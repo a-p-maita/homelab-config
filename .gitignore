@@ -1,0 +1,20 @@
+# --- SECURITY: IGNORE SECRETS ---
+.env
+.DS_Store
+*.log
+
+# --- SAFETY: IGNORE DATA ---
+# Even if accidentally map a volume here, Git will ignore it.
+*/data
+*/config
+*/db
+*/upload
+
+# --- IMMICH SPECIFIC ---
+# Generally do want to commit the docker-compose.yml for version history,
+# but have to ignore the environment file.
+immich/.env
+
+# --- CLOUDFLARE ---
+# Ignore the tunnel credentials file if it's generated locally
+core/cloudflared/

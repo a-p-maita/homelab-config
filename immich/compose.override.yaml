@@ -1,0 +1,10 @@
+services:
+  immich-server:
+    ports:
+      - "${IMMICH_PORT}:2283"
+    networks:
+      - homelab_net
+
+networks:
+  homelab_net:
+    external: true

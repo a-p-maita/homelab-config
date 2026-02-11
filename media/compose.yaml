@@ -1,0 +1,37 @@
+name: media
+
+services:
+  audiobookshelf:
+    image: ghcr.io/advplyr/audiobookshelf:latest
+    container_name: audiobookshelf
+    ports:
+      - "${ABS_PORT}:80"
+    volumes:
+      - ${HOME}/homelab-data/audiobookshelf/config:/config
+      - ${HOME}/homelab-data/audiobookshelf/metadata:/metadata
+      - ${HOME}/homelab-data/audiobooks:/audiobooks
+    restart: unless-stopped
+    networks:
+      - homelab_net
+
+  syncthing:
+    image: lscr.io/linuxserver/syncthing:latest
+    container_name: syncthing
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ${HOME}/homelab-data/syncthing/config:/config
+      - ${HOME}/homelab-data/syncthing/data:/data1
+    ports:
+      - "${SYNCTHING_GUI_PORT}:8384"
+      - "${SYNCTHING_TRANS_PORT}:22000/tcp"
+      - "${SYNCTHING_TRANS_PORT}:22000/udp"
+      - "21027:21027/udp"
+    restart: unless-stopped
+    networks:
+      - homelab_net
+
+networks:
+  homelab_net:
+    external: true
