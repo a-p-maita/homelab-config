@@ -1,7 +1,17 @@
 services:
   immich-server:
-    ports:
-      - "${IMMICH_PORT}:2283"
+    networks:
+      - homelab_net
+
+  immich-machine-learning:
+    networks:
+      - homelab_net
+
+  redis:
+    networks:
+      - homelab_net
+
+  database:
     networks:
       - homelab_net
 

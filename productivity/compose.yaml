@@ -8,13 +8,16 @@ services:
       - USER_UID=${PUID}
       - USER_GID=${PGID}
       - FORGEJO__database__DB_TYPE=sqlite3
+      - FORGEJO__repository__ENABLE_PUSH_TO_CREATE_USER=true
     volumes:
       - ${HOME}/homelab-data/forgejo:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     ports:
-      - "${FORGEJO_WEB_PORT}:3000"
-      - "${FORGEJO_SSH_PORT}:22"
+      # OLD: - "${FORGEJO_WEB_PORT}:3000"
+      - "3000:3000"  # <--- Standard HTTP Port
+      # OLD: - "${FORGEJO_SSH_PORT}:22"
+      - "2222:22"    # <--- Standard SSH Port
     restart: unless-stopped
     networks:
       - homelab_net
@@ -22,12 +25,13 @@ services:
   dufs:
     image: sigoden/dufs:latest
     container_name: dufs
-    # Command sets path and allows All permissions (-A)
-    command: /data -A
+    # Keep your command fix (using the variable for password is good!)
+    command: /data -A -a ${DUFS_auth}@/:rw
     volumes:
       - ${HOME}/homelab-data/dufs:/data
     ports:
-      - "${WEBDAV_PORT}:5000"
+      # OLD: - "${WEBDAV_PORT}:5000"
+      - "5000:5000"  # <--- Standard Dufs Port
     restart: unless-stopped
     networks:
       - homelab_net

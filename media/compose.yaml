@@ -5,7 +5,8 @@ services:
     image: ghcr.io/advplyr/audiobookshelf:latest
     container_name: audiobookshelf
     ports:
-      - "${ABS_PORT}:80"
+      # OLD: - "${ABS_PORT}:80"
+      - "13378:80"   # <--- Standard ABS Port
     volumes:
       - ${HOME}/homelab-data/audiobookshelf/config:/config
       - ${HOME}/homelab-data/audiobookshelf/metadata:/metadata
@@ -24,9 +25,10 @@ services:
       - ${HOME}/homelab-data/syncthing/config:/config
       - ${HOME}/homelab-data/syncthing/data:/data1
     ports:
-      - "${SYNCTHING_GUI_PORT}:8384"
-      - "${SYNCTHING_TRANS_PORT}:22000/tcp"
-      - "${SYNCTHING_TRANS_PORT}:22000/udp"
+      # OLD: - "${SYNCTHING_GUI_PORT}:8384"
+      - "8384:8384"    # <--- Standard Web UI
+      - "22000:22000/tcp"
+      - "22000:22000/udp"
       - "21027:21027/udp"
     restart: unless-stopped
     networks:
