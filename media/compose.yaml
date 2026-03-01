@@ -34,6 +34,41 @@ services:
     networks:
       - homelab_net
 
+  ryot:
+    image: ghcr.io/ignisda/ryot:latest
+    container_name: ryot
+    restart: unless-stopped
+    depends_on:
+      - ryot_db
+    environment:
+      - TZ=Europe/London
+      - DATABASE_URL=postgres://${RYOT_DB_USER}:${RYOT_DB_PASS}@ryot_db:5432/ryot
+      - WEB_INSECURE_COOKIE=true
+      - SERVER_ADMIN_ACCESS_TOKEN=${SERVER_ADMIN_ACCESS_TOKEN}
+      - MOVIES_AND_SHOWS_TMDB_ACCESS_TOKEN=${MOVIES_AND_SHOWS_TMDB_ACCESS_TOKEN}
+      - SERVER_IMPORTER_TRAKT_CLIENT_ID=${SERVER_IMPORTER_TRAKT_CLIENT_ID}
+    volumes:
+      - ${HOME}/homelab-data/ryot/data:/data
+    ports:
+      # Now both internal and external
+      - "10040:8000"
+    networks:
+      - homelab_net
+
+  ryot_db:
+    image: postgres:16-alpine
+    container_name: ryot_db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${RYOT_DB_USER}
+      - POSTGRES_PASSWORD=${RYOT_DB_PASS}
+      - POSTGRES_DB=ryot
+      - TZ=Europe/London
+    volumes:
+      - ${HOME}/homelab-data/ryot/db:/var/lib/postgresql/data
+    networks:
+      - homelab_net
+
 networks:
   homelab_net:
     external: true
