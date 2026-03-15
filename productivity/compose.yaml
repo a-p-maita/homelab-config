@@ -2,7 +2,7 @@ name: productivity
 
 services:
   forgejo:
-    image: codeberg.org/forgejo/forgejo:9
+    image: codeberg.org/forgejo/forgejo:14
     container_name: forgejo
     environment:
       - USER_UID=${PUID}
