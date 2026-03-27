@@ -69,6 +69,27 @@ services:
     networks:
       - homelab_net
 
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Europe/London
+      - WEBUI_PORT=8080
+    volumes:
+      - ${HOME}/homelab-data/qbittorrent/config:/config
+      # This maps your host downloads folder to the container's /downloads folder
+      - ${HOME}/homelab-data/downloads:/downloads
+    ports:
+      - "8080:8080"
+      # These ports are required for standard torrent traffic (TCP/UDP)
+      - "6881:6881"
+      - "6881:6881/udp"
+    restart: unless-stopped
+    networks:
+      - homelab_net
+
 networks:
   homelab_net:
     external: true
