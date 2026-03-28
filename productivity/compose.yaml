@@ -10,31 +10,37 @@ services:
       - FORGEJO__database__DB_TYPE=sqlite3
       - FORGEJO__repository__ENABLE_PUSH_TO_CREATE_USER=true
     volumes:
-      - ${HOME}/homelab-data/forgejo:/data
+      - ../homelab-data/forgejo:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     ports:
-      # OLD: - "${FORGEJO_WEB_PORT}:3000"
-      - "3000:3000"  # <--- Standard HTTP Port
-      # OLD: - "${FORGEJO_SSH_PORT}:22"
-      - "2222:22"    # <--- Standard SSH Port
+      - "${FORGEJO_WEB_PORT}:3000"
+      - "${FORGEJO_SSH_PORT}:22"
     restart: unless-stopped
     networks:
       - homelab_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000" ]
+      interval: 1m
+      timeout: 10s
+      retries: 3
 
   dufs:
     image: sigoden/dufs:latest
     container_name: dufs
-    # Keep your command fix (using the variable for password is good!)
     command: /data -A -a ${DUFS_auth}@/:rw
     volumes:
-      - ${HOME}/homelab-data/dufs:/data
+      - ../homelab-data/dufs:/data
     ports:
-      # OLD: - "${WEBDAV_PORT}:5000"
-      - "5000:5000"  # <--- Standard Dufs Port
+      - "${DUFS_PORT}:5000"
     restart: unless-stopped
     networks:
       - homelab_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000" ]
+      interval: 1m
+      timeout: 10s
+      retries: 3
 
 networks:
   homelab_net:

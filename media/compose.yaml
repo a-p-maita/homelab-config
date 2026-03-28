@@ -5,15 +5,19 @@ services:
     image: ghcr.io/advplyr/audiobookshelf:latest
     container_name: audiobookshelf
     ports:
-      # OLD: - "${ABS_PORT}:80"
-      - "13378:80"   # <--- Standard ABS Port
+      - "${ABS_PORT}:80"
     volumes:
-      - ${HOME}/homelab-data/audiobookshelf/config:/config
-      - ${HOME}/homelab-data/audiobookshelf/metadata:/metadata
-      - ${HOME}/homelab-data/audiobooks:/audiobooks
+      - ../homelab-data/audiobookshelf/config:/config
+      - ../homelab-data/audiobookshelf/metadata:/metadata
+      - ../homelab-data/audiobooks:/audiobooks
     restart: unless-stopped
     networks:
       - homelab_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80" ]
+      interval: 1m
+      timeout: 10s
+      retries: 3
 
   syncthing:
     image: lscr.io/linuxserver/syncthing:latest
@@ -22,17 +26,21 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
     volumes:
-      - ${HOME}/homelab-data/syncthing/config:/config
-      - ${HOME}/homelab-data/syncthing/data:/data1
+      - ../homelab-data/syncthing/config:/config
+      - ../homelab-data/syncthing/data:/data1
     ports:
-      # OLD: - "${SYNCTHING_GUI_PORT}:8384"
-      - "8384:8384"    # <--- Standard Web UI
-      - "22000:22000/tcp"
-      - "22000:22000/udp"
-      - "21027:21027/udp"
+      - "${SYNCTHING_GUI_PORT}:8384"
+      - "${SYNCTHING_TRANS_TCP_PORT}:22000/tcp"
+      - "${SYNCTHING_TRANS_UDP_PORT}:22000/udp"
+      - "${SYNCTHING_DISCOVERY_PORT}:21027/udp"
     restart: unless-stopped
     networks:
       - homelab_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8384/rest/system/ping" ]
+      interval: 1m
+      timeout: 10s
+      retries: 3
 
   ryot:
     image: ghcr.io/ignisda/ryot:latest
@@ -48,12 +56,16 @@ services:
       - MOVIES_AND_SHOWS_TMDB_ACCESS_TOKEN=${MOVIES_AND_SHOWS_TMDB_ACCESS_TOKEN}
       - SERVER_IMPORTER_TRAKT_CLIENT_ID=${SERVER_IMPORTER_TRAKT_CLIENT_ID}
     volumes:
-      - ${HOME}/homelab-data/ryot/data:/data
+      - ../homelab-data/ryot/data:/data
     ports:
-      # Now both internal and external
-      - "10040:8000"
+      - "${RYOT_PORT}:8000"
     networks:
       - homelab_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 1m
+      timeout: 10s
+      retries: 3
 
   ryot_db:
     image: postgres:16-alpine
@@ -65,9 +77,14 @@ services:
       - POSTGRES_DB=ryot
       - TZ=Europe/London
     volumes:
-      - ${HOME}/homelab-data/ryot/db:/var/lib/postgresql/data
+      - ../homelab-data/ryot/db:/var/lib/postgresql/data
     networks:
       - homelab_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
@@ -76,19 +93,22 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=Europe/London
-      - WEBUI_PORT=8080
+      - WEBUI_PORT=${QBITTORRENT_WEBUI_PORT}
     volumes:
-      - ${HOME}/homelab-data/qbittorrent/config:/config
-      # This maps your host downloads folder to the container's /downloads folder
-      - ${HOME}/homelab-data/downloads:/downloads
+      - ../homelab-data/qbittorrent/config:/config
+      - ../homelab-data/downloads:/downloads
     ports:
-      - "8080:8080"
-      # These ports are required for standard torrent traffic (TCP/UDP)
-      - "6881:6881"
-      - "6881:6881/udp"
+      - "${QBITTORRENT_WEBUI_PORT}:8080"
+      - "${QBITTORRENT_TCP_PORT}:6881"
+      - "${QBITTORRENT_UDP_PORT}:6881/udp"
     restart: unless-stopped
     networks:
       - homelab_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080" ]
+      interval: 1m
+      timeout: 10s
+      retries: 3
 
 networks:
   homelab_net:

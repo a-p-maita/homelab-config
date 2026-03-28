@@ -8,8 +8,15 @@ services:
     command: tunnel run
     environment:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    ports:
+      - "${CLOUDFLARED_PORT}:8080"
     networks:
       - homelab_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080" ]
+      interval: 1m
+      timeout: 10s
+      retries: 3
 
 networks:
   homelab_net:

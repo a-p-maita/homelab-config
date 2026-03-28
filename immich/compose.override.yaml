@@ -1,19 +1,47 @@
 services:
   immich-server:
+    container_name: immich-server
+    env_file:
+      - ../.env
     networks:
       - homelab_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2283/server-info/ping" ]
+      interval: 1m
+      timeout: 10s
+      retries: 3
 
   immich-machine-learning:
+    container_name: immich-machine-learning
+    env_file:
+      - ../.env
     networks:
       - homelab_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003" ]
+      interval: 1m
+      timeout: 10s
+      retries: 3
 
   redis:
+    container_name: immich-redis
     networks:
       - homelab_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   database:
+    container_name: immich-postgres
     networks:
       - homelab_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
 networks:
   homelab_net:
