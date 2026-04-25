@@ -17,7 +17,8 @@ services:
     networks:
       - homelab_net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      # homepage (node:alpine) has wget (BusyBox) but not curl
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 > /dev/null"]
       interval: 1m
       timeout: 10s
       retries: 3
@@ -70,6 +71,8 @@ services:
       - WATCHTOWER_INCLUDE_STOPPED=false
       - WATCHTOWER_NO_STARTUP_MESSAGE=false
       - TZ=Europe/London
+      # Compatibility with Docker Engine >= 26 (min API version raised to 1.40)
+      - DOCKER_API_VERSION=1.40
     restart: unless-stopped
     networks:
       - homelab_net

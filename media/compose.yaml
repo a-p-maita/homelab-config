@@ -15,7 +15,8 @@ services:
     networks:
       - homelab_net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80" ]
+      # node:alpine has no curl — use BusyBox wget
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80 > /dev/null"]
       interval: 1m
       timeout: 10s
       retries: 3
@@ -28,38 +29,6 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
-
-  syncthing:
-    image: lscr.io/linuxserver/syncthing:latest
-    container_name: syncthing
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-    volumes:
-      - ../homelab-data/syncthing/config:/config
-      - ../homelab-data/syncthing/data:/data1
-    ports:
-      - "${SYNCTHING_GUI_PORT}:8384"
-      - "${SYNCTHING_TRANS_TCP_PORT}:22000/tcp"
-      - "${SYNCTHING_TRANS_UDP_PORT}:22000/udp"
-      - "${SYNCTHING_DISCOVERY_PORT}:21027/udp"
-    restart: unless-stopped
-    networks:
-      - homelab_net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8384/rest/system/ping" ]
-      interval: 1m
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-        reservations:
-          cpus: '0.25'
-          memory: 256M
 
   ryot:
     image: ghcr.io/ignisda/ryot:latest
@@ -139,6 +108,7 @@ services:
     volumes:
       - ../homelab-data/qbittorrent/config:/config
       - ../homelab-data/qbittorrent-downloads:/downloads
+      - ../homelab-data/audiobooks:/audiobooks
     ports:
       - "${QBITTORRENT_WEBUI_PORT}:${QBITTORRENT_WEBUI_PORT}"
       - "${QBITTORRENT_TCP_PORT}:${QBITTORRENT_TCP_PORT}"
@@ -161,32 +131,67 @@ services:
           cpus: '0.25'
           memory: 256M
 
-  audiobookbay-downloader:
-    image: ghcr.io/jamesry96/audiobookbay-automated:latest
+  jackett:
+    image: lscr.io/linuxserver/jackett:latest
+    container_name: jackett
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Europe/London
+      - AUTO_UPDATE=true
+    volumes:
+      - ../homelab-data/jackett/config:/config
+      - ../homelab-data/jackett/downloads:/downloads
     ports:
-      - "${ABB_PORT}:5078"
+      - "${JACKETT_PORT}:9117"
+    restart: unless-stopped
+    networks:
+      - homelab_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9117"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.05'
+          memory: 128M
+
+  audiobookbay-downloader:
+    image: ghcr.io/moonblade/audiobookbay-downloader:latest
+    ports:
+      - "${ABB_PORT}:9000"
     container_name: audiobookbay-downloader
     depends_on:
       qbittorrent:
         condition: service_healthy
+      jackett:
+        condition: service_healthy
     environment:
-      - DOWNLOAD_CLIENT=qbittorrent
-      - DL_SCHEME=http
-      - DL_HOST=qbittorrent
-      - DL_PORT=${QBITTORRENT_WEBUI_PORT}
-      - DL_USERNAME=${QBITTORRENT_WEBUI_USER}
-      - DL_PASSWORD=${QBITTORRENT_WEBUI_PASS}
-      - DL_CATEGORY=abb-downloader
-      - SAVE_PATH_BASE=/downloads
-      - ABB_HOSTNAME=audiobookbay.is
-      - PAGE_LIMIT=5
-      - FLASK_PORT=5078
-      - NAV_LINK_NAME=Open Audiobook Player
-      - NAV_LINK_URL=https://audiobookshelf.andreasmaita.com/
-      - VERIFY_WEBUI_CERTIFICATE=False
+      - JACKETT_API_URL=http://jackett:9117/api/v2.0/indexers/audiobookbay/results
+      - JACKETT_API_KEY=${JACKETT_API_KEY}
+      - TORRENT_CLIENT_TYPE=qbittorrent
+      - QBITTORRENT_URL=http://qbittorrent:${QBITTORRENT_WEBUI_PORT}
+      - QBITTORRENT_USERNAME=${QBITTORRENT_WEBUI_USER}
+      - QBITTORRENT_PASSWORD=${QBITTORRENT_WEBUI_PASS}
+      # Category whose save path in qBittorrent should be set to /audiobooks
+      - QBITTORRENT_CATEGORY=abb-downloader
+      # Persist app config (Jackett API key, settings changed via UI) across restarts
+      - DB_PATH=/app/data
+      # Disable auto-deletion of files — audiobooks should live in /audiobooks permanently
+      - DELETE_AFTER_DAYS=365
+      - STRICTLY_DELETE_AFTER_DAYS=365
+    volumes:
+      - ../homelab-data/audiobookbay-downloader:/app/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5078"]
+      # image is Python-based — no curl available, use Python urllib
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:9000/health')\""]
       interval: 1m
       timeout: 10s
       retries: 3

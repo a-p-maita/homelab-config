@@ -12,14 +12,14 @@ mkdir -p \
   ./homelab-data/audiobookshelf/metadata \
   ./homelab-data/qbittorrent-downloads \
   ./homelab-data/qbittorrent/config \
-  ./homelab-data/dufs \
+  ./homelab-data/jackett/config \
+  ./homelab-data/jackett/downloads \
+  ./homelab-data/audiobookbay-downloader \
   ./homelab-data/forgejo \
   ./homelab-data/immich_db \
   ./homelab-data/immich_upload \
   ./homelab-data/ryot/data \
   ./homelab-data/ryot/db \
-  ./homelab-data/syncthing/config \
-  ./homelab-data/syncthing/data \
   ./homelab-data/homepage/config \
   ./homelab-data/uptime-kuma
 

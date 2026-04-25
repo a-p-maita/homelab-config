@@ -21,5 +21,3 @@ In use:
 
 Down/work in progress:
  - Forgejo (github alternative)
- - Syncthing (File storage)
- - Dufs (Also file storage)
