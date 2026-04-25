@@ -18,6 +18,15 @@ services:
       interval: 1m
       timeout: 10s
       retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   syncthing:
     image: lscr.io/linuxserver/syncthing:latest
@@ -41,6 +50,15 @@ services:
       interval: 1m
       timeout: 10s
       retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
 
   ryot:
     image: ghcr.io/ignisda/ryot:latest
@@ -61,11 +79,21 @@ services:
       - "${RYOT_PORT}:8000"
     networks:
       - homelab_net
+      - media_backend
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 1m
       timeout: 10s
       retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 256M
 
   ryot_db:
     image: postgres:16-alpine
@@ -79,12 +107,21 @@ services:
     volumes:
       - ../homelab-data/ryot/db:/var/lib/postgresql/data
     networks:
-      - homelab_net
+      - media_backend
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 30s
       timeout: 10s
       retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 512M
+        reservations:
+          cpus: '0.05'
+          memory: 256M
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
@@ -113,6 +150,15 @@ services:
       interval: 1m
       timeout: 10s
       retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
 
   audiobookbay-downloader:
     image: ghcr.io/jamesry96/audiobookbay-automated:latest
@@ -122,9 +168,9 @@ services:
     environment:
       - DOWNLOAD_CLIENT=qbittorrent
       - DL_SCHEME=http
-      # 1. Use the exact container name of qBittorrent
+      # 1. Use the container name for Docker service discovery
       - DL_HOST=qbittorrent
-      - DL_PORT=${QBITTORRENT_TCP_PORT}
+      - DL_PORT=${QBITTORRENT_WEBUI_PORT}
       - DL_USERNAME=${QBITTORRENT_WEBUI_USER}
       # 2. Use $$ to escape the dollar sign so Docker ignores it
       - DL_PASSWORD=${AUDIOBOOKBAY_DL_PASSWORD}
@@ -136,10 +182,26 @@ services:
       - NAV_LINK_NAME=Open Audiobook Player
       - NAV_LINK_URL=https://audiobookshelf.andreasmaita.com/
       - VERIFY_WEBUI_CERTIFICATE=False
-    # 3. Add it to the shared network so it can talk to qBittorrent
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5078"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - homelab_net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+        reservations:
+          cpus: '0.05'
+          memory: 128M
 
 networks:
   homelab_net:
     external: true
+  media_backend:
+    internal: true

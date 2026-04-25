@@ -17,6 +17,15 @@ services:
       interval: 1m
       timeout: 10s
       retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
 
 networks:
   homelab_net:
