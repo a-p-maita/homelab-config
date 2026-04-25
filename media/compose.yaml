@@ -191,7 +191,7 @@ services:
     restart: unless-stopped
     healthcheck:
       # image is Python-based — no curl available, use Python urllib
-      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:9000/health')\""]
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:9000')\""]
       interval: 1m
       timeout: 10s
       retries: 3

@@ -29,11 +29,10 @@ done
 
 cat > /tmp/kuma_setup.py << 'PYEOF'
 import sys, os
-from uptime_kuma_api import UptimeKumaApi, MonitorType, AuthMethod
+from uptime_kuma_api import UptimeKumaApi, MonitorType
 
 MONITORS = [
     # ── Internal monitors (container DNS on homelab_net) ─────────────────────
-    # These check the real container health from within the network.
     {
         "name":     "Audiobookshelf",
         "type":     MonitorType.HTTP,
@@ -43,7 +42,8 @@ MONITORS = [
     {
         "name":     "Immich",
         "type":     MonitorType.HTTP,
-        "url":      "http://immich-server:2283/server-info/ping",
+        # /api/server/ping is the stable health endpoint in current Immich
+        "url":      "http://immich-server:2283/api/server/ping",
         "interval": 60,
     },
     {
@@ -65,9 +65,12 @@ MONITORS = [
         "interval": 60,
     },
     {
+        # Jackett root redirects 302 → /UI/Dashboard which trips HTTP monitors.
+        # TCP port check is simpler and reliable.
         "name":     "Jackett",
-        "type":     MonitorType.HTTP,
-        "url":      "http://jackett:9117",
+        "type":     MonitorType.PORT,
+        "hostname": "jackett",
+        "port":     9117,
         "interval": 60,
     },
     {
@@ -83,7 +86,6 @@ MONITORS = [
         "interval": 60,
     },
     # ── External monitors (Cloudflare tunnel domains) ─────────────────────────
-    # These verify end-to-end availability from the outside world.
     {
         "name":     "Audiobookshelf (external)",
         "type":     MonitorType.HTTP,
@@ -116,19 +118,34 @@ MONITORS = [
     },
 ]
 
+def monitor_key(m):
+    """Return a comparable dict of the fields we care about for drift detection."""
+    if m.get("type") in (MonitorType.PORT,):
+        return {"type": m["type"], "hostname": m.get("hostname"), "port": m.get("port")}
+    return {"type": m["type"], "url": m.get("url")}
+
 api = UptimeKumaApi("http://uptime-kuma:3001")
 try:
-    api.login(os.environ["UK_USER"], os.environ["UK_PASS"])  # credentials injected by shell script
-    existing = {m["name"] for m in api.get_monitors()}
-    added = 0
+    api.login(os.environ["UK_USER"], os.environ["UK_PASS"])
+    existing = {m["name"]: m for m in api.get_monitors()}
+    added = updated = skipped = 0
     for m in MONITORS:
         if m["name"] in existing:
-            print(f"  SKIP (exists): {m['name']}")
-            continue
-        api.add_monitor(**m)
-        print(f"  ADDED:         {m['name']}")
-        added += 1
-    print(f"\nDone — {added} monitor(s) added, {len(MONITORS) - added} skipped.")
+            ex = existing[m["name"]]
+            # Detect type/url drift so re-runs fix misconfigured monitors
+            desired_type_val = m["type"].value if hasattr(m["type"], "value") else m["type"]
+            if ex.get("type") != desired_type_val or ex.get("url") != m.get("url") or ex.get("hostname") != m.get("hostname"):
+                api.edit_monitor(ex["id"], **m)
+                print(f"  UPDATED:       {m['name']}")
+                updated += 1
+            else:
+                print(f"  SKIP (ok):     {m['name']}")
+                skipped += 1
+        else:
+            api.add_monitor(**m)
+            print(f"  ADDED:         {m['name']}")
+            added += 1
+    print(f"\nDone — {added} added, {updated} updated, {skipped} skipped.")
 except Exception as e:
     print(f"Error: {e}", file=sys.stderr)
     sys.exit(1)
