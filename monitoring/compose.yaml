@@ -7,8 +7,7 @@ services:
     ports:
       - "${HOMEPAGE_PORT}:3000"
     environment:
-      # Allow access via Tailscale IP, localhost, and Cloudflare domain
-      - HOMEPAGE_ALLOWED_HOSTS=100.106.40.5:20200,localhost:20200,localhost:3000,homepage.andreasmaita.com
+      - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS}
     volumes:
       - ../homelab-data/homepage/config:/app/config
       - /var/run/docker.sock:/var/run/docker.sock:ro

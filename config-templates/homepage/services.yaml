@@ -103,12 +103,6 @@
         icon: slskd.png
         server: my-docker
         container: slskd
-    - spotDL:
-        href: http://100.106.40.5:20076
-        description: Spotify music downloader
-        icon: mdi-spotify
-        server: my-docker
-        container: spotdl
     - Uptime Kuma:
         href: http://100.106.40.5:20201
         description: Uptime monitor
@@ -184,12 +178,6 @@
         icon: slskd.png
         server: my-docker
         container: slskd
-    - spotDL:
-        href: http://localhost:20076
-        description: Spotify music downloader
-        icon: mdi-spotify
-        server: my-docker
-        container: spotdl
     - Uptime Kuma:
         href: http://localhost:20201
         description: Uptime monitor

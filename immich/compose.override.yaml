@@ -10,7 +10,7 @@ services:
       - homelab_net
       - immich_internal
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:2283/server-info/ping" ]
+      test: ["CMD", "curl", "-f", "http://localhost:2283/api/server/ping" ]
       interval: 1m
       timeout: 10s
       retries: 3

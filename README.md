@@ -18,7 +18,6 @@ Depends on/creates another directory one step up called `homelab-data/` which ho
 | [Feishin](https://github.com/jeffvli/feishin) | Modern web UI for Navidrome |
 | [Lidarr](https://lidarr.audio/) | Automated music collection manager via torrents |
 | [Soulseek (slskd)](https://github.com/slskd/slskd) | P2P music sourcing for rare and lossless files |
-| [spotDL](https://github.com/spotDL/spotify-downloader) | Download music from Spotify (matched via YouTube Music) |
 | [Homepage](https://gethomepage.dev/) | Dashboard with live container health |
 | [Uptime Kuma](https://uptime.kuma.pet/) | Service uptime monitoring |
 | [Cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) | Cloudflare tunnel for external access since I can't port forward |
@@ -102,26 +101,12 @@ After `up-all.sh`, a few music services need one-time setup via their web UIs:
 | **Navidrome** | `:20070` | Create your admin account on first visit |
 | **Lidarr** | `:20073` | Complete the setup wizard. Add Jackett as indexer (`http://jackett:9117`, API key from `.env`). Add qBittorrent as download client (`http://qbittorrent:20050`, credentials from `.env`). Set music root folder to `/music` |
 | **slskd** | `:20075` | Log in with the credentials from `SLSKD_USERNAME` / `SLSKD_PASSWORD` in `.env`. Search and download music directly to the shared music library |
-| **spotDL** | `:8800` | Web UI opens automatically. Paste a Spotify track, album, artist, or playlist URL and hit download. Files land in the shared music library and Navidrome picks them up within 1h |
 
 **Feishin** (`:20072`) is pre-locked to Navidrome — just log in with your Navidrome credentials.
-
-To bootstrap your Spotify playlists (256kbps MP3, no FLAC), run spotDL ad-hoc:
-
-```bash
-docker run --rm \
-  -v /home/a-p-maita/homelab-config/homelab-data/music:/music \
-  spotdl/spotdl:latest \
-  sync "https://open.spotify.com/playlist/YOUR_PLAYLIST_ID" \
-  --output "/music/{artists}/{album}/{title}.{output-ext}" \
-  --save-file /music/.spotdl-sync.spotdl
-```
-
-Replace `sync` with `download` for a one-shot import, or keep `sync` to re-run and skip already-downloaded tracks.
 
 
 ## Notes
 
 - Ports are all configurable via `.env` — see `.env.example` for the full list
 - Immich uses its default port (`2283`) for app compatibility
-- Some of the services need first time logins to be configured on the webui and such so do that after the first run.
+- First-time setup per service is covered in the **Music stack first-run** table and the individual service docs linked above.

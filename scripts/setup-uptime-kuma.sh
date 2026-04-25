@@ -108,12 +108,6 @@ MONITORS = [
         "url":      "http://slskd:5030",
         "interval": 60,
     },
-    {
-        "name":     "spotDL",
-        "type":     MonitorType.HTTP,
-        "url":      "http://spotdl:8800",
-        "interval": 60,
-    },
     # ── External monitors (Cloudflare tunnel domains) ─────────────────────────
     {
         "name":     "Audiobookshelf (external)",
