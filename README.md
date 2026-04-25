@@ -16,9 +16,9 @@ Depends on/creates another directory one step up called `homelab-data/` which ho
 | [Audiobookbay Downloader](https://github.com/moonblade/audiobookbay-downloader) | Search and download audiobooks via AudiobookBay |
 | [Navidrome](https://www.navidrome.org/) | Music streaming server (Subsonic API) |
 | [Feishin](https://github.com/jeffvli/feishin) | Modern web UI for Navidrome |
-| [Deemix](https://github.com/bambanah/deemix) | Download music from Deezer (FLAC with HiFi subscription) |
 | [Lidarr](https://lidarr.audio/) | Automated music collection manager via torrents |
 | [Soulseek (slskd)](https://github.com/slskd/slskd) | P2P music sourcing for rare and lossless files |
+| [spotDL](https://github.com/spotDL/spotify-downloader) | Download music from Spotify (matched via YouTube Music) |
 | [Homepage](https://gethomepage.dev/) | Dashboard with live container health |
 | [Uptime Kuma](https://uptime.kuma.pet/) | Service uptime monitoring |
 | [Cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) | Cloudflare tunnel for external access since I can't port forward |
@@ -51,7 +51,7 @@ cp config-templates/jackett/ServerConfig.json homelab-data/jackett/config/Jacket
 # slskd (Soulseek)
 mkdir -p homelab-data/slskd
 cp config-templates/slskd/slskd.yml homelab-data/slskd/slskd.yml
-# Fill in your Soulseek network credentials and desired slskd web UI password.
+# Credentials are set via SLSKD_USERNAME / SLSKD_PASSWORD in .env — no edits needed in the yml.
 ```
 
 Then bring everything up:
@@ -62,6 +62,37 @@ Then bring everything up:
 
 To set up Uptime Kuma monitors automatically, run `./scripts/setup-uptime-kuma.sh` after the stack is healthy. Update `UK_PASS` in the script to your real password first.
 
+## Cloudflare tunnel
+
+Services exposed via Cloudflare tunnel (configured in Zero Trust → Networks → Tunnels → Public Hostnames):
+
+| Subdomain | Internal service | Auth |
+|---|---|---|
+| `audiobookshelf.andreasmaita.com` | `http://audiobookshelf:80` | Audiobookshelf own login |
+| `navidrome.andreasmaita.com` | `http://navidrome:4533` | Navidrome own login |
+| `feishin.andreasmaita.com` | `http://feishin:9180` | Navidrome own login (via Feishin) |
+| `immich.andreasmaita.com` | `http://immich-server:2283` | Immich own login |
+| `forgejo.andreasmaita.com` | `http://forgejo:3000` | Forgejo own login |
+| `homepage.andreasmaita.com` | `http://homepage:3000` | None (internal dashboard) |
+
+**Feishin `SERVER_URL`:** Set `NAVIDROME_EXTERNAL_URL` in `.env` to the public Navidrome tunnel URL. Feishin's browser client connects to Navidrome from the user's device, not from Docker, so it must be a publicly reachable URL.
+
+**Cloudflare Access bypass for Navidrome API paths (required for mobile Subsonic clients):**
+
+Mobile music apps (Symfonium, Ultrasonic, etc.) can't complete a browser-based Access challenge. Bypass Access for the API paths only so clients can authenticate directly with Navidrome:
+
+1. Zero Trust → Access → Applications → Add application → Self-hosted
+2. Set application domain: `navidrome.andreasmaita.com`
+3. Under **Policies**, add a rule:
+   - Action: **Bypass**
+   - Include rule: **Everyone**
+   - Path: `/rest/*`
+4. Add a second Bypass rule for path `/api/*` (used by Feishin native mode)
+5. Add a third Bypass rule for path `/ping` (healthcheck)
+6. Add your normal Allow policy (email OTP etc.) — this catches everything else like the web UI
+
+With this setup: web UI at `/app` requires Access auth, but `/rest/*` and `/api/*` are open to Navidrome's own auth (username/password/token).
+
 ## Music stack first-run
 
 After `up-all.sh`, a few music services need one-time setup via their web UIs:
@@ -69,9 +100,9 @@ After `up-all.sh`, a few music services need one-time setup via their web UIs:
 | Service | URL | What to do |
 |---|---|---|
 | **Navidrome** | `:20070` | Create your admin account on first visit |
-| **Deemix** | `:20071` | Go to Settings → paste your Deezer `arl` cookie value. Get it from deezer.com → F12 → Application → Cookies → `arl`. Free account = 128kbps MP3; paid HiFi = FLAC |
 | **Lidarr** | `:20073` | Complete the setup wizard. Add Jackett as indexer (`http://jackett:9117`, API key from `.env`). Add qBittorrent as download client (`http://qbittorrent:20050`, credentials from `.env`). Set music root folder to `/music` |
-| **slskd** | `:20075` | Log in with the credentials from `homelab-data/slskd/slskd.yml`. Search and download music directly to the shared music library |
+| **slskd** | `:20075` | Log in with the credentials from `SLSKD_USERNAME` / `SLSKD_PASSWORD` in `.env`. Search and download music directly to the shared music library |
+| **spotDL** | `:8800` | Web UI opens automatically. Paste a Spotify track, album, artist, or playlist URL and hit download. Files land in the shared music library and Navidrome picks them up within 1h |
 
 **Feishin** (`:20072`) is pre-locked to Navidrome — just log in with your Navidrome credentials.
 

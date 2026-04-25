@@ -97,12 +97,6 @@ MONITORS = [
         "interval": 60,
     },
     {
-        "name":     "Deemix",
-        "type":     MonitorType.HTTP,
-        "url":      "http://deemix:6595",
-        "interval": 60,
-    },
-    {
         "name":     "Lidarr",
         "type":     MonitorType.HTTP,
         "url":      "http://lidarr:8686/ping",
@@ -114,11 +108,29 @@ MONITORS = [
         "url":      "http://slskd:5030",
         "interval": 60,
     },
+    {
+        "name":     "spotDL",
+        "type":     MonitorType.HTTP,
+        "url":      "http://spotdl:8800",
+        "interval": 60,
+    },
     # ── External monitors (Cloudflare tunnel domains) ─────────────────────────
     {
         "name":     "Audiobookshelf (external)",
         "type":     MonitorType.HTTP,
         "url":      "https://audiobookshelf.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Navidrome (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://navidrome.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Feishin (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://feishin.andreasmaita.com",
         "interval": 120,
     },
     {
@@ -174,7 +186,19 @@ try:
             api.add_monitor(**m)
             print(f"  ADDED:         {m['name']}")
             added += 1
-    print(f"\nDone — {added} added, {updated} updated, {skipped} skipped.")
+    # ── Remove obsolete monitors ─────────────────────────────────────────────
+    MONITORS_TO_DELETE = [
+        "Deemix",
+    ]
+    deleted = 0
+    for name in MONITORS_TO_DELETE:
+        if name in existing:
+            api.delete_monitor(existing[name]["id"])
+            print(f"  DELETED:       {name}")
+            deleted += 1
+        else:
+            print(f"  SKIP (gone):   {name}")
+    print(f"\nDone — {added} added, {updated} updated, {skipped} skipped, {deleted} deleted.")
 except Exception as e:
     print(f"Error: {e}", file=sys.stderr)
     sys.exit(1)

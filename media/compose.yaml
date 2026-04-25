@@ -247,7 +247,8 @@ services:
       # Pre-lock to Navidrome — users just log in with their Navidrome credentials
       - SERVER_NAME=Homelab
       - SERVER_TYPE=navidrome
-      - SERVER_URL=http://navidrome:4533
+      # Must be the public URL — browser connects directly to Navidrome from client side
+      - SERVER_URL=${NAVIDROME_EXTERNAL_URL}
       - SERVER_LOCK=true
       - ANALYTICS_DISABLED=true
     ports:
@@ -272,39 +273,6 @@ services:
         reservations:
           cpus: '0.05'
           memory: 32M
-
-  deemix:
-    image: ghcr.io/bambanah/deemix:latest
-    container_name: deemix
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - DEEMIX_SERVER_PORT=6595
-      - DEEMIX_SINGLE_USER=true
-      # Skip ownership fix on startup — PUID/PGID already set correctly
-      - DISABLE_OWNERSHIP_CHECK=true
-    volumes:
-      - ../homelab-data/deemix/config:/config
-      - ../homelab-data/music:/downloads
-    ports:
-      - "${DEEMIX_PORT}:6595"
-    restart: unless-stopped
-    networks:
-      - homelab_net
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:6595 > /dev/null"]
-      interval: 1m
-      timeout: 10s
-      retries: 3
-      start_period: 20s
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-        reservations:
-          cpus: '0.05'
-          memory: 64M
 
   lidarr:
     image: lscr.io/linuxserver/lidarr:latest
@@ -351,6 +319,11 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - SLSKD_REMOTE_CONFIGURATION=false
+      # slskd env vars override YAML — fixes ${VAR} literal issue in slskd.yml
+      - SLSKD_SOULSEEK_USERNAME=${SLSKD_USERNAME}
+      - SLSKD_SOULSEEK_PASSWORD=${SLSKD_PASSWORD}
+      - SLSKD_WEB_AUTHENTICATION_USERNAME=${SLSKD_USERNAME}
+      - SLSKD_WEB_AUTHENTICATION_PASSWORD=${SLSKD_PASSWORD}
     volumes:
       # slskd.yml must be seeded from config-templates/slskd/slskd.yml before first boot
       - ../homelab-data/slskd:/app
@@ -376,6 +349,34 @@ services:
         reservations:
           cpus: '0.05'
           memory: 64M
+
+  spotdl:
+    image: spotdl/spotify-downloader
+    container_name: spotdl
+    # "web" starts the Web UI; --output routes downloads into the shared music library
+    command: web --host 0.0.0.0 --port 8800 --output /music
+    ports:
+      - "${SPOTDL_PORT}:8800"
+    volumes:
+      - ../homelab-data/music:/music
+    restart: unless-stopped
+    networks:
+      - homelab_net
+    healthcheck:
+      # Python is always present; avoids needing curl/wget in the slim image
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8800\")'"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
 
 networks:
   homelab_net:

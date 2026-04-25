@@ -1,20 +1,11 @@
 # slskd configuration template
 # Copy to homelab-data/slskd/slskd.yml BEFORE first boot.
 #
-# Soulseek credentials: create a free account at https://www.slsknet.org/news/node/1
-# Web credentials: used to log in to the slskd web UI at http://host:20075
+# Credentials are passed via environment variables in compose.yaml (SLSKD_USERNAME /
+# SLSKD_PASSWORD) which map to the SLSKD_SOULSEEK_* and SLSKD_WEB_AUTHENTICATION_*
+# env vars — no credentials needed in this file.
 #
-# After seeding this file, bring up the stack. slskd reads this on startup.
-
-soulseek:
-  username: ${SLSKD_USERNAME}
-  password: ${SLSKD_PASSWORD}
-
-web:
-  authentication:
-    disabled: false
-    username: ${SLSKD_USERNAME}
-    password: ${SLSKD_PASSWORD}
+# Only directory paths are configured here since they cannot be set via env vars.
 
 directories:
   # Downloads go directly into the shared music library so Navidrome picks them up

@@ -24,7 +24,6 @@ mkdir -p \
   ./homelab-data/uptime-kuma \
   ./homelab-data/music \
   ./homelab-data/navidrome/data \
-  ./homelab-data/deemix/config \
   ./homelab-data/lidarr/config \
   ./homelab-data/slskd
 
