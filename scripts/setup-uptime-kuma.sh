@@ -83,6 +83,37 @@ MONITORS = [
         "url":      "http://homepage:3000",
         "interval": 60,
     },
+    # ── Music stack ──────────────────────────────────────────────────────────
+    {
+        "name":     "Navidrome",
+        "type":     MonitorType.HTTP,
+        "url":      "http://navidrome:4533/ping",
+        "interval": 60,
+    },
+    {
+        "name":     "Feishin",
+        "type":     MonitorType.HTTP,
+        "url":      "http://feishin:9180",
+        "interval": 60,
+    },
+    {
+        "name":     "Deemix",
+        "type":     MonitorType.HTTP,
+        "url":      "http://deemix:6595",
+        "interval": 60,
+    },
+    {
+        "name":     "Lidarr",
+        "type":     MonitorType.HTTP,
+        "url":      "http://lidarr:8686/ping",
+        "interval": 60,
+    },
+    {
+        "name":     "Soulseek (slskd)",
+        "type":     MonitorType.HTTP,
+        "url":      "http://slskd:5030",
+        "interval": 60,
+    },
     # ── External monitors (Cloudflare tunnel domains) ─────────────────────────
     {
         "name":     "Audiobookshelf (external)",

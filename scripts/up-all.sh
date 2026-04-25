@@ -21,7 +21,12 @@ mkdir -p \
   ./homelab-data/ryot/data \
   ./homelab-data/ryot/db \
   ./homelab-data/homepage/config \
-  ./homelab-data/uptime-kuma
+  ./homelab-data/uptime-kuma \
+  ./homelab-data/music \
+  ./homelab-data/navidrome/data \
+  ./homelab-data/deemix/config \
+  ./homelab-data/lidarr/config \
+  ./homelab-data/slskd
 
 # Ensure the shared external network exists (stacks declare it external so it must pre-exist)
 docker network create homelab_net 2>/dev/null || true

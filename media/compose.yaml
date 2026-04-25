@@ -207,6 +207,176 @@ services:
           cpus: '0.05'
           memory: 128M
 
+  navidrome:
+    image: deluan/navidrome:latest
+    container_name: navidrome
+    user: "${PUID}:${PGID}"
+    environment:
+      - ND_SCANSCHEDULE=1h
+      - ND_LOGLEVEL=info
+      # Extend session lifetime so Feishin stays logged in
+      - ND_SESSIONTIMEOUT=72h
+      - ND_BASEURL=
+    volumes:
+      - ../homelab-data/navidrome/data:/data
+      - ../homelab-data/music:/music:ro
+    ports:
+      - "${NAVIDROME_PORT}:4533"
+    restart: unless-stopped
+    networks:
+      - homelab_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4533/ping > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
+
+  feishin:
+    image: ghcr.io/jeffvli/feishin:latest
+    container_name: feishin
+    environment:
+      # Pre-lock to Navidrome — users just log in with their Navidrome credentials
+      - SERVER_NAME=Homelab
+      - SERVER_TYPE=navidrome
+      - SERVER_URL=http://navidrome:4533
+      - SERVER_LOCK=true
+      - ANALYTICS_DISABLED=true
+    ports:
+      - "${FEISHIN_PORT}:9180"
+    restart: unless-stopped
+    networks:
+      - homelab_net
+    depends_on:
+      navidrome:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9180 > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
+
+  deemix:
+    image: ghcr.io/bambanah/deemix:latest
+    container_name: deemix
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - DEEMIX_SERVER_PORT=6595
+      - DEEMIX_SINGLE_USER=true
+      # Skip ownership fix on startup — PUID/PGID already set correctly
+      - DISABLE_OWNERSHIP_CHECK=true
+    volumes:
+      - ../homelab-data/deemix/config:/config
+      - ../homelab-data/music:/downloads
+    ports:
+      - "${DEEMIX_PORT}:6595"
+    restart: unless-stopped
+    networks:
+      - homelab_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:6595 > /dev/null"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
+
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=Europe/London
+    volumes:
+      - ../homelab-data/lidarr/config:/config
+      # Shared with qBittorrent — same host path enables hardlinks during import
+      - ../homelab-data/qbittorrent-downloads:/downloads
+      - ../homelab-data/music:/music
+    ports:
+      - "${LIDARR_PORT}:8686"
+    restart: unless-stopped
+    networks:
+      - homelab_net
+    depends_on:
+      qbittorrent:
+        condition: service_healthy
+      jackett:
+        condition: service_healthy
+    healthcheck:
+      # /ping responds without API key
+      test: ["CMD", "curl", "-f", "http://localhost:8686/ping"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+  slskd:
+    image: slskd/slskd:latest
+    container_name: slskd
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - SLSKD_REMOTE_CONFIGURATION=false
+    volumes:
+      # slskd.yml must be seeded from config-templates/slskd/slskd.yml before first boot
+      - ../homelab-data/slskd:/app
+      - ../homelab-data/music:/music
+    ports:
+      - "${SLSKD_PORT}:5030"
+      # Soulseek P2P port — expose for better download queue priority
+      - "${SLSKD_P2P_PORT}:50300"
+    restart: unless-stopped
+    networks:
+      - homelab_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:5030 > /dev/null"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
+
 networks:
   homelab_net:
     external: true

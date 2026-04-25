@@ -1,0 +1,23 @@
+# slskd configuration template
+# Copy to homelab-data/slskd/slskd.yml BEFORE first boot.
+#
+# Soulseek credentials: create a free account at https://www.slsknet.org/news/node/1
+# Web credentials: used to log in to the slskd web UI at http://host:20075
+#
+# After seeding this file, bring up the stack. slskd reads this on startup.
+
+soulseek:
+  username: ${SLSKD_USERNAME}
+  password: ${SLSKD_PASSWORD}
+
+web:
+  authentication:
+    disabled: false
+    username: ${SLSKD_USERNAME}
+    password: ${SLSKD_PASSWORD}
+
+directories:
+  # Downloads go directly into the shared music library so Navidrome picks them up
+  downloads: /music
+  # Incomplete downloads stay in the app dir, out of Navidrome's watch path
+  incomplete: /app/incomplete
