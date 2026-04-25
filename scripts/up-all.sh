@@ -2,7 +2,7 @@
 # Script to bring up all homelab stacks with correct env and data directories
 set -e
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 # Ensure homelab-data subdirs exist
 mkdir -p \

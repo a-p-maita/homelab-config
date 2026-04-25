@@ -2,7 +2,7 @@
 # Script to pull latest images for all homelab stacks
 set -e
 
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 # Always use --env-file .env for all stacks if present
 if [ -f .env ]; then

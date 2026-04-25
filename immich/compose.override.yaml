@@ -1,8 +1,11 @@
 services:
   immich-server:
     container_name: immich-server
-    env_file:
-      - ../.env
+    environment:
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_DATABASE_NAME: ${DB_DATABASE_NAME}
+      IMMICH_VERSION: ${IMMICH_VERSION}
     networks:
       - homelab_net
       - immich_internal
@@ -23,8 +26,8 @@ services:
 
   immich-machine-learning:
     container_name: immich-machine-learning
-    env_file:
-      - ../.env
+    environment:
+      IMMICH_VERSION: ${IMMICH_VERSION}
     networks:
       - homelab_net
       - immich_internal

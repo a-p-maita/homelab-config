@@ -136,7 +136,6 @@ services:
       - TORRENTING_PORT=${QBITTORRENT_TCP_PORT}
       - WEBUI_ADDRESS=0.0.0.0
       - WEBUI_USERNAME=${QBITTORRENT_WEBUI_USER}
-      - WEBUI_PASSWORD=${QBITTORRENT_WEBUI_PASS}
     volumes:
       - ../homelab-data/qbittorrent/config:/config
       - ../homelab-data/qbittorrent-downloads:/downloads
@@ -165,18 +164,20 @@ services:
   audiobookbay-downloader:
     image: ghcr.io/jamesry96/audiobookbay-automated:latest
     ports:
-      - "5078:5078"
+      - "${ABB_PORT}:5078"
     container_name: audiobookbay-downloader
+    depends_on:
+      qbittorrent:
+        condition: service_healthy
     environment:
       - DOWNLOAD_CLIENT=qbittorrent
       - DL_SCHEME=http
-      # 1. Use the container name for Docker service discovery
       - DL_HOST=qbittorrent
       - DL_PORT=${QBITTORRENT_WEBUI_PORT}
       - DL_USERNAME=${QBITTORRENT_WEBUI_USER}
-      - DL_PASSWORD=${AUDIOBOOKBAY_DL_PASSWORD}
+      - DL_PASSWORD=${QBITTORRENT_WEBUI_PASS}
       - DL_CATEGORY=abb-downloader
-      - SAVE_PATH_BASE=/audiobooks
+      - SAVE_PATH_BASE=/downloads
       - ABB_HOSTNAME=audiobookbay.is
       - PAGE_LIMIT=5
       - FLASK_PORT=5078
