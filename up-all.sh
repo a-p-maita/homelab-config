@@ -5,7 +5,7 @@ set -e
 cd "$(dirname "$0")"
 
 # Ensure homelab-data subdirs exist
-mkdir -p ./homelab-data/audiobooks ./homelab-data/audiobookshelf/config ./homelab-data/audiobookshelf/metadata ./homelab-data/qbittorrent-downloads ./homelab-data/dufs ./homelab-data/forgejo ./homelab-data/immich_db ./homelab-data/immich_upload ./homelab-data/qbittorrent ./homelab-data/ryot/data ./homelab-data/ryot/db ./homelab-data/syncthing/config ./homelab-data/syncthing/data
+mkdir -p ./homelab-data/audiobooks ./homelab-data/podcasts ./homelab-data/audiobookshelf/config ./homelab-data/audiobookshelf/metadata ./homelab-data/qbittorrent-downloads ./homelab-data/dufs ./homelab-data/forgejo ./homelab-data/immich_db ./homelab-data/immich_upload ./homelab-data/qbittorrent ./homelab-data/ryot/data ./homelab-data/ryot/db ./homelab-data/syncthing/config ./homelab-data/syncthing/data
 
 # Ensure the shared external network exists (stacks declare it external so it must pre-exist)
 docker network create homelab_net 2>/dev/null || true
