@@ -114,6 +114,32 @@ services:
       timeout: 10s
       retries: 3
 
+  audiobookbay-downloader:
+    image: ghcr.io/jamesry96/audiobookbay-automated:latest
+    ports:
+      - "5078:5078"
+    container_name: audiobookbay-downloader
+    environment:
+      - DOWNLOAD_CLIENT=qbittorrent
+      - DL_SCHEME=http
+      # 1. Use the exact container name of qBittorrent
+      - DL_HOST=qbittorrent
+      - DL_PORT=${QBITTORRENT_TCP_PORT}
+      - DL_USERNAME=${QBITTORRENT_WEBUI_USER}
+      # 2. Use $$ to escape the dollar sign so Docker ignores it
+      - DL_PASSWORD=${AUDIOBOOKBAY_DL_PASSWORD}
+      - DL_CATEGORY=abb-downloader
+      - SAVE_PATH_BASE=/audiobooks
+      - ABB_HOSTNAME=audiobookbay.is
+      - PAGE_LIMIT=5
+      - FLASK_PORT=5078
+      - NAV_LINK_NAME=Open Audiobook Player
+      - NAV_LINK_URL=https://audiobookshelf.andreasmaita.com/
+      - VERIFY_WEBUI_CERTIFICATE=False
+    # 3. Add it to the shared network so it can talk to qBittorrent
+    networks:
+      - homelab_net
+
 networks:
   homelab_net:
     external: true
