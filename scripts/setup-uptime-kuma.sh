@@ -65,12 +65,10 @@ MONITORS = [
         "interval": 60,
     },
     {
-        # Jackett root redirects 302 → /UI/Dashboard which trips HTTP monitors.
-        # TCP port check is simpler and reliable.
+        # Jackett /health returns 200; root path redirects 301→302 and fails HTTP monitors.
         "name":     "Jackett",
-        "type":     MonitorType.PORT,
-        "hostname": "jackett",
-        "port":     9117,
+        "type":     MonitorType.HTTP,
+        "url":      "http://jackett:9117/health",
         "interval": 60,
     },
     {
