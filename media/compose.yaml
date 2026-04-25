@@ -351,14 +351,29 @@ services:
           memory: 64M
 
   spotdl:
-    image: spotdl/spotify-downloader
+    build:
+      context: .
+      dockerfile: spotdl.Dockerfile
+    image: spotdl-patched
     container_name: spotdl
-    # "web" starts the Web UI; --output routes downloads into the shared music library
-    command: web --host 0.0.0.0 --port 8800 --output /music
+    # "web" starts the Web UI; --output + --web-use-output-dir saves downloads to the shared music library
+    # --keep-alive prevents the server from shutting down when all browser sessions close
+    # --client-id / --client-secret use your own Spotify Developer app to avoid anonymous API rate limits
+    # --audio youtube-music youtube: tries YT Music first, falls back to plain YouTube
+    # --cookie-file: YouTube requires browser cookies when downloading from a server IP.
+    #   Export cookies.txt from your browser (e.g. using the "Get cookies.txt LOCALLY" extension),
+    #   then place the file at homelab-data/spotdl/cookies.txt.
+    command: >-
+      web --host 0.0.0.0 --port 8800
+      --output /music --web-use-output-dir --keep-alive
+      --audio youtube-music youtube
+      --cookie-file /spotdl/cookies.txt
+      --client-id ${SPOTDL_CLIENT_ID} --client-secret ${SPOTDL_CLIENT_SECRET}
     ports:
       - "${SPOTDL_PORT}:8800"
     volumes:
       - ../homelab-data/music:/music
+      - ../homelab-data/spotdl:/spotdl:ro
     restart: unless-stopped
     networks:
       - homelab_net

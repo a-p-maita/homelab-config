@@ -25,7 +25,12 @@ mkdir -p \
   ./homelab-data/music \
   ./homelab-data/navidrome/data \
   ./homelab-data/lidarr/config \
-  ./homelab-data/slskd
+  ./homelab-data/slskd \
+  ./homelab-data/spotdl
+
+# Create a placeholder cookies file for spotDL if it doesn't exist yet.
+# Replace it with a real export from your browser to enable YouTube downloads.
+touch ./homelab-data/spotdl/cookies.txt
 
 # Ensure the shared external network exists (stacks declare it external so it must pre-exist)
 docker network create homelab_net 2>/dev/null || true

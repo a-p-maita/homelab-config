@@ -186,19 +186,6 @@ try:
             api.add_monitor(**m)
             print(f"  ADDED:         {m['name']}")
             added += 1
-    # ── Remove obsolete monitors ─────────────────────────────────────────────
-    MONITORS_TO_DELETE = [
-        "Deemix",
-    ]
-    deleted = 0
-    for name in MONITORS_TO_DELETE:
-        if name in existing:
-            api.delete_monitor(existing[name]["id"])
-            print(f"  DELETED:       {name}")
-            deleted += 1
-        else:
-            print(f"  SKIP (gone):   {name}")
-    print(f"\nDone — {added} added, {updated} updated, {skipped} skipped, {deleted} deleted.")
 except Exception as e:
     print(f"Error: {e}", file=sys.stderr)
     sys.exit(1)
