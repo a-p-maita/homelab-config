@@ -24,11 +24,16 @@
       description: Photo & video backup
       icon: immich.png
       siteMonitor: https://immich.andreasmaita.com
-   - Ryot:
-      href: https://ryot.andreasmaita.com
-      description: Media tracker (TV, movies, books)
-      icon: ryot.png
-      siteMonitor: https://ryot.andreasmaita.com
+   - Yamtrack:
+      href: https://yamtrack.andreasmaita.com
+      description: Media tracker (TV, movies, games, books)
+      icon: mdi-television-play
+      siteMonitor: https://yamtrack.andreasmaita.com
+   - CrossWatch:
+      href: https://crosswatch.andreasmaita.com
+      description: Sync Trakt, AniList, Jellyfin, Plex, Simkl
+      icon: mdi-sync
+      siteMonitor: https://crosswatch.andreasmaita.com
    - Forgejo:
       href: https://forgejo.andreasmaita.com
       description: Git hosting
@@ -39,9 +44,39 @@
       description: Subsonic proxy with hi-res streaming
       icon: mdi-music-circle
       siteMonitor: https://octo-fiesta.andreasmaita.com
+   - Paperless-NGX:
+      href: https://paperless.andreasmaita.com
+      description: Document management
+      icon: paperless-ngx.png
+      siteMonitor: https://paperless.andreasmaita.com
+   - Vaultwarden:
+      href: https://vault.andreasmaita.com
+      description: Password manager (Bitwarden-compatible)
+      icon: vaultwarden.png
+      siteMonitor: https://vault.andreasmaita.com
+   - Jellyfin:
+      href: https://jellyfin.andreasmaita.com
+      description: Media server (video, music, TV)
+      icon: jellyfin.png
+      siteMonitor: https://jellyfin.andreasmaita.com
+   - Joplin:
+      href: https://joplin.andreasmaita.com
+      description: Note-taking server
+      icon: joplin.png
+      siteMonitor: https://joplin.andreasmaita.com
+   - Mealie:
+      href: https://mealie.andreasmaita.com
+      description: Recipe manager & meal planner
+      icon: mealie.png
+      siteMonitor: https://mealie.andreasmaita.com
+   - Homepage:
+      href: https://homepage.andreasmaita.com
+      description: This dashboard
+      icon: homepage.png
+      siteMonitor: https://homepage.andreasmaita.com
 
-# All services accessible over Tailscale (100.106.40.5) — shows live Docker health
-- Tailscale:
+# Media stack — accessible over Tailscale
+- Media:
    - Audiobookshelf:
       href: http://100.106.40.5:20020
       description: Audiobook & podcast library
@@ -60,42 +95,6 @@
       icon: feishin.png
       server: my-docker
       container: feishin
-   - Immich:
-      href: http://100.106.40.5:2283
-      description: Photo & video backup
-      icon: immich.png
-      server: my-docker
-      container: immich-server
-   - Ryot:
-      href: http://100.106.40.5:20040
-      description: Media tracker
-      icon: ryot.png
-      server: my-docker
-      container: ryot
-   - qBittorrent:
-      href: http://100.106.40.5:20050
-      description: Torrent client
-      icon: qbittorrent.png
-      server: my-docker
-      container: qbittorrent
-   - Audiobookbay:
-      href: http://100.106.40.5:20060
-      description: Audiobook downloader
-      icon: mdi-book-download
-      server: my-docker
-      container: audiobookbay-downloader
-   - Forgejo:
-      href: http://100.106.40.5:20110
-      description: Git hosting
-      icon: forgejo.png
-      server: my-docker
-      container: forgejo
-   - Jackett:
-      href: http://100.106.40.5:20065
-      description: Torrent indexer proxy
-      icon: jackett.png
-      server: my-docker
-      container: jackett
    - Lidarr:
       href: http://100.106.40.5:20073
       description: Music collection manager
@@ -114,89 +113,197 @@
       icon: mdi-music-circle
       server: my-docker
       container: octo-fiesta
-   - Uptime Kuma:
-      href: http://100.106.40.5:20201
-      description: Uptime monitor
-      icon: uptime-kuma.png
-      server: my-docker
-      container: uptime-kuma
-
-# All services accessible locally — quick links when at home
-- Local:
-   - Audiobookshelf:
-      href: http://localhost:20020
-      description: Audiobook & podcast library
-      icon: audiobookshelf.png
-      server: my-docker
-      container: audiobookshelf
-   - Navidrome:
-      href: http://localhost:20070
-      description: Music streaming server
-      icon: navidrome.png
-      server: my-docker
-      container: navidrome
-   - Feishin:
-      href: http://localhost:20072
-      description: Music web player
-      icon: feishin.png
-      server: my-docker
-      container: feishin
-   - Immich:
-      href: http://localhost:2283
-      description: Photo & video backup
-      icon: immich.png
-      server: my-docker
-      container: immich-server
-   - Ryot:
-      href: http://localhost:20040
-      description: Media tracker
-      icon: ryot.png
-      server: my-docker
-      container: ryot
    - qBittorrent:
-      href: http://localhost:20050
+      href: http://100.106.40.5:20050
       description: Torrent client
       icon: qbittorrent.png
       server: my-docker
       container: qbittorrent
    - Audiobookbay:
-      href: http://localhost:20060
+      href: http://100.106.40.5:20060
       description: Audiobook downloader
       icon: mdi-book-download
       server: my-docker
       container: audiobookbay-downloader
-   - Forgejo:
-      href: http://localhost:20110
-      description: Git hosting
-      icon: forgejo.png
-      server: my-docker
-      container: forgejo
    - Jackett:
-      href: http://localhost:20065
+      href: http://100.106.40.5:20065
       description: Torrent indexer proxy
       icon: jackett.png
       server: my-docker
       container: jackett
-   - Lidarr:
-      href: http://localhost:20073
-      description: Music collection manager
-      icon: lidarr.png
+   - Yamtrack:
+      href: http://100.106.40.5:20041
+      description: Media tracker
+      icon: mdi-television-play
       server: my-docker
-      container: lidarr
-   - Soulseek (slskd):
-      href: http://localhost:20075
-      description: P2P music sourcing
-      icon: slskd.png
+      container: yamtrack
+   - CrossWatch:
+      href: http://100.106.40.5:20042
+      description: Sync Trakt, AniList, Jellyfin, Plex, Simkl
+      icon: mdi-sync
       server: my-docker
-      container: slskd
-   - Octo-Fiesta:
-      href: http://localhost:20076
-      description: Subsonic proxy with hi-res streaming
-      icon: mdi-music-circle
+      container: crosswatch
+
+# Productivity & photos
+- Productivity:
+   - Immich:
+      href: http://100.106.40.5:2283
+      description: Photo & video backup
+      icon: immich.png
       server: my-docker
-      container: octo-fiesta
+      container: immich-server
+   - Forgejo:
+      href: http://100.106.40.5:20110
+      description: Git hosting
+      icon: forgejo.png
+      server: my-docker
+      container: forgejo
+
+# Documents stack
+- Documents:
+   - Paperless-NGX:
+      href: http://100.106.40.5:20301
+      description: Document management & OCR
+      icon: paperless-ngx.png
+      server: my-docker
+      container: paperless-ngx
+   - Paperless-GPT:
+      href: http://100.106.40.5:20302
+      description: AI document tagging
+      icon: mdi-robot
+      server: my-docker
+      container: paperless-gpt
+   - Stirling PDF:
+      href: http://100.106.40.5:20303
+      description: PDF tools
+      icon: stirling-pdf.png
+      server: my-docker
+      container: stirling-pdf
+   - Kiwix:
+      href: http://100.106.40.5:20304
+      description: Offline Wikipedia & ZIM reader
+      icon: mdi-book-open-page-variant
+      server: my-docker
+      container: kiwix
+
+# Tools stack
+- Tools:
+   - Code Server:
+      href: http://100.106.40.5:20310
+      description: VS Code in the browser
+      icon: code-server.png
+      server: my-docker
+      container: code-server
+   - Draw.io:
+      href: http://100.106.40.5:20311
+      description: Diagram editor
+      icon: mdi-vector-square
+      server: my-docker
+      container: drawio
+   - Excalidraw:
+      href: http://100.106.40.5:20312
+      description: Collaborative whiteboard
+      icon: mdi-pencil-ruler
+      server: my-docker
+      container: excalidraw
+   - IT-Tools:
+      href: http://100.106.40.5:20313
+      description: Developer utilities
+      icon: mdi-tools
+      server: my-docker
+      container: it-tools
+   - LibreOffice:
+      href: http://100.106.40.5:20314
+      description: Office suite (browser)
+      icon: mdi-file-document-multiple
+      server: my-docker
+      container: libreoffice
+   - Vaultwarden:
+      href: http://100.106.40.5:20315
+      description: Password manager
+      icon: vaultwarden.png
+      server: my-docker
+      container: vaultwarden
+   - Actual Budget:
+      href: http://100.106.40.5:20316
+      description: Personal finance
+      icon: actual-budget.png
+      server: my-docker
+      container: actual-budget
+   - Joplin Server:
+      href: http://100.106.40.5:20317
+      description: Note-taking sync server
+      icon: joplin.png
+      server: my-docker
+      container: joplin
+   - Job Ops:
+      href: http://100.106.40.5:20318
+      description: Job application tracker
+      icon: mdi-briefcase-search
+      server: my-docker
+      container: job-ops
+   - MeshCentral:
+      href: http://100.106.40.5:20319
+      description: Remote device management
+      icon: mdi-remote-desktop
+      server: my-docker
+      container: meshcentral
+
+# Personal stack
+- Personal:
+   - Mealie:
+      href: http://100.106.40.5:20321
+      description: Recipe manager & meal planner
+      icon: mealie.png
+      server: my-docker
+      container: mealie
+   - LubeLogger:
+      href: http://100.106.40.5:20322
+      description: Vehicle maintenance tracker
+      icon: mdi-car-wrench
+      server: my-docker
+      container: lubelogger
+   - Monica:
+      href: http://100.106.40.5:20323
+      description: Personal CRM
+      icon: mdi-account-heart
+      server: my-docker
+      container: monica
+   - World Monitor:
+      href: http://100.106.40.5:20324
+      description: Global news & events map
+      icon: mdi-earth
+      server: my-docker
+      container: worldmonitor
+
+# Entertainment stack
+- Entertainment:
+   - Jellyfin:
+      href: http://100.106.40.5:20330
+      description: Media server (video, TV)
+      icon: jellyfin.png
+      server: my-docker
+      container: jellyfin
+   - RomM:
+      href: http://100.106.40.5:20331
+      description: ROM manager & game library
+      icon: mdi-gamepad-variant
+      server: my-docker
+      container: romm
+
+# Smart Home
+- Home:
+   - Home Assistant:
+      href: http://100.106.40.5:20340
+      description: Home automation
+      icon: home-assistant.png
+      server: my-docker
+      container: home-assistant
+
+# Monitoring
+- Monitoring:
    - Uptime Kuma:
-      href: http://localhost:20201
+      href: http://100.106.40.5:20201
       description: Uptime monitor
       icon: uptime-kuma.png
       server: my-docker

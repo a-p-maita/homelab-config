@@ -47,9 +47,15 @@ MONITORS = [
         "interval": 60,
     },
     {
-        "name":     "Ryot",
+        "name":     "Yamtrack",
         "type":     MonitorType.HTTP,
-        "url":      "http://ryot:8000/health",
+        "url":      "http://yamtrack:8000",
+        "interval": 60,
+    },
+    {
+        "name":     "CrossWatch",
+        "type":     MonitorType.HTTP,
+        "url":      "http://crosswatch:8787",
         "interval": 60,
     },
     {
@@ -115,6 +121,137 @@ MONITORS = [
         "url":      "http://octo-fiesta:8080/",
         "interval": 60,
     },
+    # ── Documents stack ──────────────────────────────────────────────────────
+    {
+        "name":     "Paperless-NGX",
+        "type":     MonitorType.HTTP,
+        "url":      "http://paperless-ngx:8000",
+        "interval": 60,
+    },
+    {
+        "name":     "Paperless-GPT",
+        "type":     MonitorType.HTTP,
+        "url":      "http://paperless-gpt:8080",
+        "interval": 60,
+    },
+    {
+        "name":     "Stirling PDF",
+        "type":     MonitorType.HTTP,
+        "url":      "http://stirling-pdf:8080/api/v1/info/status",
+        "interval": 60,
+    },
+    {
+        "name":     "Kiwix",
+        "type":     MonitorType.HTTP,
+        "url":      "http://kiwix:8080",
+        "interval": 120,
+    },
+    # ── Tools stack ──────────────────────────────────────────────────────────
+    {
+        "name":     "Code Server",
+        "type":     MonitorType.HTTP,
+        "url":      "http://code-server:8443",
+        "interval": 60,
+    },
+    {
+        "name":     "Draw.io",
+        "type":     MonitorType.HTTP,
+        "url":      "http://drawio:8080",
+        "interval": 120,
+    },
+    {
+        "name":     "Excalidraw",
+        "type":     MonitorType.HTTP,
+        "url":      "http://excalidraw:80",
+        "interval": 120,
+    },
+    {
+        "name":     "IT-Tools",
+        "type":     MonitorType.HTTP,
+        "url":      "http://it-tools:80",
+        "interval": 120,
+    },
+    {
+        "name":     "LibreOffice",
+        "type":     MonitorType.HTTP,
+        "url":      "http://libreoffice:3000",
+        "interval": 120,
+    },
+    {
+        "name":     "Vaultwarden",
+        "type":     MonitorType.HTTP,
+        "url":      "http://vaultwarden:80/alive",
+        "interval": 60,
+    },
+    {
+        "name":     "Actual Budget",
+        "type":     MonitorType.HTTP,
+        "url":      "http://actual-budget:5006",
+        "interval": 120,
+    },
+    {
+        "name":     "Joplin Server",
+        "type":     MonitorType.HTTP,
+        "url":      "http://joplin:22300",
+        "interval": 60,
+    },
+    {
+        "name":     "Job Ops",
+        "type":     MonitorType.HTTP,
+        "url":      "http://job-ops:3005",
+        "interval": 120,
+    },
+    {
+        "name":     "MeshCentral",
+        "type":     MonitorType.HTTP,
+        "url":      "http://meshcentral:80",
+        "interval": 120,
+    },
+    # ── Personal stack ───────────────────────────────────────────────────────
+    {
+        "name":     "Mealie",
+        "type":     MonitorType.HTTP,
+        "url":      "http://mealie:9000/api/app/about",
+        "interval": 60,
+    },
+    {
+        "name":     "LubeLogger",
+        "type":     MonitorType.HTTP,
+        "url":      "http://lubelogger:8080",
+        "interval": 120,
+    },
+    {
+        "name":     "Monica",
+        "type":     MonitorType.HTTP,
+        "url":      "http://monica:80",
+        "interval": 60,
+    },
+    {
+        "name":     "World Monitor",
+        "type":     MonitorType.HTTP,
+        "url":      "http://worldmonitor:80",
+        "interval": 120,
+    },
+    # ── Entertainment stack ──────────────────────────────────────────────────
+    {
+        "name":     "Jellyfin",
+        "type":     MonitorType.HTTP,
+        "url":      "http://jellyfin:8096/health",
+        "interval": 60,
+    },
+    {
+        "name":     "RomM",
+        "type":     MonitorType.HTTP,
+        "url":      "http://romm:8080",
+        "interval": 60,
+    },
+    # ── Home stack ───────────────────────────────────────────────────────────
+    {
+        "name":     "Home Assistant",
+        "type":     MonitorType.HTTP,
+        "url":      "http://home-assistant:8123",
+        "interval": 60,
+    },
     # ── External monitors (Cloudflare tunnel domains) ─────────────────────────
     {
         "name":     "Audiobookshelf (external)",
@@ -141,9 +278,15 @@ MONITORS = [
         "interval": 120,
     },
     {
-        "name":     "Ryot (external)",
+        "name":     "Yamtrack (external)",
         "type":     MonitorType.HTTP,
-        "url":      "https://ryot.andreasmaita.com",
+        "url":      "https://yamtrack.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "CrossWatch (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://crosswatch.andreasmaita.com",
         "interval": 120,
     },
     {
@@ -158,6 +301,37 @@ MONITORS = [
         "url":      "https://homepage.andreasmaita.com",
         "interval": 120,
     },
+    # ── New service external monitors (add Cloudflare tunnels for these) ──────
+    {
+        "name":     "Paperless-NGX (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://paperless.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Vaultwarden (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://vault.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Jellyfin (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://jellyfin.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Joplin (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://joplin.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Mealie (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://mealie.andreasmaita.com",
+        "interval": 120,
+    },
 ]
 
 def monitor_key(m):
@@ -167,7 +341,7 @@ def monitor_key(m):
     return {"type": m["type"], "url": m.get("url")}
 
 # Monitors to delete if they still exist (services that have been removed)
-DELETE_MONITORS = ["spotDL", "SpotDL"]
+DELETE_MONITORS = ["spotDL", "SpotDL", "Ryot", "Ryot (external)"]
 
 api = UptimeKumaApi("http://uptime-kuma:3001")
 try:

@@ -11,6 +11,21 @@ else
   ENV_FILE_ARG=""
 fi
 
+echo "Bringing down home..."
+docker compose $ENV_FILE_ARG -f dockerfiles/home/compose.yaml down
+
+echo "Bringing down entertainment..."
+docker compose $ENV_FILE_ARG -f dockerfiles/entertainment/compose.yaml down
+
+echo "Bringing down personal..."
+docker compose $ENV_FILE_ARG -f dockerfiles/personal/compose.yaml down
+
+echo "Bringing down tools..."
+docker compose $ENV_FILE_ARG -f dockerfiles/tools/compose.yaml down
+
+echo "Bringing down documents..."
+docker compose $ENV_FILE_ARG -f dockerfiles/documents/compose.yaml down
+
 echo "Bringing down monitoring..."
 docker compose $ENV_FILE_ARG -f dockerfiles/monitoring/compose.yaml down
 

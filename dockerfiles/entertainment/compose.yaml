@@ -1,0 +1,185 @@
+name: entertainment
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Entertainment stack: Jellyfin, RomM, Kiwix-style ROM streaming
+#
+# Service statuses:
+#   jellyfin → ⚠️  STOP: First-time setup wizard required in browser.
+#              Open http://localhost:${JELLYFIN_PORT} and follow the wizard to
+#              create your admin account and configure media libraries.
+#   romm     → AUTOMATED. Admin user created from ROMM_FIRST_USERNAME/PASSWORD
+#              env vars on first start. IGDB API keys needed for metadata.
+#              Register at https://dev.twitch.tv → Applications → New App.
+#
+# Commented-out services:
+#   peertube → Requires SMTP/email configuration + admin creation CLI command.
+#              Not suitable for passwordless automated setup.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+ # ── Jellyfin ────────────────────────────────────────────────────────────────
+ # ⚠️  STOP: First-time setup wizard in browser on first visit.
+ # Create admin account and add media libraries through the wizard.
+ jellyfin:
+  image: jellyfin/jellyfin:latest
+  container_name: jellyfin
+  restart: unless-stopped
+  ports:
+   - "${JELLYFIN_PORT}:8096"
+  environment:
+   - PUID=${PUID}
+   - PGID=${PGID}
+   - TZ=Europe/London
+  volumes:
+   - ../../homelab-data/jellyfin/config:/config
+   - ../../homelab-data/jellyfin/cache:/cache
+   # Add media mounts below as needed, e.g.:
+   # - ../../homelab-data/music:/data/music:ro
+   # - /path/to/movies:/data/movies:ro
+   # - /path/to/tv:/data/tv:ro
+  networks:
+   - homelab_net
+  healthcheck:
+   test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
+   interval: 30s
+   timeout: 10s
+   retries: 3
+   start_period: 30s
+  deploy:
+   resources:
+    limits:
+     cpus: "2.0"
+     memory: 2G
+    reservations:
+     cpus: "0.5"
+     memory: 512M
+
+ # ── RomM (ROM Manager) ──────────────────────────────────────────────────────
+ # Admin user auto-created from ROMM_FIRST_USERNAME/PASSWORD on first start.
+ # IGDB API keys are optional but strongly recommended for game metadata.
+ # Register at https://dev.twitch.tv → Applications → New App (Category: Other)
+ # then go to Client Secrets → New Secret.
+ romm-db:
+  image: mariadb:11
+  container_name: romm-db
+  restart: unless-stopped
+  environment:
+   - MYSQL_ROOT_PASSWORD=${ROMM_DB_ROOT_PASS}
+   - MYSQL_DATABASE=romm
+   - MYSQL_USER=${ROMM_DB_USER}
+   - MYSQL_PASSWORD=${ROMM_DB_PASS}
+  volumes:
+   - ../../homelab-data/romm/db:/var/lib/mysql
+  networks:
+   - entertainment_net
+  healthcheck:
+   test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+   interval: 30s
+   timeout: 10s
+   retries: 5
+   start_period: 60s
+  deploy:
+   resources:
+    limits:
+     cpus: "0.5"
+     memory: 256M
+
+ romm:
+  image: rommapp/romm:latest
+  container_name: romm
+  restart: unless-stopped
+  depends_on:
+   romm-db:
+    condition: service_healthy
+  ports:
+   - "${ROMM_PORT}:8080"
+  environment:
+   - DB_HOST=romm-db
+   - DB_NAME=romm
+   - DB_USER=${ROMM_DB_USER}
+   - DB_PASSWD=${ROMM_DB_PASS}
+   - ROMM_AUTH_SECRET_KEY=${ROMM_SECRET_KEY}
+   - ROMM_FIRST_USERNAME=${ROMM_ADMIN_USER}
+   - ROMM_FIRST_PASSWORD=${ROMM_ADMIN_PASS}
+   # IGDB API keys for game metadata (optional but recommended)
+   - IGDB_CLIENT_ID=${ROMM_IGDB_CLIENT_ID}
+   - IGDB_CLIENT_SECRET=${ROMM_IGDB_CLIENT_SECRET}
+  volumes:
+   - ../../homelab-data/romm/library:/romm/library
+   - ../../homelab-data/romm/assets:/romm/assets
+   - ../../homelab-data/romm/config:/romm/config
+  networks:
+   - homelab_net
+   - entertainment_net
+  healthcheck:
+   test: ["CMD", "curl", "-f", "http://localhost:8080"]
+   interval: 30s
+   timeout: 10s
+   retries: 3
+   start_period: 60s
+  deploy:
+   resources:
+    limits:
+     cpus: "1.0"
+     memory: 1G
+
+ # ── PeerTube ────────────────────────────────────────────────────────────────
+ # ⚠️  STOP: PeerTube requires SMTP/email configuration and an initial admin
+ # account created via CLI before it is usable. Uncomment only after:
+ #   1. Setting up SMTP credentials
+ #   2. Running: docker exec -it peertube /bin/bash -c \
+ #        "cd /app && NODE_CONFIG_DIR=/config NODE_ENV=production node dist/server/tools/peertube.js create-user --role 1 --username admin"
+ #
+ # peertube-postgres:
+ #   image: postgres:16-alpine
+ #   container_name: peertube-postgres
+ #   environment:
+ #     POSTGRES_USER: ${PEERTUBE_DB_USER}
+ #     POSTGRES_PASSWORD: ${PEERTUBE_DB_PASS}
+ #     POSTGRES_DB: peertube
+ #   volumes:
+ #     - ../../homelab-data/peertube/db:/var/lib/postgresql/data
+ #   networks:
+ #     - entertainment_net
+ #
+ # peertube-redis:
+ #   image: redis:7-alpine
+ #   container_name: peertube-redis
+ #   networks:
+ #     - entertainment_net
+ #
+ # peertube:
+ #   image: chocobozzz/peertube:production-bookworm
+ #   container_name: peertube
+ #   ports:
+ #     - "${PEERTUBE_PORT}:9000"
+ #   environment:
+ #     PEERTUBE_DB_USERNAME: ${PEERTUBE_DB_USER}
+ #     PEERTUBE_DB_PASSWORD: ${PEERTUBE_DB_PASS}
+ #     PEERTUBE_DB_HOSTNAME: peertube-postgres
+ #     PEERTUBE_REDIS_HOSTNAME: peertube-redis
+ #     PEERTUBE_WEBSERVER_HOSTNAME: ${PEERTUBE_EXTERNAL_HOSTNAME}
+ #     PEERTUBE_WEBSERVER_PORT: 443
+ #     PEERTUBE_WEBSERVER_HTTPS: "true"
+ #     PEERTUBE_SMTP_USERNAME: ${PEERTUBE_SMTP_USER}
+ #     PEERTUBE_SMTP_PASSWORD: ${PEERTUBE_SMTP_PASS}
+ #     PEERTUBE_SMTP_HOSTNAME: ${PEERTUBE_SMTP_HOST}
+ #     PEERTUBE_SMTP_PORT: ${PEERTUBE_SMTP_PORT}
+ #     PEERTUBE_SMTP_FROM: ${PEERTUBE_SMTP_FROM}
+ #     PEERTUBE_ADMIN_EMAIL: ${PEERTUBE_ADMIN_EMAIL}
+ #     PEERTUBE_SECRET: ${PEERTUBE_SECRET}
+ #   volumes:
+ #     - ../../homelab-data/peertube/data:/data
+ #     - ../../homelab-data/peertube/config:/config
+ #   depends_on:
+ #     - peertube-postgres
+ #     - peertube-redis
+ #   networks:
+ #     - homelab_net
+ #     - entertainment_net
+
+networks:
+ homelab_net:
+  external: true
+ entertainment_net:
+  internal: true

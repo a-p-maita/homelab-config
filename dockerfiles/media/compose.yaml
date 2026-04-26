@@ -30,29 +30,40 @@ services:
      cpus: "0.5"
      memory: 512M
 
- ryot:
-  image: ghcr.io/ignisda/ryot:latest
-  container_name: ryot
+ yamtrack:
+  image: ghcr.io/fuzzygrim/yamtrack
+  container_name: yamtrack
   restart: unless-stopped
+  # ⚠️ First run: visit http://localhost:${YAMTRACK_PORT}/register to create your admin account,
+  #    then set REGISTRATION=False below and run: docker compose restart yamtrack
   depends_on:
-   ryot_db:
+   yamtrack-redis:
     condition: service_healthy
   environment:
    - TZ=Europe/London
-   - DATABASE_URL=postgres://${RYOT_DB_USER}:${RYOT_DB_PASS}@ryot_db:5432/ryot
-   - WEB_INSECURE_COOKIE=true
-   - SERVER_ADMIN_ACCESS_TOKEN=${SERVER_ADMIN_ACCESS_TOKEN}
-   - MOVIES_AND_SHOWS_TMDB_ACCESS_TOKEN=${MOVIES_AND_SHOWS_TMDB_ACCESS_TOKEN}
-   - SERVER_IMPORTER_TRAKT_CLIENT_ID=${SERVER_IMPORTER_TRAKT_CLIENT_ID}
+   - SECRET=${YAMTRACK_SECRET}
+   - REDIS_URL=redis://yamtrack-redis:6379
+   # URLS: comma-separated trusted origins (sets CSRF + ALLOWED_HOSTS)
+   - URLS=${YAMTRACK_EXTERNAL_URL}
+   # Reuse ROMM IGDB credentials (same Twitch Developer app)
+   - IGDB_ID=${ROMM_IGDB_CLIENT_ID}
+   - IGDB_SECRET=${ROMM_IGDB_CLIENT_SECRET}
+   # TMDB_API: optional v3 API key — a default is built-in if left blank
+   - TMDB_API=${YAMTRACK_TMDB_API:-}
+   # Disable public registration after creating your admin account
+   - REGISTRATION=False
   volumes:
-   - ../../homelab-data/ryot/data:/data
+   - ../../homelab-data/yamtrack:/yamtrack/db
   ports:
-   - "${RYOT_PORT}:8000"
+   - "${YAMTRACK_PORT}:8000"
   networks:
    - homelab_net
-   - media_backend
   healthcheck:
-   test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+   test:
+    [
+     "CMD-SHELL",
+     'python3 -c "import urllib.request; urllib.request.urlopen(''http://localhost:8000'')"',
+    ]
    interval: 1m
    timeout: 10s
    retries: 3
@@ -60,39 +71,34 @@ services:
   deploy:
    resources:
     limits:
-     cpus: "2.0"
-     memory: 2G
-    reservations:
-     cpus: "0.5"
+     cpus: "1.0"
      memory: 512M
+    reservations:
+     cpus: "0.1"
+     memory: 256M
 
- ryot_db:
-  image: postgres:16-alpine
-  container_name: ryot_db
+ yamtrack-redis:
+  image: redis:8-alpine
+  container_name: yamtrack-redis
   restart: unless-stopped
-  environment:
-   - POSTGRES_USER=${RYOT_DB_USER}
-   - POSTGRES_PASSWORD=${RYOT_DB_PASS}
-   - POSTGRES_DB=ryot
-   - TZ=Europe/London
   volumes:
-   - ../../homelab-data/ryot/db:/var/lib/postgresql/data
+   - ../../homelab-data/yamtrack/redis:/data
   networks:
-   - media_backend
+   - homelab_net
   healthcheck:
-   test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+   test: ["CMD", "redis-cli", "ping"]
    interval: 30s
    timeout: 10s
-   retries: 5
-   start_period: 30s
+   retries: 3
+   start_period: 15s
   deploy:
    resources:
     limits:
      cpus: "0.25"
-     memory: 512M
+     memory: 256M
     reservations:
      cpus: "0.05"
-     memory: 256M
+     memory: 64M
 
  qbittorrent:
   image: lscr.io/linuxserver/qbittorrent:latest
@@ -404,8 +410,35 @@ services:
      cpus: "0.1"
      memory: 128M
 
+ crosswatch:
+  image: ghcr.io/cenodude/crosswatch:latest
+  container_name: crosswatch
+  restart: unless-stopped
+  # ⚠️ All provider accounts (Trakt, AniList, Jellyfin, Plex, Simkl, etc.)
+  #    are configured entirely through the web UI — no env vars needed.
+  ports:
+   - "${CROSSWATCH_PORT}:8787"
+  environment:
+   - TZ=Europe/London
+  volumes:
+   - ../../homelab-data/crosswatch:/config
+  networks:
+   - homelab_net
+  healthcheck:
+   test: ["CMD-SHELL", "wget -qO- http://localhost:8787 > /dev/null"]
+   interval: 1m
+   timeout: 10s
+   retries: 3
+   start_period: 60s
+  deploy:
+   resources:
+    limits:
+     cpus: "0.5"
+     memory: 512M
+    reservations:
+     cpus: "0.1"
+     memory: 128M
+
 networks:
  homelab_net:
   external: true
- media_backend:
-  internal: true

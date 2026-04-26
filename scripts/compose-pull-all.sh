@@ -26,4 +26,19 @@ docker compose $ENV_FILE_ARG -f dockerfiles/immich/compose.yaml -f dockerfiles/i
 echo "Pulling monitoring images..."
 docker compose $ENV_FILE_ARG -f dockerfiles/monitoring/compose.yaml pull
 
+echo "Pulling documents images..."
+docker compose $ENV_FILE_ARG -f dockerfiles/documents/compose.yaml pull
+
+echo "Pulling tools images..."
+docker compose $ENV_FILE_ARG -f dockerfiles/tools/compose.yaml pull
+
+echo "Pulling personal images..."
+docker compose $ENV_FILE_ARG -f dockerfiles/personal/compose.yaml pull
+
+echo "Pulling entertainment images..."
+docker compose $ENV_FILE_ARG -f dockerfiles/entertainment/compose.yaml pull
+
+echo "Pulling home images..."
+docker compose $ENV_FILE_ARG -f dockerfiles/home/compose.yaml pull
+
 echo "All images pulled!"

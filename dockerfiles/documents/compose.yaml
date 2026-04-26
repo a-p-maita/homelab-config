@@ -1,0 +1,205 @@
+name: documents
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Documents stack: paperless-ngx, paperless-gpt, stirling-pdf, kiwix
+#
+# Setup notes:
+#   paperless-ngx  → AUTOMATED. Superuser created from env vars on first start.
+#   paperless-gpt  → ⚠️  SEMI-MANUAL: After first paperless start, generate an
+#                    API token at /api/auth/token/ or Admin > Auth Tokens, then
+#                    set PAPERLESS_GPT_API_TOKEN in .env and restart this stack.
+#   stirling-pdf   → AUTOMATED. No auth by default.
+#   kiwix          → AUTOMATED. Drop .zim files into homelab-data/kiwix/ and
+#                    restart; each .zim becomes a library entry.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+ # ── Paperless-ngx dependencies ──────────────────────────────────────────────
+ paperless-redis:
+  image: redis:7-alpine
+  container_name: paperless-redis
+  restart: unless-stopped
+  volumes:
+   - ../../homelab-data/paperless/redis:/data
+  networks:
+   - documents_net
+  healthcheck:
+   test: ["CMD", "redis-cli", "ping"]
+   interval: 30s
+   timeout: 5s
+   retries: 3
+  deploy:
+   resources:
+    limits:
+     cpus: "0.25"
+     memory: 128M
+
+ paperless-postgres:
+  image: postgres:16-alpine
+  container_name: paperless-postgres
+  restart: unless-stopped
+  environment:
+   - POSTGRES_USER=${PAPERLESS_DB_USER}
+   - POSTGRES_PASSWORD=${PAPERLESS_DB_PASS}
+   - POSTGRES_DB=paperless
+  volumes:
+   - ../../homelab-data/paperless/db:/var/lib/postgresql/data
+  networks:
+   - documents_net
+  healthcheck:
+   test: ["CMD-SHELL", "pg_isready -U ${PAPERLESS_DB_USER} -d paperless"]
+   interval: 30s
+   timeout: 10s
+   retries: 5
+   start_period: 30s
+  deploy:
+   resources:
+    limits:
+     cpus: "0.5"
+     memory: 256M
+
+ # ── Paperless-NGX ───────────────────────────────────────────────────────────
+ paperless-ngx:
+  image: ghcr.io/paperless-ngx/paperless-ngx:latest
+  container_name: paperless-ngx
+  restart: unless-stopped
+  depends_on:
+   paperless-postgres:
+    condition: service_healthy
+   paperless-redis:
+    condition: service_healthy
+  ports:
+   - "${PAPERLESS_PORT}:8000"
+  environment:
+   - PAPERLESS_REDIS=redis://paperless-redis:6379
+   - PAPERLESS_DBHOST=paperless-postgres
+   - PAPERLESS_DBUSER=${PAPERLESS_DB_USER}
+   - PAPERLESS_DBPASS=${PAPERLESS_DB_PASS}
+   - PAPERLESS_DBNAME=paperless
+   - PAPERLESS_SECRET_KEY=${PAPERLESS_SECRET_KEY}
+   - PAPERLESS_SUPERUSER_NAME=${PAPERLESS_ADMIN_USER}
+   - PAPERLESS_SUPERUSER_EMAIL=${PAPERLESS_ADMIN_EMAIL}
+   - PAPERLESS_SUPERUSER_PASSWORD=${PAPERLESS_ADMIN_PASS}
+   - PAPERLESS_URL=${PAPERLESS_EXTERNAL_URL}
+   - PAPERLESS_OCR_LANGUAGE=eng
+   - PAPERLESS_TIME_ZONE=Europe/London
+   - PAPERLESS_CONSUMER_POLLING=60
+   - USERMAP_UID=${PUID}
+   - USERMAP_GID=${PGID}
+  volumes:
+   - ../../homelab-data/paperless/data:/usr/src/paperless/data
+   - ../../homelab-data/paperless/media:/usr/src/paperless/media
+   - ../../homelab-data/paperless/consume:/usr/src/paperless/consume
+   - ../../homelab-data/paperless/export:/usr/src/paperless/export
+  networks:
+   - homelab_net
+   - documents_net
+  healthcheck:
+   test:
+    ["CMD", "curl", "-fs", "-S", "--max-time", "2", "http://localhost:8000"]
+   interval: 30s
+   timeout: 10s
+   retries: 5
+   start_period: 90s
+  deploy:
+   resources:
+    limits:
+     cpus: "2.0"
+     memory: 2G
+    reservations:
+     cpus: "0.5"
+     memory: 512M
+
+ # ── Paperless-GPT ───────────────────────────────────────────────────────────
+ # ⚠️  Requires PAPERLESS_GPT_API_TOKEN — generate in paperless Admin > Auth Tokens
+ paperless-gpt:
+  image: ghcr.io/icereed/paperless-gpt:latest
+  container_name: paperless-gpt
+  restart: unless-stopped
+  depends_on:
+   paperless-ngx:
+    condition: service_healthy
+  ports:
+   - "${PAPERLESS_GPT_PORT}:8080"
+  environment:
+   - PAPERLESS_BASE_URL=http://paperless-ngx:8000
+   - PAPERLESS_API_TOKEN=${PAPERLESS_GPT_API_TOKEN}
+   - PAPERLESS_PUBLIC_URL=${PAPERLESS_EXTERNAL_URL}
+   - LLM_PROVIDER=${PAPERLESS_GPT_LLM_PROVIDER}
+   - LLM_MODEL=${PAPERLESS_GPT_LLM_MODEL}
+   - OLLAMA_HOST=${PAPERLESS_GPT_OLLAMA_HOST}
+   - LLM_LANGUAGE=English
+   - LOG_LEVEL=info
+  volumes:
+   - ../../homelab-data/paperless/gpt-prompts:/app/prompts
+  extra_hosts:
+   - "host.docker.internal:host-gateway"
+  networks:
+   - homelab_net
+   - documents_net
+  deploy:
+   resources:
+    limits:
+     cpus: "0.5"
+     memory: 256M
+
+ # ── Stirling PDF ────────────────────────────────────────────────────────────
+ stirling-pdf:
+  image: stirlingtools/stirling-pdf:latest
+  container_name: stirling-pdf
+  restart: unless-stopped
+  ports:
+   - "${STIRLING_PDF_PORT}:8080"
+  volumes:
+   - ../../homelab-data/stirling-pdf/configs:/configs
+   - ../../homelab-data/stirling-pdf/logs:/logs
+  environment:
+   - DOCKER_ENABLE_SECURITY=false
+   - INSTALL_BOOK_AND_ADVANCED_HTML_OPS=false
+   - LANGS=en_GB
+  networks:
+   - homelab_net
+  healthcheck:
+   test:
+    ["CMD-SHELL", "curl -f http://localhost:8080/api/v1/info/status || exit 1"]
+   interval: 30s
+   timeout: 10s
+   retries: 3
+   start_period: 30s
+  deploy:
+   resources:
+    limits:
+     cpus: "1.0"
+     memory: 512M
+
+ # ── Kiwix ───────────────────────────────────────────────────────────────────
+ # Drop .zim files into homelab-data/kiwix/ — each is automatically served.
+ # Find ZIM files at: https://library.kiwix.org
+ kiwix:
+  image: ghcr.io/kiwix/kiwix-serve:latest
+  container_name: kiwix
+  restart: unless-stopped
+  ports:
+   - "${KIWIX_PORT}:8080"
+  volumes:
+   - ../../homelab-data/kiwix:/data
+  command: "--port 8080 /data/"
+  networks:
+   - homelab_net
+  healthcheck:
+   test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080"]
+   interval: 60s
+   timeout: 10s
+   retries: 3
+   start_period: 10s
+  deploy:
+   resources:
+    limits:
+     cpus: "0.5"
+     memory: 256M
+
+networks:
+ homelab_net:
+  external: true
+ documents_net:
+  internal: true

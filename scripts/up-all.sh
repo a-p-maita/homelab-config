@@ -18,17 +18,58 @@ mkdir -p \
   ./homelab-data/forgejo \
   ./homelab-data/immich_db \
   ./homelab-data/immich_upload \
-  ./homelab-data/ryot/data \
-  ./homelab-data/ryot/db \
+  ./homelab-data/yamtrack \
+  ./homelab-data/yamtrack/redis \
+  ./homelab-data/crosswatch \
   ./homelab-data/homepage/config \
   ./homelab-data/uptime-kuma \
   ./homelab-data/music \
   ./homelab-data/navidrome/data \
   ./homelab-data/lidarr/config \
-  ./homelab-data/slskd
+  ./homelab-data/slskd \
+  ./homelab-data/paperless/redis \
+  ./homelab-data/paperless/db \
+  ./homelab-data/paperless/data \
+  ./homelab-data/paperless/media \
+  ./homelab-data/paperless/consume \
+  ./homelab-data/paperless/export \
+  ./homelab-data/paperless/gpt-prompts \
+  ./homelab-data/stirling-pdf/configs \
+  ./homelab-data/stirling-pdf/logs \
+  ./homelab-data/kiwix \
+  ./homelab-data/code-server/config \
+  ./homelab-data/libreoffice/config \
+  ./homelab-data/vaultwarden \
+  ./homelab-data/actual-budget \
+  ./homelab-data/joplin/db \
+  ./homelab-data/job-ops \
+  ./homelab-data/meshcentral/data \
+  ./homelab-data/meshcentral/user-files \
+  ./homelab-data/meshcentral/backups \
+  ./homelab-data/mealie \
+  ./homelab-data/lubelogger/data \
+  ./homelab-data/lubelogger/documents \
+  ./homelab-data/lubelogger/images \
+  ./homelab-data/lubelogger/translations \
+  ./homelab-data/lubelogger/keys \
+  ./homelab-data/monica/db \
+  ./homelab-data/monica/storage \
+  ./homelab-data/jellyfin/config \
+  ./homelab-data/jellyfin/cache \
+  ./homelab-data/romm/db \
+  ./homelab-data/romm/library \
+  ./homelab-data/romm/assets \
+  ./homelab-data/romm/config \
+  ./homelab-data/home-assistant
 
 # Ensure the shared external network exists (stacks declare it external so it must pre-exist)
 docker network create homelab_net 2>/dev/null || true
+
+# Seed Homepage config from template if not already present (containers never started yet)
+if [ ! -f ./homelab-data/homepage/config/services.yaml ]; then
+  cp config-templates/homepage/services.yaml ./homelab-data/homepage/config/services.yaml
+  echo "Seeded Homepage services.yaml from config-templates."
+fi
 
 # Always use --env-file .env for all stacks if present
 if [ -f .env ]; then
@@ -51,5 +92,20 @@ docker compose $ENV_FILE_ARG -f dockerfiles/immich/compose.yaml -f dockerfiles/i
 
 echo "Bringing up monitoring..."
 docker compose $ENV_FILE_ARG -f dockerfiles/monitoring/compose.yaml up -d
+
+echo "Bringing up documents..."
+docker compose $ENV_FILE_ARG -f dockerfiles/documents/compose.yaml up -d
+
+echo "Bringing up tools..."
+docker compose $ENV_FILE_ARG -f dockerfiles/tools/compose.yaml up -d
+
+echo "Bringing up personal..."
+docker compose $ENV_FILE_ARG -f dockerfiles/personal/compose.yaml up -d
+
+echo "Bringing up entertainment..."
+docker compose $ENV_FILE_ARG -f dockerfiles/entertainment/compose.yaml up -d
+
+echo "Bringing up home..."
+docker compose $ENV_FILE_ARG -f dockerfiles/home/compose.yaml up -d
 
 echo "All stacks are up"
