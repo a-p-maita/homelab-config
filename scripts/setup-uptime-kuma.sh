@@ -108,6 +108,13 @@ MONITORS = [
         "url":      "http://slskd:5030",
         "interval": 60,
     },
+    {
+        "name":     "Octo-Fiesta",
+        "type":     MonitorType.HTTP,
+        # Root path returns {"ok":true} with 200 — confirmed health endpoint
+        "url":      "http://octo-fiesta:8080/",
+        "interval": 60,
+    },
     # ── External monitors (Cloudflare tunnel domains) ─────────────────────────
     {
         "name":     "Audiobookshelf (external)",
@@ -159,11 +166,20 @@ def monitor_key(m):
         return {"type": m["type"], "hostname": m.get("hostname"), "port": m.get("port")}
     return {"type": m["type"], "url": m.get("url")}
 
+# Monitors to delete if they still exist (services that have been removed)
+DELETE_MONITORS = ["spotDL", "SpotDL"]
+
 api = UptimeKumaApi("http://uptime-kuma:3001")
 try:
     api.login(os.environ["UK_USER"], os.environ["UK_PASS"])
     existing = {m["name"]: m for m in api.get_monitors()}
     added = updated = skipped = 0
+    # Remove stale monitors first
+    for name in DELETE_MONITORS:
+        if name in existing:
+            api.delete_monitor(existing[name]["id"])
+            print(f"  DELETED:       {name}")
+            del existing[name]
     for m in MONITORS:
         if m["name"] in existing:
             ex = existing[m["name"]]

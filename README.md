@@ -6,23 +6,24 @@ Depends on/creates another directory one step up called `homelab-data/` which ho
 
 ## What's running
 
-| Service | Purpose |
-|---|---|
-| [Audiobookshelf](https://www.audiobookshelf.org/) | Audiobook & podcast library with streaming |
-| [Immich](https://immich.app/) | Self-hosted photo and video backup |
-| [Ryot](https://github.com/ignisda/ryot) | Media tracker (books, TV, movies, audiobooks) |
-| [qBittorrent](https://www.qbittorrent.org/) | Torrent client |
-| [Jackett](https://github.com/Jackett/Jackett) | Torrent indexer proxy (for Audiobookbay downloader) |
-| [Audiobookbay Downloader](https://github.com/moonblade/audiobookbay-downloader) | Search and download audiobooks via AudiobookBay |
-| [Navidrome](https://www.navidrome.org/) | Music streaming server (Subsonic API) |
-| [Feishin](https://github.com/jeffvli/feishin) | Modern web UI for Navidrome |
-| [Lidarr](https://lidarr.audio/) | Automated music collection manager via torrents |
-| [Soulseek (slskd)](https://github.com/slskd/slskd) | P2P music sourcing for rare and lossless files |
-| [Homepage](https://gethomepage.dev/) | Dashboard with live container health |
-| [Uptime Kuma](https://uptime.kuma.pet/) | Service uptime monitoring |
-| [Cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) | Cloudflare tunnel for external access since I can't port forward |
-| [Watchtower](https://containrrr.dev/watchtower/) | Automatic nightly image updates |
-| [Forgejo](https://forgejo.org/) | Self-hosted git repository |
+| Service                                                                                       | Purpose                                                                  |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| [Audiobookshelf](https://www.audiobookshelf.org/)                                             | Audiobook & podcast library with streaming                               |
+| [Immich](https://immich.app/)                                                                 | Self-hosted photo and video backup                                       |
+| [Ryot](https://github.com/ignisda/ryot)                                                       | Media tracker (books, TV, movies, audiobooks)                            |
+| [qBittorrent](https://www.qbittorrent.org/)                                                   | Torrent client                                                           |
+| [Jackett](https://github.com/Jackett/Jackett)                                                 | Torrent indexer proxy (for Audiobookbay downloader)                      |
+| [Audiobookbay Downloader](https://github.com/moonblade/audiobookbay-downloader)               | Search and download audiobooks via AudiobookBay                          |
+| [Navidrome](https://www.navidrome.org/)                                                       | Music streaming server (Subsonic API)                                    |
+| [Octo-Fiesta](https://github.com/V1ck3s/octo-fiesta)                                          | Subsonic API proxy — on-the-fly hi-res streaming from Deezer/Qobuz/Tidal |
+| [Feishin](https://github.com/jeffvli/feishin)                                                 | Modern web UI for Navidrome                                              |
+| [Lidarr](https://lidarr.audio/)                                                               | Automated music collection manager via torrents                          |
+| [Soulseek (slskd)](https://github.com/slskd/slskd)                                            | P2P music sourcing for rare and lossless files                           |
+| [Homepage](https://gethomepage.dev/)                                                          | Dashboard with live container health                                     |
+| [Uptime Kuma](https://uptime.kuma.pet/)                                                       | Service uptime monitoring                                                |
+| [Cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) | Cloudflare tunnel for external access since I can't port forward         |
+| [Watchtower](https://containrrr.dev/watchtower/)                                              | Automatic nightly image updates                                          |
+| [Forgejo](https://forgejo.org/)                                                               | Self-hosted git repository                                               |
 
 ## Setup
 
@@ -65,14 +66,15 @@ To set up Uptime Kuma monitors automatically, run `./scripts/setup-uptime-kuma.s
 
 Services exposed via Cloudflare tunnel (configured in Zero Trust → Networks → Tunnels → Public Hostnames):
 
-| Subdomain | Internal service | Auth |
-|---|---|---|
-| `audiobookshelf.andreasmaita.com` | `http://audiobookshelf:80` | Audiobookshelf own login |
-| `navidrome.andreasmaita.com` | `http://navidrome:4533` | Navidrome own login |
-| `feishin.andreasmaita.com` | `http://feishin:9180` | Navidrome own login (via Feishin) |
-| `immich.andreasmaita.com` | `http://immich-server:2283` | Immich own login |
-| `forgejo.andreasmaita.com` | `http://forgejo:3000` | Forgejo own login |
-| `homepage.andreasmaita.com` | `http://homepage:3000` | None (internal dashboard) |
+| Subdomain                         | Internal service            | Auth                                 |
+| --------------------------------- | --------------------------- | ------------------------------------ |
+| `audiobookshelf.andreasmaita.com` | `http://audiobookshelf:80`  | Audiobookshelf own login             |
+| `navidrome.andreasmaita.com`      | `http://navidrome:4533`     | Navidrome own login                  |
+| `octo-fiesta.andreasmaita.com`    | `http://octo-fiesta:8080`   | Navidrome own login (Subsonic proxy) |
+| `feishin.andreasmaita.com`        | `http://feishin:9180`       | Navidrome own login (via Feishin)    |
+| `immich.andreasmaita.com`         | `http://immich-server:2283` | Immich own login                     |
+| `forgejo.andreasmaita.com`        | `http://forgejo:3000`       | Forgejo own login                    |
+| `homepage.andreasmaita.com`       | `http://homepage:3000`      | None (internal dashboard)            |
 
 **Feishin `SERVER_URL`:** Set `NAVIDROME_EXTERNAL_URL` in `.env` to the public Navidrome tunnel URL. Feishin's browser client connects to Navidrome from the user's device, not from Docker, so it must be a publicly reachable URL.
 
@@ -96,14 +98,16 @@ With this setup: web UI at `/app` requires Access auth, but `/rest/*` and `/api/
 
 After `up-all.sh`, a few music services need one-time setup via their web UIs:
 
-| Service | URL | What to do |
-|---|---|---|
-| **Navidrome** | `:20070` | Create your admin account on first visit |
-| **Lidarr** | `:20073` | Complete the setup wizard. Add Jackett as indexer (`http://jackett:9117`, API key from `.env`). Add qBittorrent as download client (`http://qbittorrent:20050`, credentials from `.env`). Set music root folder to `/music` |
-| **slskd** | `:20075` | Log in with the credentials from `SLSKD_USERNAME` / `SLSKD_PASSWORD` in `.env`. Search and download music directly to the shared music library |
+| Service         | URL      | What to do                                                                                                                                                                                                                  |
+| --------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Navidrome**   | `:20070` | Create your admin account on first visit                                                                                                                                                                                    |
+| **Octo-Fiesta** | `:20076` | Point your Subsonic clients here instead of Navidrome to enable transparent hi-res downloads. Configure the music provider via `OCTOFIESTA_MUSIC_SERVICE` in `.env` (default: SquidWTF — no credentials needed)             |
+| **Lidarr**      | `:20073` | Complete the setup wizard. Add Jackett as indexer (`http://jackett:9117`, API key from `.env`). Add qBittorrent as download client (`http://qbittorrent:20050`, credentials from `.env`). Set music root folder to `/music` |
+| **slskd**       | `:20075` | Log in with the credentials from `SLSKD_USERNAME` / `SLSKD_PASSWORD` in `.env`. Search and download music directly to the shared music library                                                                              |
 
 **Feishin** (`:20072`) is pre-locked to Navidrome — just log in with your Navidrome credentials.
 
+**Octo-Fiesta** acts as a transparent Subsonic proxy: point your mobile music clients (Symfonium, Ultrasonic, etc.) at `octo-fiesta:20076` instead of Navidrome. When you play a track, octo-fiesta fetches the hi-res version from your configured provider and streams it. The downloaded file is saved to the shared music library so Navidrome picks it up on next scan.
 
 ## Notes
 

@@ -4,183 +4,200 @@
 
 # Services with a public Cloudflare tunnel — accessible from any network
 - External:
-    - Audiobookshelf:
-        href: https://audiobookshelf.andreasmaita.com
-        description: Audiobook & podcast library
-        icon: audiobookshelf.png
-        siteMonitor: https://audiobookshelf.andreasmaita.com
-    - Navidrome:
-        href: https://navidrome.andreasmaita.com
-        description: Music streaming server
-        icon: navidrome.png
-        siteMonitor: https://navidrome.andreasmaita.com
-    - Feishin:
-        href: https://feishin.andreasmaita.com
-        description: Music web player
-        icon: feishin.png
-        siteMonitor: https://feishin.andreasmaita.com
-    - Immich:
-        href: https://immich.andreasmaita.com
-        description: Photo & video backup
-        icon: immich.png
-        siteMonitor: https://immich.andreasmaita.com
-    - Ryot:
-        href: https://ryot.andreasmaita.com
-        description: Media tracker (TV, movies, books)
-        icon: ryot.png
-        siteMonitor: https://ryot.andreasmaita.com
-    - Forgejo:
-        href: https://forgejo.andreasmaita.com
-        description: Git hosting
-        icon: forgejo.png
-        siteMonitor: https://forgejo.andreasmaita.com
+   - Audiobookshelf:
+      href: https://audiobookshelf.andreasmaita.com
+      description: Audiobook & podcast library
+      icon: audiobookshelf.png
+      siteMonitor: https://audiobookshelf.andreasmaita.com
+   - Navidrome:
+      href: https://navidrome.andreasmaita.com
+      description: Music streaming server
+      icon: navidrome.png
+      siteMonitor: https://navidrome.andreasmaita.com
+   - Feishin:
+      href: https://feishin.andreasmaita.com
+      description: Music web player
+      icon: feishin.png
+      siteMonitor: https://feishin.andreasmaita.com
+   - Immich:
+      href: https://immich.andreasmaita.com
+      description: Photo & video backup
+      icon: immich.png
+      siteMonitor: https://immich.andreasmaita.com
+   - Ryot:
+      href: https://ryot.andreasmaita.com
+      description: Media tracker (TV, movies, books)
+      icon: ryot.png
+      siteMonitor: https://ryot.andreasmaita.com
+   - Forgejo:
+      href: https://forgejo.andreasmaita.com
+      description: Git hosting
+      icon: forgejo.png
+      siteMonitor: https://forgejo.andreasmaita.com
+   - Octo-Fiesta:
+      href: https://octo-fiesta.andreasmaita.com
+      description: Subsonic proxy with hi-res streaming
+      icon: mdi-music-circle
+      siteMonitor: https://octo-fiesta.andreasmaita.com
 
 # All services accessible over Tailscale (100.106.40.5) — shows live Docker health
 - Tailscale:
-    - Audiobookshelf:
-        href: http://100.106.40.5:20020
-        description: Audiobook & podcast library
-        icon: audiobookshelf.png
-        server: my-docker
-        container: audiobookshelf
-    - Navidrome:
-        href: http://100.106.40.5:20070
-        description: Music streaming server
-        icon: navidrome.png
-        server: my-docker
-        container: navidrome
-    - Feishin:
-        href: http://100.106.40.5:20072
-        description: Music web player
-        icon: feishin.png
-        server: my-docker
-        container: feishin
-    - Immich:
-        href: http://100.106.40.5:2283
-        description: Photo & video backup
-        icon: immich.png
-        server: my-docker
-        container: immich-server
-    - Ryot:
-        href: http://100.106.40.5:20040
-        description: Media tracker
-        icon: ryot.png
-        server: my-docker
-        container: ryot
-    - qBittorrent:
-        href: http://100.106.40.5:20050
-        description: Torrent client
-        icon: qbittorrent.png
-        server: my-docker
-        container: qbittorrent
-    - Audiobookbay:
-        href: http://100.106.40.5:20060
-        description: Audiobook downloader
-        icon: mdi-book-download
-        server: my-docker
-        container: audiobookbay-downloader
-    - Forgejo:
-        href: http://100.106.40.5:20110
-        description: Git hosting
-        icon: forgejo.png
-        server: my-docker
-        container: forgejo
-    - Jackett:
-        href: http://100.106.40.5:20065
-        description: Torrent indexer proxy
-        icon: jackett.png
-        server: my-docker
-        container: jackett
-    - Lidarr:
-        href: http://100.106.40.5:20073
-        description: Music collection manager
-        icon: lidarr.png
-        server: my-docker
-        container: lidarr
-    - Soulseek (slskd):
-        href: http://100.106.40.5:20075
-        description: P2P music sourcing
-        icon: slskd.png
-        server: my-docker
-        container: slskd
-    - Uptime Kuma:
-        href: http://100.106.40.5:20201
-        description: Uptime monitor
-        icon: uptime-kuma.png
-        server: my-docker
-        container: uptime-kuma
+   - Audiobookshelf:
+      href: http://100.106.40.5:20020
+      description: Audiobook & podcast library
+      icon: audiobookshelf.png
+      server: my-docker
+      container: audiobookshelf
+   - Navidrome:
+      href: http://100.106.40.5:20070
+      description: Music streaming server
+      icon: navidrome.png
+      server: my-docker
+      container: navidrome
+   - Feishin:
+      href: http://100.106.40.5:20072
+      description: Music web player
+      icon: feishin.png
+      server: my-docker
+      container: feishin
+   - Immich:
+      href: http://100.106.40.5:2283
+      description: Photo & video backup
+      icon: immich.png
+      server: my-docker
+      container: immich-server
+   - Ryot:
+      href: http://100.106.40.5:20040
+      description: Media tracker
+      icon: ryot.png
+      server: my-docker
+      container: ryot
+   - qBittorrent:
+      href: http://100.106.40.5:20050
+      description: Torrent client
+      icon: qbittorrent.png
+      server: my-docker
+      container: qbittorrent
+   - Audiobookbay:
+      href: http://100.106.40.5:20060
+      description: Audiobook downloader
+      icon: mdi-book-download
+      server: my-docker
+      container: audiobookbay-downloader
+   - Forgejo:
+      href: http://100.106.40.5:20110
+      description: Git hosting
+      icon: forgejo.png
+      server: my-docker
+      container: forgejo
+   - Jackett:
+      href: http://100.106.40.5:20065
+      description: Torrent indexer proxy
+      icon: jackett.png
+      server: my-docker
+      container: jackett
+   - Lidarr:
+      href: http://100.106.40.5:20073
+      description: Music collection manager
+      icon: lidarr.png
+      server: my-docker
+      container: lidarr
+   - Soulseek (slskd):
+      href: http://100.106.40.5:20075
+      description: P2P music sourcing
+      icon: slskd.png
+      server: my-docker
+      container: slskd
+   - Octo-Fiesta:
+      href: http://100.106.40.5:20076
+      description: Subsonic proxy with hi-res streaming
+      icon: mdi-music-circle
+      server: my-docker
+      container: octo-fiesta
+   - Uptime Kuma:
+      href: http://100.106.40.5:20201
+      description: Uptime monitor
+      icon: uptime-kuma.png
+      server: my-docker
+      container: uptime-kuma
 
 # All services accessible locally — quick links when at home
 - Local:
-    - Audiobookshelf:
-        href: http://localhost:20020
-        description: Audiobook & podcast library
-        icon: audiobookshelf.png
-        server: my-docker
-        container: audiobookshelf
-    - Navidrome:
-        href: http://localhost:20070
-        description: Music streaming server
-        icon: navidrome.png
-        server: my-docker
-        container: navidrome
-    - Feishin:
-        href: http://localhost:20072
-        description: Music web player
-        icon: feishin.png
-        server: my-docker
-        container: feishin
-    - Immich:
-        href: http://localhost:2283
-        description: Photo & video backup
-        icon: immich.png
-        server: my-docker
-        container: immich-server
-    - Ryot:
-        href: http://localhost:20040
-        description: Media tracker
-        icon: ryot.png
-        server: my-docker
-        container: ryot
-    - qBittorrent:
-        href: http://localhost:20050
-        description: Torrent client
-        icon: qbittorrent.png
-        server: my-docker
-        container: qbittorrent
-    - Audiobookbay:
-        href: http://localhost:20060
-        description: Audiobook downloader
-        icon: mdi-book-download
-        server: my-docker
-        container: audiobookbay-downloader
-    - Forgejo:
-        href: http://localhost:20110
-        description: Git hosting
-        icon: forgejo.png
-        server: my-docker
-        container: forgejo
-    - Jackett:
-        href: http://localhost:20065
-        description: Torrent indexer proxy
-        icon: jackett.png
-        server: my-docker
-        container: jackett
-    - Lidarr:
-        href: http://localhost:20073
-        description: Music collection manager
-        icon: lidarr.png
-        server: my-docker
-        container: lidarr
-    - Soulseek (slskd):
-        href: http://localhost:20075
-        description: P2P music sourcing
-        icon: slskd.png
-        server: my-docker
-        container: slskd
-    - Uptime Kuma:
-        href: http://localhost:20201
-        description: Uptime monitor
-        icon: uptime-kuma.png
-        server: my-docker
-        container: uptime-kuma
+   - Audiobookshelf:
+      href: http://localhost:20020
+      description: Audiobook & podcast library
+      icon: audiobookshelf.png
+      server: my-docker
+      container: audiobookshelf
+   - Navidrome:
+      href: http://localhost:20070
+      description: Music streaming server
+      icon: navidrome.png
+      server: my-docker
+      container: navidrome
+   - Feishin:
+      href: http://localhost:20072
+      description: Music web player
+      icon: feishin.png
+      server: my-docker
+      container: feishin
+   - Immich:
+      href: http://localhost:2283
+      description: Photo & video backup
+      icon: immich.png
+      server: my-docker
+      container: immich-server
+   - Ryot:
+      href: http://localhost:20040
+      description: Media tracker
+      icon: ryot.png
+      server: my-docker
+      container: ryot
+   - qBittorrent:
+      href: http://localhost:20050
+      description: Torrent client
+      icon: qbittorrent.png
+      server: my-docker
+      container: qbittorrent
+   - Audiobookbay:
+      href: http://localhost:20060
+      description: Audiobook downloader
+      icon: mdi-book-download
+      server: my-docker
+      container: audiobookbay-downloader
+   - Forgejo:
+      href: http://localhost:20110
+      description: Git hosting
+      icon: forgejo.png
+      server: my-docker
+      container: forgejo
+   - Jackett:
+      href: http://localhost:20065
+      description: Torrent indexer proxy
+      icon: jackett.png
+      server: my-docker
+      container: jackett
+   - Lidarr:
+      href: http://localhost:20073
+      description: Music collection manager
+      icon: lidarr.png
+      server: my-docker
+      container: lidarr
+   - Soulseek (slskd):
+      href: http://localhost:20075
+      description: P2P music sourcing
+      icon: slskd.png
+      server: my-docker
+      container: slskd
+   - Octo-Fiesta:
+      href: http://localhost:20076
+      description: Subsonic proxy with hi-res streaming
+      icon: mdi-music-circle
+      server: my-docker
+      container: octo-fiesta
+   - Uptime Kuma:
+      href: http://localhost:20201
+      description: Uptime monitor
+      icon: uptime-kuma.png
+      server: my-docker
+      container: uptime-kuma

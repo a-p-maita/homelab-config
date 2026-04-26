@@ -38,18 +38,18 @@ else
 fi
 
 echo "Bringing up core..."
-docker compose $ENV_FILE_ARG -f core/compose.yaml up -d
+docker compose $ENV_FILE_ARG -f dockerfiles/core/compose.yaml up -d
 
 echo "Bringing up media..."
-docker compose $ENV_FILE_ARG -f media/compose.yaml up -d
+docker compose $ENV_FILE_ARG -f dockerfiles/media/compose.yaml up -d
 
 echo "Bringing up productivity..."
-docker compose $ENV_FILE_ARG -f productivity/compose.yaml up -d
+docker compose $ENV_FILE_ARG -f dockerfiles/productivity/compose.yaml up -d
 
 echo "Bringing up immich..."
-docker compose $ENV_FILE_ARG -f immich/compose.yaml -f immich/compose.override.yaml up -d
+docker compose $ENV_FILE_ARG -f dockerfiles/immich/compose.yaml -f dockerfiles/immich/compose.override.yaml up -d
 
 echo "Bringing up monitoring..."
-docker compose $ENV_FILE_ARG -f monitoring/compose.yaml up -d
+docker compose $ENV_FILE_ARG -f dockerfiles/monitoring/compose.yaml up -d
 
 echo "All stacks are up"

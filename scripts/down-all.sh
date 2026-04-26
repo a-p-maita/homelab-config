@@ -12,18 +12,18 @@ else
 fi
 
 echo "Bringing down monitoring..."
-docker compose $ENV_FILE_ARG -f monitoring/compose.yaml down
+docker compose $ENV_FILE_ARG -f dockerfiles/monitoring/compose.yaml down
 
 echo "Bringing down immich..."
-docker compose $ENV_FILE_ARG -f immich/compose.yaml -f immich/compose.override.yaml down
+docker compose $ENV_FILE_ARG -f dockerfiles/immich/compose.yaml -f dockerfiles/immich/compose.override.yaml down
 
 echo "Bringing down productivity..."
-docker compose $ENV_FILE_ARG -f productivity/compose.yaml down
+docker compose $ENV_FILE_ARG -f dockerfiles/productivity/compose.yaml down
 
 echo "Bringing down media..."
-docker compose $ENV_FILE_ARG -f media/compose.yaml down
+docker compose $ENV_FILE_ARG -f dockerfiles/media/compose.yaml down
 
 echo "Bringing down core..."
-docker compose $ENV_FILE_ARG -f core/compose.yaml down
+docker compose $ENV_FILE_ARG -f dockerfiles/core/compose.yaml down
 
 echo "All stacks are down!"

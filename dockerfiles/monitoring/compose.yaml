@@ -9,7 +9,7 @@ services:
     environment:
       - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS}
     volumes:
-      - ../homelab-data/homepage/config:/app/config
+      - ../../homelab-data/homepage/config:/app/config
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
@@ -37,7 +37,7 @@ services:
     ports:
       - "${UPTIMEKUMA_PORT}:3001"
     volumes:
-      - ../homelab-data/uptime-kuma:/app/data
+      - ../../homelab-data/uptime-kuma:/app/data
       - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
     networks:
