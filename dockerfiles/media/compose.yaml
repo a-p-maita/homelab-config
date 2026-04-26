@@ -248,11 +248,13 @@ services:
   image: ghcr.io/jeffvli/feishin:latest
   container_name: feishin
   environment:
-   # Pre-lock to Navidrome — users just log in with their Navidrome credentials
+   # Use Subsonic protocol (not navidrome) so Feishin uses standard Subsonic API
+   # that octo-fiesta proxies — navidrome type uses Navidrome-specific extensions
+   # that bypass octo-fiesta's enhanced endpoints (causing artist/album page failures)
    - SERVER_NAME=Homelab
-   - SERVER_TYPE=navidrome
-   # Must be the public URL — browser connects directly to Navidrome from client side
-   - SERVER_URL=${NAVIDROME_EXTERNAL_URL}
+   - SERVER_TYPE=subsonic
+   # Must be the public URL — browser connects directly to octo-fiesta from client side
+   - SERVER_URL=${OCTOFIESTA_EXTERNAL_URL}
    - SERVER_LOCK=true
    - ANALYTICS_DISABLED=true
   ports:
