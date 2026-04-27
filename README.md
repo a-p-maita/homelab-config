@@ -46,7 +46,6 @@ Depends on/creates another directory one step up called `homelab-data/` which ho
 | [Draw.io](https://github.com/jgraph/drawio)               | Diagram editor                          |
 | [Excalidraw](https://excalidraw.com/)                     | Collaborative whiteboard                |
 | [IT-Tools](https://github.com/CorentinTh/it-tools)        | Developer utilities collection          |
-| [LibreOffice](https://www.libreoffice.org/)               | Office suite in the browser             |
 | [Vaultwarden](https://github.com/dani-garcia/vaultwarden) | Password manager (Bitwarden-compatible) |
 | [Actual Budget](https://actualbudget.org/)                | Local-first personal finance            |
 | [Joplin Server](https://joplinapp.org/)                   | Note-taking sync server                 |
@@ -93,12 +92,12 @@ Running on an old laptop repurposed as a headless server.
 
 Every container has `deploy.resources.limits` set. The budget leaves ~2 cores and ~2 GB RAM free for the OS. Key allocations:
 
-| Tier     | Services                                                                       | CPU limit  | RAM limit     |
-| -------- | ------------------------------------------------------------------------------ | ---------- | ------------- |
-| Heavy    | Immich server/ML, Jellyfin, Paperless-NGX, Code Server                         | 2.0        | 2 GB          |
-| Medium   | Audiobookshelf, qBittorrent, Lidarr, Stirling PDF, LibreOffice, Home Assistant | 1.0        | 512 M – 1 G   |
-| Light    | Most other services                                                            | 0.25 – 0.5 | 128 M – 512 M |
-| DB/cache | postgres, redis, mysql                                                         | 0.25 – 0.5 | 256 M – 1 G   |
+| Tier     | Services                                                          | CPU limit  | RAM limit     |
+| -------- | ----------------------------------------------------------------- | ---------- | ------------- |
+| Heavy    | Immich server/ML, Jellyfin, Paperless-NGX, Code Server            | 2.0        | 2 GB          |
+| Medium   | Audiobookshelf, qBittorrent, Lidarr, Stirling PDF, Home Assistant | 1.0        | 512 M – 1 G   |
+| Light    | Most other services                                               | 0.25 – 0.5 | 128 M – 512 M |
+| DB/cache | postgres, redis, mysql                                            | 0.25 – 0.5 | 256 M – 1 G   |
 
 Limits are soft ceilings — containers can burst when idle headroom is available. Reservations are set low so Docker does not pre-allocate memory.
 

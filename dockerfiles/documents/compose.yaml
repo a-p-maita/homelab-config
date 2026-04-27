@@ -81,6 +81,8 @@ services:
    - PAPERLESS_SUPERUSER_EMAIL=${PAPERLESS_ADMIN_EMAIL}
    - PAPERLESS_SUPERUSER_PASSWORD=${PAPERLESS_ADMIN_PASS}
    - PAPERLESS_URL=${PAPERLESS_EXTERNAL_URL}
+   # Explicitly trust the Cloudflare tunnel origin (required for CSRF when behind reverse proxy)
+   - PAPERLESS_CSRF_TRUSTED_ORIGINS=${PAPERLESS_EXTERNAL_URL}
    - PAPERLESS_OCR_LANGUAGE=eng
    - PAPERLESS_TIME_ZONE=Europe/London
    - PAPERLESS_CONSUMER_POLLING=60
@@ -169,7 +171,7 @@ services:
    interval: 30s
    timeout: 10s
    retries: 3
-   start_period: 30s
+   start_period: 90s
   deploy:
    resources:
     limits:
@@ -177,25 +179,23 @@ services:
      memory: 512M
 
  # ── Kiwix ───────────────────────────────────────────────────────────────────
- # Drop .zim files into homelab-data/kiwix/ — they are picked up automatically
- # via the library.xml (managed by the entrypoint script in up-all.sh).
+ # Drop .zim files into homelab-data/kiwix/ — they are served automatically.
  # Find ZIM files at: https://library.kiwix.org
- # To add a new ZIM after first start:
- #   docker exec kiwix kiwix-manage /data/library.xml add /data/yourfile.zim
- #   docker compose -f dockerfiles/documents/compose.yaml restart kiwix
+ # kiwix-serve exits when there are no ZIM files in /data (expected behaviour).
+ # To start kiwix after adding ZIM files:
+ #   docker compose -f dockerfiles/documents/compose.yaml up -d kiwix
  kiwix:
   image: ghcr.io/kiwix/kiwix-serve:latest
   container_name: kiwix
-  # on-failure only restarts on non-zero exit; kiwix exits 0 when library is
-  # empty (no ZIM files), so the container stays stopped until ZIM files are
-  # added and the stack is re-upped.
+  # on-failure:3 — exits when no ZIM files present; restarts are correct once
+  # files are added. Run `docker compose up -d kiwix` after dropping .zim files.
   restart: on-failure:3
   ports:
    - "${KIWIX_PORT}:8080"
   volumes:
    - ../../homelab-data/kiwix:/data
-  # Serve via library XML — starts fine even with zero ZIM files
-  command: "--library /data/library.xml --port 8080"
+  # Directory mode — serves all .zim files in /data directly (no library.xml needed)
+  command: "--port 8080 /data"
   networks:
    - homelab_net
   healthcheck:

@@ -38,7 +38,6 @@ mkdir -p \
   ./homelab-data/stirling-pdf/logs \
   ./homelab-data/kiwix \
   ./homelab-data/code-server/config \
-  ./homelab-data/libreoffice/config \
   ./homelab-data/vaultwarden \
   ./homelab-data/actual-budget \
   ./homelab-data/joplin/db \
@@ -105,12 +104,8 @@ if [ ! -f ./homelab-data/crosswatch/config.json ]; then
   echo "Seeded CrossWatch config.json from config-templates."
 fi
 
-# Create empty kiwix library XML if not present (kiwix-serve exits on startup without it)
-if [ ! -f ./homelab-data/kiwix/library.xml ]; then
-  printf '<?xml version="1.0" encoding="UTF-8"?>\n<library version="20110515"/>\n' \
-    > ./homelab-data/kiwix/library.xml
-  echo "Created empty kiwix library.xml."
-fi
+# Create kiwix data dir (kiwix-serve serves any .zim files dropped here directly)
+mkdir -p ./homelab-data/kiwix
 
 # Always use --env-file .env for all stacks if present
 if [ -f .env ]; then

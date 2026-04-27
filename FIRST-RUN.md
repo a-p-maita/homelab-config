@@ -153,17 +153,17 @@ If you already started without setting a password, the `settings.yml` is seeded 
 
 ## Services with no first-run step required
 
-| Service        | Notes                                                                                        |
-| -------------- | -------------------------------------------------------------------------------------------- |
-| Audiobookshelf | Create account on first visit — self-service                                                 |
-| Immich         | Credentials pre-configured via `.env`                                                        |
-| qBittorrent    | WebUI password set in `config-templates/qbittorrent/qBittorrent.conf`                        |
-| Jackett        | API key set in `ServerConfig.json` template                                                  |
-| Actual Budget  | Creates a local vault on first open — no account needed                                      |
-| Feishin        | Pre-locked to Navidrome — just use Navidrome credentials                                     |
-| Octo-Fiesta    | No login — configured entirely via `.env`                                                    |
-| Kiwix          | Add ZIM files to `homelab-data/kiwix/` — auto-discovered                                     |
-| Stirling PDF   | Login enabled. Credentials set via `STIRLING_PDF_USERNAME`/`STIRLING_PDF_PASSWORD` in `.env` |
-| Code Server    | Password set via `CODE_SERVER_PASSWORD` in `.env`                                            |
-| LubeLogger     | Credentials set via `LUBELOGGER_ADMIN_USER/PASS` in `.env`                                   |
-| Job Ops        | Onboarding wizard on first open (no server account needed)                                   |
+| Service        | Notes                                                                                                                                                                                                                                |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Audiobookshelf | Create account on first visit — self-service                                                                                                                                                                                         |
+| Immich         | Credentials pre-configured via `.env`                                                                                                                                                                                                |
+| qBittorrent    | WebUI password set in `config-templates/qbittorrent/qBittorrent.conf`                                                                                                                                                                |
+| Jackett        | API key set in `ServerConfig.json` template                                                                                                                                                                                          |
+| Actual Budget  | Creates a local vault on first open — no account needed. If you see a SharedArrayBuffer error, clear browser cache (server already sends correct COOP/COEP headers). Accessed at `http://localhost:20316` (not in Cloudflare tunnel) |
+| Feishin        | Pre-locked to Navidrome — just use Navidrome credentials                                                                                                                                                                             |
+| Octo-Fiesta    | No login — configured entirely via `.env`                                                                                                                                                                                            |
+| Kiwix          | Add ZIM files to `homelab-data/kiwix/` — auto-discovered                                                                                                                                                                             |
+| Stirling PDF   | Login enabled. Credentials set via `STIRLING_PDF_USERNAME`/`STIRLING_PDF_PASSWORD` in `.env`                                                                                                                                         |
+| Code Server    | Password set via `CODE_SERVER_PASSWORD` in `.env`                                                                                                                                                                                    |
+| LubeLogger     | Credentials set via `LUBELOGGER_ADMIN_USER/PASS` in `.env`                                                                                                                                                                           |
+| Job Ops        | Onboarding wizard on first open (no server account needed)                                                                                                                                                                           |
