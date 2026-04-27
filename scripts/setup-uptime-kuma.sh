@@ -10,8 +10,13 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-UPTIMEKUMA_USER="a-p-maita"
-UPTIMEKUMA_PASS="UPTIMEKUMA_PASS"
+# Load credentials from .env — never hardcode them here (this file is tracked by git)
+if [ -f .env ]; then
+  UPTIMEKUMA_USER=$(grep -E '^UPTIMEKUMA_USER=' .env | head -1 | cut -d= -f2- | sed "s/^['\"]//; s/['\"]$//")
+  UPTIMEKUMA_PASS=$(grep -E '^UPTIMEKUMA_PASS=' .env | head -1 | cut -d= -f2- | sed "s/^['\"]//; s/['\"]$//")
+fi
+: "${UPTIMEKUMA_USER:?UPTIMEKUMA_USER not set — add it to .env}"
+: "${UPTIMEKUMA_PASS:?UPTIMEKUMA_PASS not set — add it to .env}"
 
 # Wait for Uptime Kuma to be reachable (up to 90 seconds)
 echo "Waiting for Uptime Kuma to be ready..."

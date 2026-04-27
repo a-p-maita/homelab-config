@@ -6,24 +6,101 @@ Depends on/creates another directory one step up called `homelab-data/` which ho
 
 ## What's running
 
-| Service                                                                                       | Purpose                                                                  |
-| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| [Audiobookshelf](https://www.audiobookshelf.org/)                                             | Audiobook & podcast library with streaming                               |
-| [Immich](https://immich.app/)                                                                 | Self-hosted photo and video backup                                       |
-| [Ryot](https://github.com/ignisda/ryot)                                                       | Media tracker (books, TV, movies, audiobooks)                            |
-| [qBittorrent](https://www.qbittorrent.org/)                                                   | Torrent client                                                           |
-| [Jackett](https://github.com/Jackett/Jackett)                                                 | Torrent indexer proxy (for Audiobookbay downloader)                      |
-| [Audiobookbay Downloader](https://github.com/moonblade/audiobookbay-downloader)               | Search and download audiobooks via AudiobookBay                          |
-| [Navidrome](https://www.navidrome.org/)                                                       | Music streaming server (Subsonic API)                                    |
-| [Octo-Fiesta](https://github.com/V1ck3s/octo-fiesta)                                          | Subsonic API proxy — on-the-fly hi-res streaming from Deezer/Qobuz/Tidal |
-| [Feishin](https://github.com/jeffvli/feishin)                                                 | Modern web UI for Navidrome                                              |
-| [Lidarr](https://lidarr.audio/)                                                               | Automated music collection manager via torrents                          |
-| [Soulseek (slskd)](https://github.com/slskd/slskd)                                            | P2P music sourcing for rare and lossless files                           |
-| [Homepage](https://gethomepage.dev/)                                                          | Dashboard with live container health                                     |
-| [Uptime Kuma](https://uptime.kuma.pet/)                                                       | Service uptime monitoring                                                |
-| [Cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) | Cloudflare tunnel for external access since I can't port forward         |
-| [Watchtower](https://containrrr.dev/watchtower/)                                              | Automatic nightly image updates                                          |
-| [Forgejo](https://forgejo.org/)                                                               | Self-hosted git repository                                               |
+### Media
+
+| Service                                                                         | Purpose                                                                  |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| [Audiobookshelf](https://www.audiobookshelf.org/)                               | Audiobook & podcast library with streaming                               |
+| [Audiobookbay Downloader](https://github.com/moonblade/audiobookbay-downloader) | Search and download audiobooks via AudiobookBay                          |
+| [Yamtrack](https://github.com/FuzzyGrim/Yamtrack)                               | Media tracker (TV, movies, games, manga, books)                          |
+| [CrossWatch](https://github.com/FuzzyGrim/crosswatch)                           | Sync watch history across Trakt, AniList, Jellyfin, Simkl                |
+| [qBittorrent](https://www.qbittorrent.org/)                                     | Torrent client                                                           |
+| [Jackett](https://github.com/Jackett/Jackett)                                   | Torrent indexer proxy                                                    |
+| [Navidrome](https://www.navidrome.org/)                                         | Music streaming server (Subsonic API)                                    |
+| [Octo-Fiesta](https://github.com/V1ck3s/octo-fiesta)                            | Subsonic API proxy — on-the-fly hi-res streaming from Deezer/Qobuz/Tidal |
+| [Feishin](https://github.com/jeffvli/feishin)                                   | Modern web UI for Navidrome                                              |
+| [Lidarr](https://lidarr.audio/)                                                 | Automated music collection manager via torrents                          |
+| [Soulseek (slskd)](https://github.com/slskd/slskd)                              | P2P music sourcing for rare and lossless files                           |
+
+### Entertainment
+
+| Service                                 | Purpose                    |
+| --------------------------------------- | -------------------------- |
+| [Jellyfin](https://jellyfin.org/)       | Media server (video, TV)   |
+| [RomM](https://github.com/rommapp/romm) | ROM manager & game library |
+
+### Documents
+
+| Service                                                   | Purpose                         |
+| --------------------------------------------------------- | ------------------------------- |
+| [Paperless-NGX](https://docs.paperless-ngx.com/)          | Document management & OCR       |
+| [Paperless-GPT](https://github.com/icereed/paperless-gpt) | AI-assisted document tagging    |
+| [Stirling PDF](https://stirlingpdf.io/)                   | PDF manipulation tools          |
+| [Kiwix](https://www.kiwix.org/)                           | Offline Wikipedia & ZIM content |
+
+### Tools
+
+| Service                                                   | Purpose                                 |
+| --------------------------------------------------------- | --------------------------------------- |
+| [Code Server](https://github.com/coder/code-server)       | VS Code in the browser                  |
+| [Draw.io](https://github.com/jgraph/drawio)               | Diagram editor                          |
+| [Excalidraw](https://excalidraw.com/)                     | Collaborative whiteboard                |
+| [IT-Tools](https://github.com/CorentinTh/it-tools)        | Developer utilities collection          |
+| [LibreOffice](https://www.libreoffice.org/)               | Office suite in the browser             |
+| [Vaultwarden](https://github.com/dani-garcia/vaultwarden) | Password manager (Bitwarden-compatible) |
+| [Actual Budget](https://actualbudget.org/)                | Local-first personal finance            |
+| [Joplin Server](https://joplinapp.org/)                   | Note-taking sync server                 |
+| [Job Ops](https://github.com/BasedDevelopment/job-ops)    | Job application tracker                 |
+| [MeshCentral](https://meshcentral.com/)                   | Remote device management                |
+
+### Personal
+
+| Service                               | Purpose                       |
+| ------------------------------------- | ----------------------------- |
+| [Mealie](https://mealie.io/)          | Recipe manager & meal planner |
+| [LubeLogger](https://lubelogger.com/) | Vehicle maintenance tracker   |
+| [Monica](https://www.monicahq.com/)   | Personal CRM                  |
+
+### Home
+
+| Service                                          | Purpose         |
+| ------------------------------------------------ | --------------- |
+| [Home Assistant](https://www.home-assistant.io/) | Home automation |
+
+### Infrastructure
+
+| Service                                                                                       | Purpose                                                    |
+| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| [Immich](https://immich.app/)                                                                 | Self-hosted photo and video backup                         |
+| [Forgejo](https://forgejo.org/)                                                               | Self-hosted git repository                                 |
+| [Homepage](https://gethomepage.dev/)                                                          | Dashboard with live container health                       |
+| [Uptime Kuma](https://uptime.kuma.pet/)                                                       | Service uptime monitoring                                  |
+| [Cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) | Cloudflare tunnel for external access (no port forwarding) |
+| [Watchtower](https://containrrr.dev/watchtower/)                                              | Automatic nightly image updates                            |
+
+## Hardware
+
+Running on an old laptop repurposed as a headless server.
+
+| Component | Spec                                                   |
+| --------- | ------------------------------------------------------ |
+| CPU       | AMD Ryzen 5 5500U — 6 cores, 12 threads, up to 4.0 GHz |
+| RAM       | 14 GB DDR4 + 14 GB zram swap                           |
+| Storage   | NVMe SSD ~930 GB (main) + 120 GB SSD (secondary)       |
+| OS        | Linux                                                  |
+
+### Resource allocation
+
+Every container has `deploy.resources.limits` set. The budget leaves ~2 cores and ~2 GB RAM free for the OS. Key allocations:
+
+| Tier     | Services                                                                       | CPU limit  | RAM limit     |
+| -------- | ------------------------------------------------------------------------------ | ---------- | ------------- |
+| Heavy    | Immich server/ML, Jellyfin, Paperless-NGX, Code Server                         | 2.0        | 2 GB          |
+| Medium   | Audiobookshelf, qBittorrent, Lidarr, Stirling PDF, LibreOffice, Home Assistant | 1.0        | 512 M – 1 G   |
+| Light    | Most other services                                                            | 0.25 – 0.5 | 128 M – 512 M |
+| DB/cache | postgres, redis, mysql                                                         | 0.25 – 0.5 | 256 M – 1 G   |
+
+Limits are soft ceilings — containers can burst when idle headroom is available. Reservations are set low so Docker does not pre-allocate memory.
 
 ## Setup
 
@@ -34,7 +111,7 @@ cp .env.example .env
 # Fill in .env with your credentials and tokens
 ```
 
-A few services need config files seeded before first start, or they'll ignore settings like save paths and proxy headers. Templates are in `config-templates/`:
+A few services need config files seeded before first start, or they'll ignore settings like save paths and proxy headers. Templates are in `config-templates/`. Most are **auto-seeded by `up-all.sh`** — the ones below need manual placement:
 
 ```bash
 # qBittorrent
@@ -54,13 +131,20 @@ cp config-templates/slskd/slskd.yml homelab-data/slskd/slskd.yml
 # Credentials are set via SLSKD_USERNAME / SLSKD_PASSWORD in .env — no edits needed in the yml.
 ```
 
+The following templates are seeded automatically by `up-all.sh` on first run (only if the file doesn't already exist):
+
+- `config-templates/homepage/` → `homelab-data/homepage/config/` (services, settings, docker, widgets, bookmarks)
+- `config-templates/stirling-pdf/settings.yml` → `homelab-data/stirling-pdf/configs/settings.yml`
+- `config-templates/meshcentral/config.json` → `homelab-data/meshcentral/data/config.json`
+- `config-templates/crosswatch/config.json` → `homelab-data/crosswatch/config.json`
+
 Then bring everything up:
 
 ```bash
 ./scripts/up-all.sh
 ```
 
-To set up Uptime Kuma monitors automatically, run `./scripts/setup-uptime-kuma.sh` after the stack is healthy. Update `UPTIMEKUMA_PASS` in the script to your real password first.
+> **First run:** Several services require manual steps after startup (setting credentials, completing wizards, etc.). See **[FIRST-RUN.md](FIRST-RUN.md)** for the complete guide.
 
 ## Cloudflare tunnel
 
@@ -96,7 +180,7 @@ With this setup: web UI at `/app` requires Access auth, but `/rest/*` and `/api/
 
 ## Music stack first-run
 
-After `up-all.sh`, a few music services need one-time setup via their web UIs:
+After `up-all.sh`, the music services need one-time setup:
 
 | Service         | URL      | What to do                                                                                                                                                                                                                  |
 | --------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -111,6 +195,7 @@ After `up-all.sh`, a few music services need one-time setup via their web UIs:
 
 ## Notes
 
-- Ports are all configurable via `.env` — see `.env.example` for the full list
+- All ports are configurable via `.env` — see `.env.example` for the full list
+- Ports are intentionally in the `20000–20340` range to avoid conflicts with well-known services
 - Immich uses its default port (`2283`) for app compatibility
-- First-time setup per service is covered in the **Music stack first-run** table and the individual service docs linked above.
+- First-time setup for all services is documented in **[FIRST-RUN.md](FIRST-RUN.md)**

@@ -1,0 +1,78 @@
+{
+ "plex": {
+  "server_url": "",
+  "verify_ssl": false,
+  "account_token": "",
+  "pms_token": "",
+  "client_id": "",
+  "machine_id": "",
+  "username": "",
+  "account_id": "",
+  "home_pin": "",
+  "timeout": 10,
+  "max_retries": 3
+ },
+ "simkl": {
+  "access_token": "",
+  "refresh_token": "",
+  "token_expires_at": 0,
+  "client_id": "",
+  "client_secret": "",
+  "date_from": ""
+ },
+ "anilist": {
+  "client_id": "",
+  "client_secret": "",
+  "access_token": "",
+  "user": {}
+ },
+ "trakt": {
+  "client_id": "",
+  "client_secret": "",
+  "access_token": "",
+  "refresh_token": "",
+  "scope": "public",
+  "token_type": "Bearer",
+  "expires_at": 0,
+  "timeout": 10,
+  "max_retries": 5
+ },
+ "jellyfin": {
+  "server": "http://jellyfin:8096",
+  "access_token": "",
+  "user_id": "",
+  "device_id": "crosswatch",
+  "username": "",
+  "user": "",
+  "verify_ssl": false,
+  "timeout": 15,
+  "max_retries": 3
+ },
+ "crosswatch": {
+  "root_dir": "/config/.cw_provider",
+  "enabled": true,
+  "retention_days": 30,
+  "auto_snapshot": true,
+  "max_snapshots": 64
+ },
+ "tmdb": {
+  "api_key": ""
+ },
+ "sync": {
+  "enable_add": true,
+  "enable_remove": false,
+  "dry_run": false,
+  "allow_mass_delete": true
+ },
+ "runtime": {
+  "debug": false,
+  "debug_http": false,
+  "telemetry": {
+   "enabled": false
+  }
+ },
+ "metadata": {
+  "locale": "en-US",
+  "ttl_hours": 72
+ }
+}

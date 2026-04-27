@@ -1,0 +1,25 @@
+{
+ "$schema": "http://info.meshcentral.com/downloads/meshcentral-config-schema.json",
+ "settings": {
+  "cert": "localhost",
+  "sessionKey": "CHANGE_ME_RANDOM_32_CHAR_STRING",
+  "port": 443,
+  "redirPort": 80,
+  "AgentPong": 300,
+  "TLSOffload": false,
+  "SelfUpdate": false,
+  "AllowFraming": "",
+  "AutoBackup": {
+   "backupPath": "/opt/meshcentral/meshcentral-backups",
+   "backupInvervalHours": 24,
+   "keepLastDaysBackup": 7,
+   "zippassword": ""
+  }
+ },
+ "domains": {
+  "": {
+   "NewAccounts": false,
+   "certUrl": ""
+  }
+ }
+}

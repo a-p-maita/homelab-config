@@ -120,8 +120,8 @@ services:
   deploy:
    resources:
     limits:
-     cpus: "1.0"
-     memory: 1G
+     cpus: "0.5"
+     memory: 512M
 
  # ── PeerTube ────────────────────────────────────────────────────────────────
  # ⚠️  STOP: PeerTube requires SMTP/email configuration and an initial admin

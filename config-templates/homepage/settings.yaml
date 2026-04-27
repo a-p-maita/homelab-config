@@ -1,0 +1,35 @@
+---
+title: Homelab
+theme: dark
+color: slate
+headerStyle: clean
+statusStyle: dot
+
+layout:
+ External:
+  style: row
+  columns: 4
+ Media:
+  style: row
+  columns: 5
+ Productivity:
+  style: row
+  columns: 3
+ Documents:
+  style: row
+  columns: 4
+ Tools:
+  style: row
+  columns: 5
+ Personal:
+  style: row
+  columns: 4
+ Entertainment:
+  style: row
+  columns: 3
+ Home:
+  style: row
+  columns: 2
+ Monitoring:
+  style: row
+  columns: 2

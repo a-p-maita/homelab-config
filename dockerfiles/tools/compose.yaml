@@ -77,8 +77,8 @@ services:
   deploy:
    resources:
     limits:
-     cpus: "0.5"
-     memory: 512M
+     cpus: "0.25"
+     memory: 256M
 
  # ── Excalidraw ──────────────────────────────────────────────────────────────
  excalidraw:
@@ -159,7 +159,8 @@ services:
    # ADMIN_TOKEN must be an Argon2 hash. Generate with:
    #   docker run --rm -it vaultwarden/server /vaultwarden hash --preset owasp
    - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
-   - SIGNUPS_ALLOWED=false
+   # Set VAULTWARDEN_SIGNUPS_ALLOWED=true in .env to temporarily allow registration, then remove to disable again
+   - SIGNUPS_ALLOWED=${VAULTWARDEN_SIGNUPS_ALLOWED:-false}
    - WEBSOCKET_ENABLED=true
    - DOMAIN=${VAULTWARDEN_EXTERNAL_URL}
    - LOG_LEVEL=warn
@@ -292,11 +293,23 @@ services:
    - ../../homelab-data/job-ops:/app/data
   networks:
    - homelab_net
+  healthcheck:
+   test:
+    [
+     "CMD",
+     "node",
+     "-e",
+     "require('net').connect(3005,'localhost',()=>process.exit(0)).on('error',()=>process.exit(1))",
+    ]
+   interval: 30s
+   timeout: 10s
+   retries: 3
+   start_period: 30s
   deploy:
    resources:
     limits:
-     cpus: "1.0"
-     memory: 1G
+     cpus: "0.5"
+     memory: 512M
 
  # ── MeshCentral ─────────────────────────────────────────────────────────────
  # ⚠️  STOP: First-time setup wizard in browser. After starting, visit
@@ -315,11 +328,24 @@ services:
    - ../../homelab-data/meshcentral/backups:/opt/meshcentral/meshcentral-backups
   networks:
    - homelab_net
+  healthcheck:
+   # MeshCentral image has node but no curl/wget
+   test:
+    [
+     "CMD",
+     "node",
+     "-e",
+     "require('net').connect(80,'localhost',()=>process.exit(0)).on('error',()=>process.exit(1))",
+    ]
+   interval: 30s
+   timeout: 10s
+   retries: 3
+   start_period: 60s
   deploy:
    resources:
     limits:
      cpus: "0.5"
-     memory: 512M
+     memory: 256M
 
  # ── Nginx Proxy Manager ─────────────────────────────────────────────────────
  # NOTE: This is largely redundant if you're already using Cloudflared tunnels

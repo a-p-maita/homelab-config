@@ -8,7 +8,7 @@ name: documents
 #   paperless-gpt  → ⚠️  SEMI-MANUAL: After first paperless start, generate an
 #                    API token at /api/auth/token/ or Admin > Auth Tokens, then
 #                    set PAPERLESS_GPT_API_TOKEN in .env and restart this stack.
-#   stirling-pdf   → AUTOMATED. No auth by default.
+#   stirling-pdf   → AUTOMATED. Login enabled. Set STIRLING_PDF_PASSWORD in .env.
 #   kiwix          → AUTOMATED. Drop .zim files into homelab-data/kiwix/ and
 #                    restart; each .zim becomes a library entry.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -154,7 +154,11 @@ services:
    - ../../homelab-data/stirling-pdf/configs:/configs
    - ../../homelab-data/stirling-pdf/logs:/logs
   environment:
-   - DOCKER_ENABLE_SECURITY=false
+   # Security: login enabled, set initial credentials before first start
+   # or override via env in .env: SECURITY_INITIALLOGIN_USERNAME / SECURITY_INITIALLOGIN_PASSWORD
+   - DOCKER_ENABLE_SECURITY=true
+   - SECURITY_INITIALLOGIN_USERNAME=${STIRLING_PDF_USERNAME:-admin}
+   - SECURITY_INITIALLOGIN_PASSWORD=${STIRLING_PDF_PASSWORD}
    - INSTALL_BOOK_AND_ADVANCED_HTML_OPS=false
    - LANGS=en_GB
   networks:
