@@ -236,12 +236,6 @@
       icon: joplin.png
       server: my-docker
       container: joplin
-   - Job Ops:
-      href: http://100.106.40.5:20318
-      description: Job application tracker
-      icon: mdi-briefcase-search
-      server: my-docker
-      container: job-ops
    - MeshCentral:
       href: http://100.106.40.5:20319
       description: Remote device management

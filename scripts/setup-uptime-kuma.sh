@@ -201,12 +201,6 @@ MONITORS = [
         "interval": 60,
     },
     {
-        "name":     "Job Ops",
-        "type":     MonitorType.HTTP,
-        "url":      "http://job-ops:3005",
-        "interval": 120,
-    },
-    {
         "name":     "MeshCentral",
         "type":     MonitorType.HTTP,
         "url":      "http://meshcentral:80",

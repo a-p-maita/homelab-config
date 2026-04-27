@@ -49,7 +49,6 @@ Depends on/creates another directory one step up called `homelab-data/` which ho
 | [Vaultwarden](https://github.com/dani-garcia/vaultwarden) | Password manager (Bitwarden-compatible) |
 | [Actual Budget](https://actualbudget.org/)                | Local-first personal finance            |
 | [Joplin Server](https://joplinapp.org/)                   | Note-taking sync server                 |
-| [Job Ops](https://github.com/BasedDevelopment/job-ops)    | Job application tracker                 |
 | [MeshCentral](https://meshcentral.com/)                   | Remote device management                |
 
 ### Personal

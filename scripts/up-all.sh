@@ -41,7 +41,6 @@ mkdir -p \
   ./homelab-data/vaultwarden \
   ./homelab-data/actual-budget \
   ./homelab-data/joplin/db \
-  ./homelab-data/job-ops \
   ./homelab-data/meshcentral/data \
   ./homelab-data/meshcentral/user-files \
   ./homelab-data/meshcentral/backups \
