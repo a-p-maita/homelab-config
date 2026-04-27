@@ -60,7 +60,7 @@ Then bring everything up:
 ./scripts/up-all.sh
 ```
 
-To set up Uptime Kuma monitors automatically, run `./scripts/setup-uptime-kuma.sh` after the stack is healthy. Update `UK_PASS` in the script to your real password first.
+To set up Uptime Kuma monitors automatically, run `./scripts/setup-uptime-kuma.sh` after the stack is healthy. Update `UPTIMEKUMA_PASS` in the script to your real password first.
 
 ## Cloudflare tunnel
 

@@ -50,8 +50,9 @@ services:
    - IGDB_SECRET=${ROMM_IGDB_CLIENT_SECRET}
    # TMDB_API: optional v3 API key — a default is built-in if left blank
    - TMDB_API=${YAMTRACK_TMDB_API:-}
-   # Disable public registration after creating your admin account
-   - REGISTRATION=False
+   # Set YAMTRACK_REGISTRATION=False in .env after creating your admin account,
+   # then restart: docker compose -f dockerfiles/media/compose.yaml restart yamtrack
+   - REGISTRATION=${YAMTRACK_REGISTRATION:-True}
   volumes:
    - ../../homelab-data/yamtrack:/yamtrack/db
   ports:
@@ -425,7 +426,9 @@ services:
   networks:
    - homelab_net
   healthcheck:
-   test: ["CMD-SHELL", "wget -qO- http://localhost:8787 > /dev/null"]
+   # crosswatch image has curl but not wget; -L follows the login redirect
+   test:
+    ["CMD-SHELL", "curl -fsL http://localhost:8787/ -o /dev/null || exit 1"]
    interval: 1m
    timeout: 10s
    retries: 3

@@ -36,8 +36,7 @@ mkdir -p \
   ./homelab-data/paperless/gpt-prompts \
   ./homelab-data/stirling-pdf/configs \
   ./homelab-data/stirling-pdf/logs \
-  ./homelab-data/kiwix \
-  ./homelab-data/code-server/config \
+  ./homelab-data/kiwix \  ./homelab-data/code-server/config \
   ./homelab-data/libreoffice/config \
   ./homelab-data/vaultwarden \
   ./homelab-data/actual-budget \
@@ -69,6 +68,13 @@ docker network create homelab_net 2>/dev/null || true
 if [ ! -f ./homelab-data/homepage/config/services.yaml ]; then
   cp config-templates/homepage/services.yaml ./homelab-data/homepage/config/services.yaml
   echo "Seeded Homepage services.yaml from config-templates."
+fi
+
+# Create empty kiwix library XML if not present (kiwix-serve exits on startup without it)
+if [ ! -f ./homelab-data/kiwix/library.xml ]; then
+  printf '<?xml version="1.0" encoding="UTF-8"?>\n<library version="20110515"/>\n' \
+    > ./homelab-data/kiwix/library.xml
+  echo "Created empty kiwix library.xml."
 fi
 
 # Always use --env-file .env for all stacks if present

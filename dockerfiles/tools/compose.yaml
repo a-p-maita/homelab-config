@@ -110,7 +110,8 @@ services:
   networks:
    - homelab_net
   healthcheck:
-   test: ["CMD", "wget", "-q", "--spider", "http://localhost:80"]
+   # 'localhost' resolves to ::1 (IPv6) in this Alpine image; use 127.0.0.1
+   test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80"]
    interval: 60s
    timeout: 10s
    retries: 3
@@ -190,7 +191,14 @@ services:
   networks:
    - homelab_net
   healthcheck:
-   test: ["CMD", "wget", "-q", "--spider", "http://localhost:5006"]
+   # actual-budget image has node but not wget/curl; use Node.js TCP check
+   test:
+    [
+     "CMD",
+     "node",
+     "-e",
+     "require('net').connect(5006,'localhost',()=>process.exit(0)).on('error',()=>process.exit(1))",
+    ]
    interval: 60s
    timeout: 10s
    retries: 3
@@ -251,11 +259,18 @@ services:
    - homelab_net
    - tools_net
   healthcheck:
-   test: ["CMD", "wget", "-q", "--spider", "http://localhost:22300"]
+   # joplin/server image has no curl or wget — use Node.js TCP check
+   test:
+    [
+     "CMD",
+     "node",
+     "-e",
+     "require('net').connect(22300,'localhost',()=>process.exit(0)).on('error',()=>process.exit(1))",
+    ]
    interval: 30s
    timeout: 10s
    retries: 3
-   start_period: 30s
+   start_period: 60s
   deploy:
    resources:
     limits:

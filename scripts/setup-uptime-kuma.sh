@@ -10,8 +10,8 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-UK_USER="a-p-maita"
-UK_PASS="UK_PASS"
+UPTIMEKUMA_USER="a-p-maita"
+UPTIMEKUMA_PASS="UPTIMEKUMA_PASS"
 
 # Wait for Uptime Kuma to be reachable (up to 90 seconds)
 echo "Waiting for Uptime Kuma to be ready..."
@@ -345,7 +345,7 @@ DELETE_MONITORS = ["spotDL", "SpotDL", "Ryot", "Ryot (external)"]
 
 api = UptimeKumaApi("http://uptime-kuma:3001")
 try:
-    api.login(os.environ["UK_USER"], os.environ["UK_PASS"])
+    api.login(os.environ["UPTIMEKUMA_USER"], os.environ["UPTIMEKUMA_PASS"])
     existing = {m["name"]: m for m in api.get_monitors()}
     added = updated = skipped = 0
     # Remove stale monitors first
@@ -380,8 +380,8 @@ PYEOF
 echo "Running Uptime Kuma setup against http://uptime-kuma:3001 ..."
 docker run --rm \
     --network homelab_net \
-    -e UK_USER="${UK_USER}" \
-    -e UK_PASS="${UK_PASS}" \
+    -e UPTIMEKUMA_USER="${UPTIMEKUMA_USER}" \
+    -e UPTIMEKUMA_PASS="${UPTIMEKUMA_PASS}" \
     -v /tmp/kuma_setup.py:/kuma_setup.py:ro \
     python:3-alpine \
     sh -c "pip install uptime-kuma-api -q && python3 /kuma_setup.py"
