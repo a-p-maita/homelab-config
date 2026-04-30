@@ -125,7 +125,34 @@ If you already started without setting a password, the `settings.yml` is seeded 
 
 ---
 
-## 10. \*arr Stack — initial configuration
+## 10. Seerr — complete the setup wizard
+
+Seerr is a media request manager: users browse movies/TV, click Request, and Seerr automatically routes the request to Radarr or Sonarr.
+
+1. Open `http://100.106.40.5:20331`
+2. **Setup wizard — Step 1: Media Server**
+   - Select **Jellyfin**
+   - Hostname: `jellyfin`, Port: `8096`, Use SSL: off
+   - Enter your Jellyfin admin username + password → click **Save Changes**
+   - Click **Sync Libraries** to import your existing Jellyfin libraries
+3. **Setup wizard — Step 2: Configure services**
+   - **Add Radarr:**
+     - Hostname: `radarr`, Port: `7878`, API Key: (from Radarr → Settings → General)
+     - Quality Profile: choose your preferred profile
+     - Root Folder: `/data/media/movies`
+     - Enable: ☑ Default Server, ☑ Enable Scan
+   - **Add Sonarr:**
+     - Hostname: `sonarr`, Port: `8989`, API Key: (from Sonarr → Settings → General)
+     - Quality Profile: choose your preferred profile
+     - Root Folder: `/data/media/tv`
+     - Enable: ☑ Default Server, ☑ Enable Scan
+4. Click **Finish Setup**
+
+After setup, Seerr imports your Jellyfin users — they can log in with their Jellyfin credentials and request media immediately.
+
+---
+
+## 11. \*arr Stack — initial configuration
 
 Services: **Prowlarr**, **Radarr**, **Sonarr**, **LazyLibrarian**, **Lidarr**, **Byparr**, **Jackett** (legacy), **qBittorrent**, **Audiobookbay Downloader**
 

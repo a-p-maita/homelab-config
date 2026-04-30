@@ -52,11 +52,9 @@ services:
      - qbittorrent # ← *arr apps use http://qbittorrent:PORT in both VPN and non-VPN mode
   restart: unless-stopped
   healthcheck:
-   test:
-    [
-     "CMD-SHELL",
-     "wget -qO- http://localhost:8000/v1/publicip/ip | grep -q 'public_ip'",
-    ]
+   # Use gluetun's built-in healthcheck binary — avoids HTTP 401 from the control server's
+   # authentication requirement added in recent gluetun versions.
+   test: /gluetun-entrypoint healthcheck
    interval: 30s
    timeout: 10s
    retries: 5
@@ -71,7 +69,11 @@ services:
      memory: 64M
 
  qbittorrent:
-  # In VPN mode: join gluetun's network namespace instead of homelab_net
+  # In VPN mode: join gluetun's network namespace instead of homelab_net.
+  # Both 'networks' and 'ports' must be cleared — they are mutually exclusive
+  # with network_mode. Gluetun publishes the ports instead (see above).
+  networks: !reset null
+  ports: !reset []
   network_mode: "service:gluetun"
   labels:
    - deunhealth.restart.on.unhealthy=true # deunhealth auto-restarts qbt when VPN stalls
@@ -88,8 +90,6 @@ services:
    timeout: 10s
    retries: 3
    start_period: 30s
-  # The ports defined in compose.yaml are ignored when network_mode is set;
-  # gluetun publishes them above.
 
  # ── deunhealth ───────────────────────────────────────────────────────────────
  # Watches containers labelled 'deunhealth.restart.on.unhealthy=true' and restarts

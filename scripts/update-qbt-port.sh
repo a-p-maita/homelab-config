@@ -12,17 +12,34 @@ if [ -z "$PORT" ] || [ "$PORT" = "0" ]; then
   exit 0
 fi
 
-echo "[port-sync] ProtonVPN forwarded port: $PORT — updating qBittorrent listen port"
+echo "[port-sync] ProtonVPN forwarded port: $PORT"
 
-HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-  -X POST "http://localhost:${QBITTORRENT_WEBUI_PORT}/api/v2/app/setPreferences" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  --data "json={\"listen_port\":${PORT}}")
+# gluetun runs this command as soon as the VPN port is established, which happens
+# during gluetun's own startup — before qBittorrent has launched (qBittorrent
+# depends_on: gluetun healthy). Retry until qBittorrent's WebUI is reachable.
+MAX_WAIT=180
+WAITED=0
+until wget -q -O /dev/null "http://localhost:${QBITTORRENT_WEBUI_PORT}/api/v2/app/version" 2>/dev/null; do
+  if [ "$WAITED" -ge "$MAX_WAIT" ]; then
+    echo "[port-sync] qBittorrent WebUI not reachable after ${MAX_WAIT}s — giving up"
+    exit 1
+  fi
+  echo "[port-sync] Waiting for qBittorrent WebUI... (${WAITED}s elapsed)"
+  sleep 5
+  WAITED=$((WAITED + 5))
+done
 
-if [ "$HTTP_STATUS" = "200" ]; then
+echo "[port-sync] qBittorrent is up — applying listen port $PORT"
+
+# gluetun's Alpine image has wget (busybox), not curl.
+# wget exits 0 on HTTP 200, non-zero on 4xx/5xx.
+if wget -q -O /dev/null \
+  --post-data "json={\"listen_port\":${PORT}}" \
+  --header "Content-Type: application/x-www-form-urlencoded" \
+  "http://localhost:${QBITTORRENT_WEBUI_PORT}/api/v2/app/setPreferences"; then
   echo "[port-sync] Success — qBittorrent now listens on port $PORT"
 else
-  echo "[port-sync] Failed (HTTP $HTTP_STATUS)"
+  echo "[port-sync] setPreferences call failed"
   echo "[port-sync] Ensure 'Bypass auth for localhost' is enabled in qBittorrent Web UI settings"
   exit 1
 fi

@@ -135,7 +135,7 @@ services:
    interval: 30s
    timeout: 10s
    retries: 3
-   start_period: 90s
+   start_period: 180s
   deploy:
    resources:
     limits:
@@ -158,12 +158,15 @@ services:
    - "${KIWIX_PORT}:8080"
   volumes:
    - ../../data/kiwix:/data
-  # Directory mode — serves all .zim files in /data directly (no library.xml needed)
-  command: "--port 8080 /data"
+  # Shell glob: serves all .zim files in /data — auto-picks up new files on restart.
+  # dumb-init for proper signal handling; exec replaces shell with kiwix-serve.
+  entrypoint: ["/usr/bin/dumb-init", "--"]
+  command:
+   ["/bin/sh", "-c", "exec /usr/local/bin/kiwix-serve --port=8080 /data/*.zim"]
   networks:
    - homelab_net
   healthcheck:
-   test: ["CMD-SHELL", "curl -sf http://localhost:8080/ -o /dev/null || exit 1"]
+   test: ["CMD-SHELL", "wget -qO- http://localhost:8080/ > /dev/null || exit 1"]
    interval: 60s
    timeout: 10s
    retries: 3

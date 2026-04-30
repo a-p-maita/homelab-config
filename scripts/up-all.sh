@@ -87,6 +87,7 @@ mkdir -p \
   ./data/mealie \
   ./data/jellyfin/config \
   ./data/jellyfin/cache \
+  ./data/seerr/config \
   ./data/home-assistant
 
 # ── Fix ABS podcast write permissions ────────────────────────────────────────

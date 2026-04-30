@@ -214,6 +214,9 @@ services:
    - PUID=${PUID}
    - PGID=${PGID}
    - TZ=Europe/London
+   # Used by /config/custom-scripts/scan-navidrome.sh to trigger Navidrome rescan on import
+   - NAVIDROME_USER=${NAVIDROME_USER:-}
+   - NAVIDROME_PASS=${NAVIDROME_PASS:-}
   volumes:
    - ../../data/lidarr/config:/config
    - ${DATA_ROOT}:/data
@@ -248,6 +251,7 @@ services:
  byparr:
   image: ghcr.io/thephaseless/byparr:latest
   container_name: byparr
+  init: true # required by Byparr: prevents zombie processes from Camoufox (Firefox)
   environment:
    - HOST=0.0.0.0
    - PORT=8191
@@ -357,7 +361,49 @@ services:
     reservations:
      cpus: "0.05"
      memory: 128M
-
+ # ── Bazarr ───────────────────────────────────────────────────────────────────
+ # Subtitle manager: auto-downloads subtitles for Sonarr/Radarr media.
+ # Jellyfin picks up subtitle files automatically (placed alongside media files).
+ # ⚠️  FIRST RUN: Settings → Sonarr (host=sonarr, port=8989, API key from Sonarr UI)
+ #                Settings → Radarr (host=radarr, port=7878, API key from Radarr UI)
+ #                Settings → Providers → add subtitle providers (e.g. OpenSubtitles.com)
+ #                Settings → Languages → select desired subtitle languages
+ bazarr:
+  image: lscr.io/linuxserver/bazarr:latest
+  container_name: bazarr
+  environment:
+   - PUID=${PUID}
+   - PGID=${PGID}
+   - TZ=Europe/London
+  volumes:
+   - ../../data/bazarr/config:/config
+   # Mount the full data root so Bazarr sees the same paths Radarr/Sonarr report:
+   # Radarr root folder → /data/media/movies, Sonarr root folder → /data/media/tv
+   - ${DATA_ROOT}:/data
+  ports:
+   - "${BAZARR_PORT}:6767"
+  restart: unless-stopped
+  networks:
+   - homelab_net
+  depends_on:
+   radarr:
+    condition: service_healthy
+   sonarr:
+    condition: service_healthy
+  healthcheck:
+   test: ["CMD", "curl", "-f", "http://localhost:6767/"]
+   interval: 1m
+   timeout: 10s
+   retries: 3
+   start_period: 60s
+  deploy:
+   resources:
+    limits:
+     cpus: "0.5"
+     memory: 256M
+    reservations:
+     cpus: "0.1"
+     memory: 64M
 networks:
  homelab_net:
   external: true

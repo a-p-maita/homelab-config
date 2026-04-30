@@ -220,8 +220,12 @@ MONITORS = [
         "type":     MonitorType.HTTP,
         "url":      "http://jellyfin:8096/health",
         "interval": 60,
-    },
-    # ── Home stack ───────────────────────────────────────────────────────────
+    },    {
+        "name":     "Seerr",
+        "type":     MonitorType.HTTP,
+        "url":      "http://seerr:5055/api/v1/settings/public",
+        "interval": 60,
+    },    # ── Home stack ───────────────────────────────────────────────────────────
     {
         "name":     "Home Assistant",
         "type":     MonitorType.HTTP,
