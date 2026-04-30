@@ -14,8 +14,6 @@
   "CacheEnabled": true,
   "CacheTtl": 2100,
   "CacheMaxResultsPerIndexer": 1000,
-  "FlareSolverrUrl": null,
-  "FlareSolverrMaxTimeout": 55000,
   "OmdbApiKey": null,
   "OmdbApiUrl": null,
   "ProxyType": 0,

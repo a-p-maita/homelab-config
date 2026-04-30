@@ -18,24 +18,24 @@ echo "DATA_ROOT: $DATA_ROOT"
 echo "USE_VPN:   ${USE_VPN:-false}"
 
 # ── Migrate legacy data dirs to new media/ layout (idempotent) ────────────────
-if [ -d "./homelab-data/audiobooks" ] && [ ! -d "${DATA_ROOT}/media/audiobooks" ]; then
-  echo "Migrating homelab-data/audiobooks → ${DATA_ROOT}/media/audiobooks ..."
+if [ -d "./data/audiobooks" ] && [ ! -d "${DATA_ROOT}/media/audiobooks" ]; then
+  echo "Migrating data/audiobooks → ${DATA_ROOT}/media/audiobooks ..."
   mkdir -p "${DATA_ROOT}/media"
-  mv "./homelab-data/audiobooks" "${DATA_ROOT}/media/audiobooks"
+  mv "./data/audiobooks" "${DATA_ROOT}/media/audiobooks"
 fi
-if [ -d "./homelab-data/music" ] && [ ! -d "${DATA_ROOT}/media/music" ]; then
-  echo "Migrating homelab-data/music → ${DATA_ROOT}/media/music ..."
+if [ -d "./data/music" ] && [ ! -d "${DATA_ROOT}/media/music" ]; then
+  echo "Migrating data/music → ${DATA_ROOT}/media/music ..."
   mkdir -p "${DATA_ROOT}/media"
-  mv "./homelab-data/music" "${DATA_ROOT}/media/music"
+  mv "./data/music" "${DATA_ROOT}/media/music"
 fi
-if [ -d "./homelab-data/podcasts" ] && [ ! -d "${DATA_ROOT}/media/podcasts" ]; then
-  echo "Migrating homelab-data/podcasts → ${DATA_ROOT}/media/podcasts ..."
+if [ -d "./data/podcasts" ] && [ ! -d "${DATA_ROOT}/media/podcasts" ]; then
+  echo "Migrating data/podcasts → ${DATA_ROOT}/media/podcasts ..."
   mkdir -p "${DATA_ROOT}/media"
-  mv "./homelab-data/podcasts" "${DATA_ROOT}/media/podcasts"
+  mv "./data/podcasts" "${DATA_ROOT}/media/podcasts"
 fi
 # Remove empty legacy download dir (was never used for actual data)
-if [ -d "./homelab-data/qbittorrent-downloads" ]; then
-  rmdir --ignore-fail-on-non-empty "./homelab-data/qbittorrent-downloads"
+if [ -d "./data/qbittorrent-downloads" ]; then
+  rmdir --ignore-fail-on-non-empty "./data/qbittorrent-downloads"
 fi
 
 # ── Ensure all required data directories exist ────────────────────────────────
@@ -51,43 +51,43 @@ mkdir -p \
   "${DATA_ROOT}/torrents/music" \
   "${DATA_ROOT}/torrents/books" \
   "${DATA_ROOT}/torrents/incomplete" \
-  ./homelab-data/audiobookshelf/config \
-  ./homelab-data/audiobookshelf/metadata \
-  ./homelab-data/qbittorrent/config \
-  ./homelab-data/jackett/config \
-  ./homelab-data/jackett/downloads \
-  ./homelab-data/audiobookbay-downloader \
-  ./homelab-data/prowlarr/config \
-  ./homelab-data/radarr/config \
-  ./homelab-data/sonarr/config \
-  ./homelab-data/readarr/config \
-  ./homelab-data/lidarr/config \
-  ./homelab-data/gluetun \
-  ./homelab-data/forgejo \
-  ./homelab-data/immich_db \
-  ./homelab-data/immich_upload \
-  ./homelab-data/yamtrack \
-  ./homelab-data/yamtrack/redis \
-  ./homelab-data/crosswatch \
-  ./homelab-data/homepage/config \
-  ./homelab-data/uptime-kuma \
-  ./homelab-data/navidrome/data \
-  ./homelab-data/paperless/redis \
-  ./homelab-data/paperless/db \
-  ./homelab-data/paperless/data \
-  ./homelab-data/paperless/media \
-  ./homelab-data/paperless/consume \
-  ./homelab-data/paperless/export \
-  ./homelab-data/stirling-pdf/configs \
-  ./homelab-data/stirling-pdf/logs \
-  ./homelab-data/kiwix \
-  ./homelab-data/vaultwarden \
-  ./homelab-data/actual-budget \
-  ./homelab-data/joplin/db \
-  ./homelab-data/mealie \
-  ./homelab-data/jellyfin/config \
-  ./homelab-data/jellyfin/cache \
-  ./homelab-data/home-assistant
+  ./data/audiobookshelf/config \
+  ./data/audiobookshelf/metadata \
+  ./data/qbittorrent/config \
+  ./data/jackett/config \
+  ./data/jackett/downloads \
+  ./data/audiobookbay-downloader \
+  ./data/prowlarr/config \
+  ./data/radarr/config \
+  ./data/sonarr/config \
+  ./data/readarr/config \
+  ./data/lidarr/config \
+  ./data/gluetun \
+  ./data/forgejo \
+  ./data/immich_db \
+  ./data/immich_upload \
+  ./data/yamtrack \
+  ./data/yamtrack/redis \
+  ./data/crosswatch \
+  ./data/homepage/config \
+  ./data/uptime-kuma \
+  ./data/navidrome/data \
+  ./data/paperless/redis \
+  ./data/paperless/db \
+  ./data/paperless/data \
+  ./data/paperless/media \
+  ./data/paperless/consume \
+  ./data/paperless/export \
+  ./data/stirling-pdf/configs \
+  ./data/stirling-pdf/logs \
+  ./data/kiwix \
+  ./data/vaultwarden \
+  ./data/actual-budget \
+  ./data/joplin/db \
+  ./data/mealie \
+  ./data/jellyfin/config \
+  ./data/jellyfin/cache \
+  ./data/home-assistant
 
 # ── Fix ABS podcast write permissions ────────────────────────────────────────
 # ABS needs to write episode files as the host user (PUID:PGID)
@@ -96,7 +96,7 @@ if [ -n "$PUID" ] && [ -n "$PGID" ]; then
 fi
 
 # ── Patch existing qBittorrent config (critical: sed runs even if file exists) ─
-QBT_CONF="./homelab-data/qbittorrent/config/qBittorrent/qBittorrent.conf"
+QBT_CONF="./data/qbittorrent/config/qBittorrent/qBittorrent.conf"
 if [ -f "$QBT_CONF" ]; then
   echo "Patching existing qBittorrent.conf paths ..."
   sed -i \
@@ -105,7 +105,7 @@ if [ -f "$QBT_CONF" ]; then
 fi
 
 # ── Force-update qBittorrent categories (always sync from template) ───────────
-QBT_CAT_DIR="./homelab-data/qbittorrent/config/qBittorrent"
+QBT_CAT_DIR="./data/qbittorrent/config/qBittorrent"
 mkdir -p "$QBT_CAT_DIR"
 cp config-templates/qbittorrent/categories.json "${QBT_CAT_DIR}/categories.json"
 echo "Updated qBittorrent categories.json from template."
@@ -116,38 +116,33 @@ if [ ! -f "$QBT_CONF" ]; then
   cp config-templates/qbittorrent/qBittorrent.conf "$QBT_CONF"
   echo "Seeded qBittorrent.conf from config-templates."
 fi
-if [ ! -f ./homelab-data/homepage/config/services.yaml ]; then
-  cp config-templates/homepage/services.yaml ./homelab-data/homepage/config/services.yaml
+if [ ! -f ./data/homepage/config/services.yaml ]; then
+  cp config-templates/homepage/services.yaml ./data/homepage/config/services.yaml
   echo "Seeded Homepage services.yaml from config-templates."
 fi
-if [ ! -f ./homelab-data/homepage/config/settings.yaml ]; then
-  cp config-templates/homepage/settings.yaml ./homelab-data/homepage/config/settings.yaml
+if [ ! -f ./data/homepage/config/settings.yaml ]; then
+  cp config-templates/homepage/settings.yaml ./data/homepage/config/settings.yaml
   echo "Seeded Homepage settings.yaml from config-templates."
 fi
-if [ ! -f ./homelab-data/homepage/config/docker.yaml ]; then
-  cp config-templates/homepage/docker.yaml ./homelab-data/homepage/config/docker.yaml
+if [ ! -f ./data/homepage/config/docker.yaml ]; then
+  cp config-templates/homepage/docker.yaml ./data/homepage/config/docker.yaml
   echo "Seeded Homepage docker.yaml from config-templates."
 fi
-if [ ! -f ./homelab-data/homepage/config/widgets.yaml ]; then
-  cp config-templates/homepage/widgets.yaml ./homelab-data/homepage/config/widgets.yaml
+if [ ! -f ./data/homepage/config/widgets.yaml ]; then
+  cp config-templates/homepage/widgets.yaml ./data/homepage/config/widgets.yaml
   echo "Seeded Homepage widgets.yaml from config-templates."
 fi
-if [ ! -f ./homelab-data/homepage/config/bookmarks.yaml ]; then
-  cp config-templates/homepage/bookmarks.yaml ./homelab-data/homepage/config/bookmarks.yaml
+if [ ! -f ./data/homepage/config/bookmarks.yaml ]; then
+  cp config-templates/homepage/bookmarks.yaml ./data/homepage/config/bookmarks.yaml
   echo "Seeded Homepage bookmarks.yaml from config-templates."
 fi
-if [ ! -f ./homelab-data/stirling-pdf/configs/settings.yml ]; then
-  cp config-templates/stirling-pdf/settings.yml ./homelab-data/stirling-pdf/configs/settings.yml
+if [ ! -f ./data/stirling-pdf/configs/settings.yml ]; then
+  cp config-templates/stirling-pdf/settings.yml ./data/stirling-pdf/configs/settings.yml
   echo "Seeded Stirling PDF settings.yml from config-templates."
 fi
-if [ ! -f ./homelab-data/crosswatch/config.json ]; then
-  cp config-templates/crosswatch/config.json ./homelab-data/crosswatch/config.json
+if [ ! -f ./data/crosswatch/config.json ]; then
+  cp config-templates/crosswatch/config.json ./data/crosswatch/config.json
   echo "Seeded CrossWatch config.json from config-templates."
-fi
-if [ ! -f ./homelab-data/slskd/slskd.yml ]; then
-  mkdir -p ./homelab-data/slskd
-  cp config-templates/slskd/slskd.yml ./homelab-data/slskd/slskd.yml
-  echo "Seeded slskd config from config-templates."
 fi
 
 # ── Ensure the shared external network exists ─────────────────────────────────

@@ -9,10 +9,11 @@ name: arr
 #   qbittorrent → (base)
 #   jackett     → (base)
 #   prowlarr    → (base)
+#   byparr      → (base — Cloudflare bypass for protected indexers)
 #   radarr      → depends_on: qbittorrent (healthy)
 #   sonarr      → depends_on: qbittorrent (healthy)
 #   lidarr      → depends_on: qbittorrent (healthy)
-#   readarr     → depends_on: qbittorrent (healthy)
+#   lazylibrarian → depends_on: qbittorrent (healthy)
 #   audiobookbay-downloader → depends_on: qbittorrent (healthy), jackett (healthy)
 #
 # VPN (optional): bring up with compose.vpn.yaml overlay:
@@ -43,7 +44,7 @@ services:
    - WEBUI_ADDRESS=0.0.0.0
    - WEBUI_USERNAME=${QBITTORRENT_WEBUI_USER}
   volumes:
-   - ../../homelab-data/qbittorrent/config:/config
+   - ../../data/qbittorrent/config:/config
    - ${DATA_ROOT}:/data
   ports:
    - "${QBITTORRENT_WEBUI_PORT}:${QBITTORRENT_WEBUI_PORT}"
@@ -79,8 +80,8 @@ services:
    - TZ=Europe/London
    - AUTO_UPDATE=true
   volumes:
-   - ../../homelab-data/jackett/config:/config
-   - ../../homelab-data/jackett/downloads:/downloads
+   - ../../data/jackett/config:/config
+   - ../../data/jackett/downloads:/downloads
   ports:
    - "${JACKETT_PORT}:9117"
   restart: unless-stopped
@@ -112,7 +113,7 @@ services:
    - PGID=${PGID}
    - TZ=Europe/London
   volumes:
-   - ../../homelab-data/prowlarr/config:/config
+   - ../../data/prowlarr/config:/config
   ports:
    - "${PROWLARR_PORT}:9696"
   restart: unless-stopped
@@ -143,7 +144,7 @@ services:
    - PGID=${PGID}
    - TZ=Europe/London
   volumes:
-   - ../../homelab-data/radarr/config:/config
+   - ../../data/radarr/config:/config
    - ${DATA_ROOT}:/data
   ports:
    - "${RADARR_PORT}:7878"
@@ -178,7 +179,7 @@ services:
    - PGID=${PGID}
    - TZ=Europe/London
   volumes:
-   - ../../homelab-data/sonarr/config:/config
+   - ../../data/sonarr/config:/config
    - ${DATA_ROOT}:/data
   ports:
    - "${SONARR_PORT}:8989"
@@ -214,7 +215,7 @@ services:
    - PGID=${PGID}
    - TZ=Europe/London
   volumes:
-   - ../../homelab-data/lidarr/config:/config
+   - ../../data/lidarr/config:/config
    - ${DATA_ROOT}:/data
   ports:
    - "${LIDARR_PORT}:8686"
@@ -240,21 +241,52 @@ services:
      cpus: "0.1"
      memory: 128M
 
- # ── Readarr ──────────────────────────────────────────────────────────────────
- # Ebooks (epub/mobi/pdf): root folder /data/media/books, download path /data/torrents/books
- # Note: Readarr uses the 'develop' branch — it has no stable release yet; develop is stable for daily use.
- readarr:
-  image: linuxserver/readarr:0.4.19-nightly
-  container_name: readarr
+ # ── Byparr ───────────────────────────────────────────────────────────────────
+ # FlareSolverr-compatible Cloudflare anti-bot bypass (successor to FlareSolverr).
+ # Used by Prowlarr to access Cloudflare-protected indexers.
+ # Configure in Prowlarr: Settings → Indexers → FlareSolverr → http://byparr:8191
+ byparr:
+  image: ghcr.io/thephaseless/byparr:latest
+  container_name: byparr
+  environment:
+   - HOST=0.0.0.0
+   - PORT=8191
+   - TZ=Europe/London
+  ports:
+   - "${BYPARR_PORT}:8191"
+  restart: unless-stopped
+  networks:
+   - homelab_net
+  healthcheck:
+   test: ["CMD", "curl", "-f", "http://localhost:8191/"]
+   interval: 1m
+   timeout: 15s
+   retries: 3
+   start_period: 60s
+  deploy:
+   resources:
+    limits:
+     cpus: "1.0"
+     memory: 512M
+    reservations:
+     cpus: "0.1"
+     memory: 256M
+
+ # ── LazyLibrarian ────────────────────────────────────────────────────────────
+ # Books/ebooks/magazines: root folder /data/media/books, download client qBittorrent.
+ # Replaces Readarr. Connect Prowlarr via Settings → Providers → Torznab (add Prowlarr URL + API key).
+ lazylibrarian:
+  image: lscr.io/linuxserver/lazylibrarian:latest
+  container_name: lazylibrarian
   environment:
    - PUID=${PUID}
    - PGID=${PGID}
    - TZ=Europe/London
   volumes:
-   - ../../homelab-data/readarr/config:/config
+   - ../../data/lazylibrarian/config:/config
    - ${DATA_ROOT}:/data
   ports:
-   - "${READARR_PORT}:8787"
+   - "${LAZYLIBRARIAN_PORT}:5299"
   restart: unless-stopped
   networks:
    - homelab_net
@@ -262,7 +294,7 @@ services:
    qbittorrent:
     condition: service_healthy
   healthcheck:
-   test: ["CMD", "curl", "-f", "http://localhost:8787/ping"]
+   test: ["CMD", "curl", "-f", "http://localhost:5299"]
    interval: 1m
    timeout: 10s
    retries: 3
@@ -303,7 +335,7 @@ services:
    - DELETE_AFTER_DAYS=365
    - STRICTLY_DELETE_AFTER_DAYS=365
   volumes:
-   - ../../homelab-data/audiobookbay-downloader:/app/data
+   - ../../data/audiobookbay-downloader:/app/data
   restart: unless-stopped
   healthcheck:
    test:
@@ -325,23 +357,6 @@ services:
     reservations:
      cpus: "0.05"
      memory: 128M
-
- # ── FlareSolverr (optional — uncomment to enable) ────────────────────────────
- # Bypasses Cloudflare-protected torrent index pages for Prowlarr.
- # After enabling: Prowlarr → Settings → Indexers → FlareSolverr → host: http://flaresolverr:8191
- # Runs on the real IP (NOT through VPN) — Cloudflare challenges require a real browser fingerprint.
- # Reference: https://github.com/FlareSolverr/FlareSolverr
- # flaresolverr:
- #  image: ghcr.io/flaresolverr/flaresolverr:latest
- #  container_name: flaresolverr
- #  environment:
- #   - LOG_LEVEL=${LOG_LEVEL:-info}
- #   - TZ=Europe/London
- #  ports:
- #   - "20084:8191"   # internal only — no Tailscale/Cloudflare exposure needed
- #  restart: unless-stopped
- #  networks:
- #   - homelab_net
 
 networks:
  homelab_net:

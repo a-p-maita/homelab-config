@@ -7,16 +7,16 @@
 
 ## Confirmed Decisions
 
-| Decision              | Choice                                                                                                                     |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Prowlarr vs Jackett   | **Both**: Prowlarr for \*arr apps, Jackett kept for audiobookbay-downloader                                                |
-| Readarr               | **Yes** — ebooks (epub/mobi/pdf), separate from audiobookbay-downloader audiobooks                                         |
-| Bazarr                | **No**                                                                                                                     |
-| VPN                   | ProtonVPN WireGuard via Gluetun. User has account and can generate WireGuard key.                                          |
-| Arr access            | **Tailscale only** — no Cloudflare tunnel entries for arr services                                                         |
-| Data layout           | **Flat under `homelab-data/`** — `homelab-data/torrents/` and `homelab-data/media/` directly (no intermediate `data/` dir) |
-| Futureproofing        | **`DATA_ROOT` env var** — absolute path in `.env`, change one line for any new server                                      |
-| qbittorrent-downloads | **Empty — remove entirely.** Follow guide.md optimal layout from scratch.                                                  |
+| Decision              | Choice                                                                                   |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| Prowlarr vs Jackett   | **Both**: Prowlarr for \*arr apps, Jackett kept for audiobookbay-downloader              |
+| Readarr               | **Yes** — ebooks (epub/mobi/pdf), separate from audiobookbay-downloader audiobooks       |
+| Bazarr                | **No**                                                                                   |
+| VPN                   | ProtonVPN WireGuard via Gluetun. User has account and can generate WireGuard key.        |
+| Arr access            | **Tailscale only** — no Cloudflare tunnel entries for arr services                       |
+| Data layout           | **Flat under `data/`** — `data/torrents/` and `data/media/` directly under the repo root |
+| Futureproofing        | **`DATA_ROOT` env var** — absolute path in `.env`, change one line for any new server    |
+| qbittorrent-downloads | **Empty — remove entirely.** Follow guide.md optimal layout from scratch.                |
 
 ---
 
@@ -27,11 +27,11 @@ A single variable in `.env` controls where all media/download data lives:
 ```bash
 # .env
 # Absolute path to media+download data root. Change this on server migration.
-# On this server: /home/a-p-maita/homelab-config/homelab-data
-DATA_ROOT=/home/a-p-maita/homelab-config/homelab-data
+# On this server: /home/a-p-maita/homelab-config/data
+DATA_ROOT=/home/a-p-maita/homelab-config/data
 ```
 
-- Service **config** directories use relative paths (e.g. `../../homelab-data/radarr/config:/config`) — they are small and always live next to the repo.
+- Service **config** directories use relative paths (e.g. `../../data/radarr/config:/config`) — they are small and always live next to the repo.
 - Media and download **data** directories use `${DATA_ROOT}` — so moving the media data to a new drive or new server is one variable change.
 - Docker Compose interpolates `${DATA_ROOT}` at runtime from `--env-file .env`.
 
@@ -39,10 +39,10 @@ DATA_ROOT=/home/a-p-maita/homelab-config/homelab-data
 
 ## Section 2 — Directory Structure
 
-### Final layout under `homelab-data/`
+### Final layout under `data/`
 
 ```
-homelab-data/                                ← DATA_ROOT points here (absolute path in .env)
+data/                                ← DATA_ROOT points here (absolute path in .env)
 │
 ├── torrents/                                ← qBittorrent download root
 │   ├── movies/                              ← Radarr download category
@@ -51,9 +51,9 @@ homelab-data/                                ← DATA_ROOT points here (absolute
 │   └── books/                               ← Readarr download category
 │
 ├── media/                                   ← Library root (what Jellyfin/ABS/Navidrome serve)
-│   ├── audiobooks/    ← migrated from homelab-data/audiobooks/ (mv, instant rename)
-│   ├── podcasts/      ← migrated from homelab-data/podcasts/   (mv, instant rename)
-│   ├── music/         ← migrated from homelab-data/music/      (mv, instant rename)
+│   ├── audiobooks/    ← migrated from data/audiobooks/ (mv, instant rename)
+│   ├── podcasts/      ← migrated from data/podcasts/   (mv, instant rename)
+│   ├── music/         ← migrated from data/music/      (mv, instant rename)
 │   ├── movies/        ← new (Radarr imports here)
 │   ├── tv/            ← new (Sonarr imports here)
 │   └── books/         ← new (Readarr imports here)
@@ -97,7 +97,7 @@ homelab-data/                                ← DATA_ROOT points here (absolute
 
 ### Root cause
 
-Audiobookshelf (image: `ghcr.io/advplyr/audiobookshelf`) runs internally as the `node` user (UID 1000 by default). The podcast library requires **write access** to the `/podcasts` mount for episode downloads. The current compose sets **no `PUID`/`PGID`**, so if the host directory `homelab-data/podcasts/` is not owned by UID 1000, downloads silently fail to persist — the episode appears to download in the UI (in-memory), but the file is never written to the volume. After restart, ABS's database references an episode that doesn't exist on disk → "broken".
+Audiobookshelf (image: `ghcr.io/advplyr/audiobookshelf`) runs internally as the `node` user (UID 1000 by default). The podcast library requires **write access** to the `/podcasts` mount for episode downloads. The current compose sets **no `PUID`/`PGID`**, so if the host directory `data/podcasts/` is not owned by UID 1000, downloads silently fail to persist — the episode appears to download in the UI (in-memory), but the file is never written to the volume. After restart, ABS's database references an episode that doesn't exist on disk → "broken".
 
 **Audiobooks work fine** because they are placed in the volume by the user (owned by the host user, world-readable) and ABS only needs to **read** them during scan. Podcasts fail because ABS needs to **write** new episode files.
 
@@ -118,8 +118,8 @@ audiobookshelf:
  ports:
   - "${ABS_PORT}:80"
  volumes:
-  - ../../homelab-data/audiobookshelf/config:/config
-  - ../../homelab-data/audiobookshelf/metadata:/metadata
+  - ../../data/audiobookshelf/config:/config
+  - ../../data/audiobookshelf/metadata:/metadata
   - ${DATA_ROOT}/media/audiobooks:/audiobooks # ← path updated
   - ${DATA_ROOT}/media/podcasts:/podcasts # ← path updated (WRITE access now works)
 ```
@@ -129,7 +129,7 @@ audiobookshelf:
 ```bash
 # Read DATA_ROOT from .env for directory setup
 DATA_ROOT=$(grep -E '^DATA_ROOT=' .env | head -1 | cut -d= -f2- | sed "s/^['\"]//; s/['\"]$//")
-DATA_ROOT="${DATA_ROOT:-$(pwd)/homelab-data}"
+DATA_ROOT="${DATA_ROOT:-$(pwd)/data}"
 PUID=$(grep -E '^PUID=' .env | head -1 | cut -d= -f2-)
 PGID=$(grep -E '^PGID=' .env | head -1 | cut -d= -f2-)
 
@@ -193,7 +193,7 @@ services:
    - WEBUI_ADDRESS=0.0.0.0
    - WEBUI_USERNAME=${QBITTORRENT_WEBUI_USER}
   volumes:
-   - ../../homelab-data/qbittorrent/config:/config
+   - ../../data/qbittorrent/config:/config
    - ${DATA_ROOT}:/data
   ports:
    - "${QBITTORRENT_WEBUI_PORT}:${QBITTORRENT_WEBUI_PORT}"
@@ -229,8 +229,8 @@ services:
    - TZ=Europe/London
    - AUTO_UPDATE=true
   volumes:
-   - ../../homelab-data/jackett/config:/config
-   - ../../homelab-data/jackett/downloads:/downloads
+   - ../../data/jackett/config:/config
+   - ../../data/jackett/downloads:/downloads
   ports:
    - "${JACKETT_PORT}:9117"
   restart: unless-stopped
@@ -262,7 +262,7 @@ services:
    - PGID=${PGID}
    - TZ=Europe/London
   volumes:
-   - ../../homelab-data/prowlarr/config:/config
+   - ../../data/prowlarr/config:/config
   ports:
    - "${PROWLARR_PORT}:9696"
   restart: unless-stopped
@@ -293,7 +293,7 @@ services:
    - PGID=${PGID}
    - TZ=Europe/London
   volumes:
-   - ../../homelab-data/radarr/config:/config
+   - ../../data/radarr/config:/config
    - ${DATA_ROOT}:/data
   ports:
    - "${RADARR_PORT}:7878"
@@ -328,7 +328,7 @@ services:
    - PGID=${PGID}
    - TZ=Europe/London
   volumes:
-   - ../../homelab-data/sonarr/config:/config
+   - ../../data/sonarr/config:/config
    - ${DATA_ROOT}:/data
   ports:
    - "${SONARR_PORT}:8989"
@@ -364,7 +364,7 @@ services:
    - PGID=${PGID}
    - TZ=Europe/London
   volumes:
-   - ../../homelab-data/lidarr/config:/config
+   - ../../data/lidarr/config:/config
    - ${DATA_ROOT}:/data
   ports:
    - "${LIDARR_PORT}:8686"
@@ -401,7 +401,7 @@ services:
    - PGID=${PGID}
    - TZ=Europe/London
   volumes:
-   - ../../homelab-data/readarr/config:/config
+   - ../../data/readarr/config:/config
    - ${DATA_ROOT}:/data
   ports:
    - "${READARR_PORT}:8787"
@@ -453,7 +453,7 @@ services:
    - DELETE_AFTER_DAYS=365
    - STRICTLY_DELETE_AFTER_DAYS=365
   volumes:
-   - ../../homelab-data/audiobookbay-downloader:/app/data
+   - ../../data/audiobookbay-downloader:/app/data
   restart: unless-stopped
   healthcheck:
    test:
@@ -476,22 +476,6 @@ services:
      cpus: "0.05"
      memory: 128M
 
- # ── FlareSolverr (optional — uncomment to enable) ────────────────────────────
- # Bypasses Cloudflare-protected torrent index pages for Prowlarr.
- # After enabling: Prowlarr → Settings → Indexers → FlareSolverr → host: http://flaresolverr:8191
- # Runs on the real IP (NOT through VPN) — Cloudflare challenges require a real browser fingerprint.
- # Reference: https://github.com/FlareSolverr/FlareSolverr
- # flaresolverr:
- #  image: ghcr.io/flaresolverr/flaresolverr:latest
- #  container_name: flaresolverr
- #  environment:
- #   - LOG_LEVEL=${LOG_LEVEL:-info}
- #   - TZ=Europe/London
- #  ports:
- #   - "20084:8191"   # internal only — no Tailscale/Cloudflare exposure needed
- #  restart: unless-stopped
- #  networks:
- #   - homelab_net
 
 networks:
  homelab_net:
@@ -551,7 +535,7 @@ services:
    - "${QBITTORRENT_TCP_PORT}:${QBITTORRENT_TCP_PORT}"
    - "${QBITTORRENT_UDP_PORT}:${QBITTORRENT_UDP_PORT}/udp"
   volumes:
-   - ../../homelab-data/gluetun:/tmp/gluetun
+   - ../../data/gluetun:/tmp/gluetun
    - ../../scripts/update-qbt-port.sh:/scripts/update-qbt-port.sh:ro
   networks:
    homelab_net:
@@ -683,8 +667,8 @@ audiobookshelf:
  ports:
   - "${ABS_PORT}:80"
  volumes:
-  - ../../homelab-data/audiobookshelf/config:/config
-  - ../../homelab-data/audiobookshelf/metadata:/metadata
+  - ../../data/audiobookshelf/config:/config
+  - ../../data/audiobookshelf/metadata:/metadata
   - ${DATA_ROOT}/media/audiobooks:/audiobooks # ← updated host path (container path unchanged)
   - ${DATA_ROOT}/media/podcasts:/podcasts # ← updated host path (container path unchanged)
  # ... (rest unchanged)
@@ -692,7 +676,7 @@ audiobookshelf:
 navidrome:
  # ...
  volumes:
-  - ../../homelab-data/navidrome/data:/data
+  - ../../data/navidrome/data:/data
   - ${DATA_ROOT}/media/music:/music:ro # ← updated host path (container path unchanged)
 
 octo-fiesta:
@@ -711,8 +695,8 @@ Add media library mounts to Jellyfin. User configures libraries via wizard (path
 jellyfin:
  # ...
  volumes:
-  - ../../homelab-data/jellyfin/config:/config
-  - ../../homelab-data/jellyfin/cache:/cache
+  - ../../data/jellyfin/config:/config
+  - ../../data/jellyfin/cache:/cache
   - ${DATA_ROOT}/media/movies:/data/movies:ro # ← NEW
   - ${DATA_ROOT}/media/tv:/data/tv:ro # ← NEW
   # Optional: - ${DATA_ROOT}/media/music:/data/music:ro
@@ -726,13 +710,13 @@ jellyfin:
 
 ```bash
 # ─── Data root (absolute path — change this for server migrations) ─────────────
-DATA_ROOT=/home/a-p-maita/homelab-config/homelab-data
+DATA_ROOT=/home/a-p-maita/homelab-config/data
 
 # ─── *arr stack ──────────────────────────────────────────────────────────────
-PROWLARR_PORT=20083
-RADARR_PORT=20080
-SONARR_PORT=20081
-READARR_PORT=20082
+PROWLARR_PORT=20055
+RADARR_PORT=20056
+SONARR_PORT=20057
+READARR_PORT=20058
 
 # ─── Gluetun / ProtonVPN (optional — set USE_VPN=true to activate) ────────────
 USE_VPN=false
@@ -752,13 +736,13 @@ HEALTH_VPN_DURATION_INITIAL=120s
 | 20050 | `QBITTORRENT_WEBUI_PORT` | qBittorrent WebUI       |
 | 20051 | `QBITTORRENT_TCP_PORT`   | qBittorrent TCP         |
 | 20052 | `QBITTORRENT_UDP_PORT`   | qBittorrent UDP         |
-| 20060 | `ABB_PORT`               | audiobookbay-downloader |
-| 20065 | `JACKETT_PORT`           | Jackett                 |
-| 20073 | `LIDARR_PORT`            | Lidarr                  |
-| 20080 | `RADARR_PORT`            | Radarr (new)            |
-| 20081 | `SONARR_PORT`            | Sonarr (new)            |
-| 20082 | `READARR_PORT`           | Readarr (new)           |
-| 20083 | `PROWLARR_PORT`          | Prowlarr (new)          |
+| 20053 | `ABB_PORT`               | audiobookbay-downloader |
+| 20054 | `JACKETT_PORT`           | Jackett                 |
+| 20055 | `PROWLARR_PORT`          | Prowlarr                |
+| 20056 | `RADARR_PORT`            | Radarr                  |
+| 20057 | `SONARR_PORT`            | Sonarr                  |
+| 20058 | `READARR_PORT`           | Readarr                 |
+| 20059 | `LIDARR_PORT`            | Lidarr                  |
 
 ---
 
@@ -776,7 +760,7 @@ Sanitised template with all secrets replaced by `changeme_*` placeholders. Track
 
    ```bash
    DATA_ROOT=$(grep -E '^DATA_ROOT=' .env | head -1 | cut -d= -f2- | sed "s/^['\"]//; s/['\"]$//")
-   DATA_ROOT="${DATA_ROOT:-$(pwd)/homelab-data}"
+   DATA_ROOT="${DATA_ROOT:-$(pwd)/data}"
    PUID=$(grep -E '^PUID=' .env | head -1 | cut -d= -f2-)
    PGID=$(grep -E '^PGID=' .env | head -1 | cut -d= -f2-)
    ```
@@ -785,18 +769,18 @@ Sanitised template with all secrets replaced by `changeme_*` placeholders. Track
 
    ```bash
    # Migrate audiobooks
-   if [ -d "./homelab-data/audiobooks" ] && [ ! -L "./homelab-data/audiobooks" ]; then
+   if [ -d "./data/audiobooks" ] && [ ! -L "./data/audiobooks" ]; then
      mkdir -p "${DATA_ROOT}/media/audiobooks"
-     if [ "$(ls -A ./homelab-data/audiobooks 2>/dev/null)" ]; then
-       mv ./homelab-data/audiobooks/* "${DATA_ROOT}/media/audiobooks/" 2>/dev/null || true
+     if [ "$(ls -A ./data/audiobooks 2>/dev/null)" ]; then
+       mv ./data/audiobooks/* "${DATA_ROOT}/media/audiobooks/" 2>/dev/null || true
      fi
-     rmdir ./homelab-data/audiobooks 2>/dev/null || true
-     echo "Migrated homelab-data/audiobooks → ${DATA_ROOT}/media/audiobooks"
+     rmdir ./data/audiobooks 2>/dev/null || true
+     echo "Migrated data/audiobooks → ${DATA_ROOT}/media/audiobooks"
    fi
    # Same pattern for music → media/music, podcasts → media/podcasts
 
    # Remove empty qbittorrent-downloads dir (deprecated — no data in it)
-   rmdir ./homelab-data/qbittorrent-downloads 2>/dev/null || true
+   rmdir ./data/qbittorrent-downloads 2>/dev/null || true
    ```
 
 3. **Updated `mkdir -p` block** — new dirs, removed old:
@@ -813,11 +797,11 @@ Sanitised template with all secrets replaced by `changeme_*` placeholders. Track
      "${DATA_ROOT}/media/movies" \
      "${DATA_ROOT}/media/tv" \
      "${DATA_ROOT}/media/books" \
-     ./homelab-data/prowlarr/config \
-     ./homelab-data/radarr/config \
-     ./homelab-data/sonarr/config \
-     ./homelab-data/readarr/config \
-     ./homelab-data/gluetun \
+     ./data/prowlarr/config \
+     ./data/radarr/config \
+     ./data/sonarr/config \
+     ./data/readarr/config \
+     ./data/gluetun \
      # ... all existing dirs (remove: audiobooks, music, podcasts, qbittorrent-downloads)
    ```
 
@@ -832,11 +816,11 @@ Sanitised template with all secrets replaced by `changeme_*` placeholders. Track
 
 5. **Update existing qBittorrent config** (handles the common case where qBittorrent has already run):
 
-   > **Why this is needed**: The qBittorrent config at `homelab-data/qbittorrent/config/qBittorrent/qBittorrent.conf` already exists with `/downloads/` paths. The `if [ ! -f ... ]` seed guard will be skipped. Similarly, `categories.json` already exists with the old `abb-downloader` entry only. Both must be updated explicitly.
+   > **Why this is needed**: The qBittorrent config at `data/qbittorrent/config/qBittorrent/qBittorrent.conf` already exists with `/downloads/` paths. The `if [ ! -f ... ]` seed guard will be skipped. Similarly, `categories.json` already exists with the old `abb-downloader` entry only. Both must be updated explicitly.
 
    ```bash
-   QBT_CONF="./homelab-data/qbittorrent/config/qBittorrent/qBittorrent.conf"
-   QBT_CAT="./homelab-data/qbittorrent/config/qBittorrent/categories.json"
+   QBT_CONF="./data/qbittorrent/config/qBittorrent/qBittorrent.conf"
+   QBT_CAT="./data/qbittorrent/config/qBittorrent/categories.json"
 
    # Update save paths in existing qBittorrent.conf (idempotent — safe to run multiple times)
    if [ -f "$QBT_CONF" ]; then
@@ -857,16 +841,16 @@ Sanitised template with all secrets replaced by `changeme_*` placeholders. Track
 6. **Seed qBittorrent config** (for fresh installs only — guards already-updated files):
 
    ```bash
-   if [ ! -f ./homelab-data/qbittorrent/config/qBittorrent/qBittorrent.conf ]; then
-     mkdir -p ./homelab-data/qbittorrent/config/qBittorrent
+   if [ ! -f ./data/qbittorrent/config/qBittorrent/qBittorrent.conf ]; then
+     mkdir -p ./data/qbittorrent/config/qBittorrent
      cp config-templates/qbittorrent/qBittorrent.conf \
-        ./homelab-data/qbittorrent/config/qBittorrent/qBittorrent.conf
+        ./data/qbittorrent/config/qBittorrent/qBittorrent.conf
      echo "Seeded qBittorrent.conf from config-templates."
    fi
-   if [ ! -f ./homelab-data/qbittorrent/config/qBittorrent/categories.json ]; then
-     mkdir -p ./homelab-data/qbittorrent/config/qBittorrent
+   if [ ! -f ./data/qbittorrent/config/qBittorrent/categories.json ]; then
+     mkdir -p ./data/qbittorrent/config/qBittorrent
      cp config-templates/qbittorrent/categories.json \
-        ./homelab-data/qbittorrent/config/qBittorrent/categories.json
+        ./data/qbittorrent/config/qBittorrent/categories.json
      echo "Seeded qBittorrent categories.json from config-templates."
    fi
    ```
@@ -888,7 +872,7 @@ Sanitised template with all secrets replaced by `changeme_*` placeholders. Track
 8. **Stack order** (arr after core, before media):
    core → arr → media → productivity → immich → monitoring → documents → tools → personal → entertainment → home
 
-9. **Remove** `lidarr/config` mkdir (still exists via arr's qbittorrent-downloads removal); ensure `./homelab-data/lidarr/config` is still in the mkdir block (Lidarr moved stacks but dir stays).
+9. **Remove** `lidarr/config` mkdir (still exists via arr's qbittorrent-downloads removal); ensure `./data/lidarr/config` is still in the mkdir block (Lidarr moved stacks but dir stays).
 
 ---
 
@@ -979,25 +963,25 @@ Downloads\TempPath=/data/torrents/incomplete/
 - Media:
    # ... existing entries ...
    - Prowlarr:
-      href: http://100.106.40.5:20083
+      href: http://100.106.40.5:20055
       description: Indexer manager for *arr apps
       icon: prowlarr.png
       server: my-docker
       container: prowlarr
    - Radarr:
-      href: http://100.106.40.5:20080
+      href: http://100.106.40.5:20056
       description: Movie automation
       icon: radarr.png
       server: my-docker
       container: radarr
    - Sonarr:
-      href: http://100.106.40.5:20081
+      href: http://100.106.40.5:20057
       description: TV show automation
       icon: sonarr.png
       server: my-docker
       container: sonarr
    - Readarr:
-      href: http://100.106.40.5:20082
+      href: http://100.106.40.5:20058
       description: Ebook automation
       icon: readarr.png
       server: my-docker
@@ -1038,7 +1022,7 @@ Add new section: **"\*arr Stack Initial Configuration"** covering:
 
 ### Prowlarr (configure first — syncs indexers to all apps)
 
-1. Open `http://100.106.40.5:20083`
+1. Open `http://100.106.40.5:20055`
 2. Add indexers: Indexers → Add Indexer (add public indexers like RARBG, 1337x, or private trackers)
 3. Connect arr apps: Settings → Apps → Add Application:
    - Add Radarr: host=`radarr`, port=`7878`, API key from Radarr Settings → General
@@ -1123,7 +1107,7 @@ Add arr stack rows to the services table. Mark arr services as "Tailscale only".
 Current `.gitignore` is correct as-is:
 
 ```gitignore
-homelab-data/        # covers homelab-data/torrents/, homelab-data/media/ — correct
+data/        # covers data/torrents/, data/media/ — correct
 .env                 # sensitive credentials — correct
 .DS_Store
 *.log

@@ -28,12 +28,12 @@ services:
    - PGID=${PGID}
    - TZ=Europe/London
   volumes:
-   - ../../homelab-data/jellyfin/config:/config
-   - ../../homelab-data/jellyfin/cache:/cache
+   - ../../data/jellyfin/config:/config
+   - ../../data/jellyfin/cache:/cache
    - ${DATA_ROOT}/media/movies:/data/movies:ro
    - ${DATA_ROOT}/media/tv:/data/tv:ro
    # Add media mounts below as needed, e.g.:
-   # - ../../homelab-data/music:/data/music:ro
+   # - ../../data/music:/data/music:ro
    # - /path/to/movies:/data/movies:ro
    # - /path/to/tv:/data/tv:ro
   networks:
@@ -68,7 +68,7 @@ services:
  #     POSTGRES_PASSWORD: ${PEERTUBE_DB_PASS}
  #     POSTGRES_DB: peertube
  #   volumes:
- #     - ../../homelab-data/peertube/db:/var/lib/postgresql/data
+ #     - ../../data/peertube/db:/var/lib/postgresql/data
  #   networks:
  #     - entertainment_net
  #
@@ -99,8 +99,8 @@ services:
  #     PEERTUBE_ADMIN_EMAIL: ${PEERTUBE_ADMIN_EMAIL}
  #     PEERTUBE_SECRET: ${PEERTUBE_SECRET}
  #   volumes:
- #     - ../../homelab-data/peertube/data:/data
- #     - ../../homelab-data/peertube/config:/config
+ #     - ../../data/peertube/data:/data
+ #     - ../../data/peertube/config:/config
  #   depends_on:
  #     - peertube-postgres
  #     - peertube-redis

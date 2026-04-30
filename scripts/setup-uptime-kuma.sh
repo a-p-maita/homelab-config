@@ -132,10 +132,17 @@ MONITORS = [
         "interval": 60,
     },
     {
-        "name":     "Readarr",
+        "name":     "LazyLibrarian",
         "type":     MonitorType.HTTP,
-        "url":      "http://readarr:8787/ping",
+        "url":      "http://lazylibrarian:5299",
         "interval": 60,
+    },
+    {
+        # Byparr (FlareSolverr successor) — root redirects to /docs but returns 200
+        "name":     "Byparr",
+        "type":     MonitorType.HTTP,
+        "url":      "http://byparr:8191/",
+        "interval": 120,
     },
     {
         "name":     "Octo-Fiesta",
@@ -314,6 +321,7 @@ DELETE_MONITORS = [
     "spotDL", "SpotDL", "Ryot", "Ryot (external)",
     "Soulseek (slskd)", "Paperless-GPT", "Code Server", "LibreOffice",
     "MeshCentral", "LubeLogger", "Monica", "World Monitor", "RomM",
+    "Readarr",
 ]
 
 api = UptimeKumaApi("http://uptime-kuma:3001")

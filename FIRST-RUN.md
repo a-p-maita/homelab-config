@@ -90,7 +90,7 @@ Quick reference:
 
 ## 8. Paperless-NGX — already set up
 
-Already completed. Documents are consumed from `homelab-data/paperless/consume/`.
+Already completed. Documents are consumed from `data/paperless/consume/`.
 
 ---
 
@@ -120,14 +120,14 @@ If you already started without setting a password, the `settings.yml` is seeded 
 | Actual Budget  | Creates a local vault on first open — no account needed. If you see a SharedArrayBuffer error, clear browser cache (server already sends correct COOP/COEP headers). Accessed at `http://localhost:20316` (not in Cloudflare tunnel) |
 | Feishin        | Pre-locked to Navidrome — just use Navidrome credentials                                                                                                                                                                             |
 | Octo-Fiesta    | No login — configured entirely via `.env`                                                                                                                                                                                            |
-| Kiwix          | Add ZIM files to `homelab-data/kiwix/` — auto-discovered                                                                                                                                                                             |
+| Kiwix          | Add ZIM files to `data/kiwix/` — auto-discovered                                                                                                                                                                                     |
 | Stirling PDF   | Login enabled. Credentials set via `STIRLING_PDF_USERNAME`/`STIRLING_PDF_PASSWORD` in `.env`                                                                                                                                         |
 
 ---
 
 ## 10. \*arr Stack — initial configuration
 
-Services: **Prowlarr**, **Radarr**, **Sonarr**, **Readarr**, **Lidarr**, **Jackett** (legacy), **qBittorrent**, **Audiobookbay Downloader**
+Services: **Prowlarr**, **Radarr**, **Sonarr**, **LazyLibrarian**, **Lidarr**, **Byparr**, **Jackett** (legacy), **qBittorrent**, **Audiobookbay Downloader**
 
 All arr services are Tailscale-only — access via `http://100.106.40.5:PORT`.
 
@@ -173,12 +173,12 @@ If categories still don't appear, add them manually: right-click any entry in th
 
 Before setting up Prowlarr, collect the API key from each app:
 
-| App     | URL                         | Where to find API key                   |
-| ------- | --------------------------- | --------------------------------------- |
-| Radarr  | `http://100.106.40.5:20080` | Settings → General → Security → API Key |
-| Sonarr  | `http://100.106.40.5:20081` | Settings → General → Security → API Key |
-| Readarr | `http://100.106.40.5:20082` | Settings → General → Security → API Key |
-| Lidarr  | `http://100.106.40.5:20073` | Settings → General → Security → API Key |
+| App           | URL                         | Where to find API key                   |
+| ------------- | --------------------------- | --------------------------------------- |
+| Radarr        | `http://100.106.40.5:20056` | Settings → General → Security → API Key |
+| Sonarr        | `http://100.106.40.5:20057` | Settings → General → Security → API Key |
+| LazyLibrarian | `http://100.106.40.5:20058` | Settings → Interface → API key          |
+| Lidarr        | `http://100.106.40.5:20059` | Settings → General → Security → API Key |
 
 Each app shows a setup wizard on first visit — complete it (set UI language, etc.) to reach the Settings page.
 
@@ -188,7 +188,7 @@ Each app shows a setup wizard on first visit — complete it (set UI language, e
 
 Do this for each app before connecting Prowlarr, so indexers sync correctly.
 
-#### Radarr (movies) — `http://100.106.40.5:20080`
+#### Radarr (movies) — `http://100.106.40.5:20056`
 
 1. **Settings → Media Management**
    - Enable: ☑ Rename Movies
@@ -201,21 +201,26 @@ Do this for each app before connecting Prowlarr, so indexers sync correctly.
    - Test → Save
 3. **Settings → General → copy your API key** (needed for Prowlarr)
 
-#### Sonarr (TV) — `http://100.106.40.5:20081`
+#### Sonarr (TV) — `http://100.106.40.5:20057`
 
 1. **Settings → Media Management → Root Folders** → Add `/data/media/tv`
 2. **Settings → Download Clients → + Add → qBittorrent**
    - Host: `qbittorrent`, Port: `20050`, credentials from `.env`, Category: `tv`
 3. Copy API key from Settings → General
 
-#### Readarr (books/ebooks) — `http://100.106.40.5:20082`
+#### LazyLibrarian (books/ebooks/magazines) — `http://100.106.40.5:20058`
 
-1. **Settings → Media Management → Root Folders** → Add `/data/media/books`
-2. **Settings → Download Clients → + Add → qBittorrent**
-   - Host: `qbittorrent`, Port: `20050`, credentials from `.env`, Category: `books`
-3. Copy API key from Settings → General
+1. **Config → Processing → Book/Author folder** — set to `/data/media/books`
+2. **Config → Downloaders → qBittorrent:**
+   - Host: `qbittorrent`, Port: `20050`, Username/Password from `.env`, Category: `books`
+   - Test connection → Save
+3. **Config → Providers → Torznab — add Prowlarr as indexer source:**
+   - URL: `http://prowlarr:9696/{PROWLARR_API_KEY}/api`
+   - Prowlarr API key: from Prowlarr → Settings → General
+   - Test → Save
+4. Copy API key from **Settings → Interface → API key** (needed for Step 3 above)
 
-#### Lidarr (music) — `http://100.106.40.5:20073`
+#### Lidarr (music) — `http://100.106.40.5:20059`
 
 1. **Settings → Media Management → Root Folders** → Add `/data/media/music`
 2. **Settings → Download Clients → + Add → qBittorrent**
@@ -226,7 +231,7 @@ Do this for each app before connecting Prowlarr, so indexers sync correctly.
 
 ### Step 4: Prowlarr — add indexers and connect apps
 
-1. Open `http://100.106.40.5:20083`
+1. Open `http://100.106.40.5:20055`
 2. Create your admin account on first visit
 
 #### Add your \*arr apps to Prowlarr
@@ -237,19 +242,20 @@ This makes Prowlarr push indexers to each app automatically — you only manage 
 
 For each app below, the pattern is the same:
 
-- Click the app icon (Radarr / Sonarr / Readarr / Lidarr)
+- Click the app icon (Radarr / Sonarr / Lidarr)
 - **Prowlarr Server:** `http://prowlarr:9696`
 - **App URL:** the internal Docker URL (e.g. `http://radarr:7878`)
 - **API Key:** paste from the app's Settings → General
 - Sync Level: **Full Sync** (Prowlarr adds/removes indexers in the app automatically)
 - Click **Test** — you should see a green tick — then **Save**
 
-| App     | App URL               | Port  |
-| ------- | --------------------- | ----- |
-| Radarr  | `http://radarr:7878`  | 20080 |
-| Sonarr  | `http://sonarr:8989`  | 20081 |
-| Readarr | `http://readarr:8787` | 20082 |
-| Lidarr  | `http://lidarr:8686`  | 20073 |
+| App    | App URL              | Port  |
+| ------ | -------------------- | ----- |
+| Radarr | `http://radarr:7878` | 20056 |
+| Sonarr | `http://sonarr:8989` | 20057 |
+| Lidarr | `http://lidarr:8686` | 20059 |
+
+> **LazyLibrarian** connects to Prowlarr differently — via Torznab, not the native app integration. See Step 3 → LazyLibrarian setup above.
 
 #### Add indexers
 
@@ -281,11 +287,22 @@ If the list is empty, go back to Prowlarr → Settings → Apps → click the ap
 
 Jackett is kept specifically because Audiobookbay Downloader only supports Jackett, not Prowlarr.
 The API key is pre-configured (`JACKETT_API_KEY` in `.env` and `ServerConfig.json` template).
-Open `http://100.106.40.5:20065` to add the `audiobookbay` tracker if not already present.
+Open `http://100.106.40.5:20054` to add the `audiobookbay` tracker if not already present.
+
+#### Byparr (Cloudflare anti-bot bypass)
+
+Byparr is a FlareSolverr-compatible service that lets Prowlarr access Cloudflare-protected indexers.
+Once running, register it in Prowlarr:
+
+1. **Settings → Indexers → FlareSolverr**
+2. Set URL to `http://byparr:8191`
+3. Test → Save
+
+Then when adding a Cloudflare-protected indexer in Prowlarr, set **FlareSolverr Tag** to select the Byparr instance.
 
 ---
 
-### Step 5: Audiobookbay Downloader — `http://100.106.40.5:20060`
+### Step 5: Audiobookbay Downloader — `http://100.106.40.5:20053`
 
 1. Go to **Settings** tab
 2. Verify the Jackett connection shows green
@@ -301,6 +318,43 @@ Open `http://100.106.40.5:20065` to add the `audiobookbay` tracker if not alread
 3. Watch qBittorrent — the torrent should appear in the `movies` category
 4. Once complete, Radarr imports it to `/data/media/movies/` (rename + hardlink — instant)
 5. Jellyfin: Libraries → scan for it
+
+---
+
+## 12. Homepage arr widgets — add API keys after first arr start
+
+The Homepage dashboard has live stat widgets for each \*arr service and qBittorrent, but they need API keys that are only generated after each service first starts.
+
+**Do this after the arr stack has been running at least once.**
+
+For each service, open the UI and copy the API key from **Settings → General**:
+
+| Service  | URL                         | `.env` variable    |
+| -------- | --------------------------- | ------------------ |
+| Radarr   | `http://100.106.40.5:20056` | `RADARR_API_KEY`   |
+| Sonarr   | `http://100.106.40.5:20057` | `SONARR_API_KEY`   |
+| Lidarr   | `http://100.106.40.5:20059` | `LIDARR_API_KEY`   |
+| Prowlarr | `http://100.106.40.5:20055` | `PROWLARR_API_KEY` |
+
+> **LazyLibrarian** has no Homepage widget — no API key needed here.
+> **Byparr** has no API key authentication.
+
+Then fill them in `.env`:
+
+```env
+RADARR_API_KEY=your_32char_key_here
+SONARR_API_KEY=your_32char_key_here
+LIDARR_API_KEY=your_32char_key_here
+PROWLARR_API_KEY=your_32char_key_here
+```
+
+Then restart the monitoring stack to pick up the new env vars:
+
+```bash
+docker compose --env-file .env -f dockerfiles/monitoring/compose.yaml up -d
+```
+
+qBittorrent widget uses `QBITTORRENT_WEBUI_USER` / `QBITTORRENT_WEBUI_PASS` from `.env` — no extra step needed.
 
 ---
 

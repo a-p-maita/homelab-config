@@ -44,7 +44,7 @@ services:
    - "${QBITTORRENT_TCP_PORT}:${QBITTORRENT_TCP_PORT}"
    - "${QBITTORRENT_UDP_PORT}:${QBITTORRENT_UDP_PORT}/udp"
   volumes:
-   - ../../homelab-data/gluetun:/tmp/gluetun
+   - ../../data/gluetun:/tmp/gluetun
    - ../../scripts/update-qbt-port.sh:/scripts/update-qbt-port.sh:ro
   networks:
    homelab_net:

@@ -1,5 +1,6 @@
 # Ignore all persistent and sensitive data
 homelab-data/
+data/
 .env
 .DS_Store
 *.log

@@ -33,7 +33,7 @@ services:
    - PUID=${PUID}
    - PGID=${PGID}
   volumes:
-   - ../../homelab-data/mealie:/app/data
+   - ../../data/mealie:/app/data
   networks:
    - homelab_net
   healthcheck:

@@ -2,7 +2,7 @@ A homelab setup to repurpose my old laptop.
 
 Uses a variety of microservices that I deem essential but will eventually add onto.
 
-Depends on/creates another directory one step up called `homelab-data/` which holds all the permanent data being written like images, audiobooks and databases (all gitignored). Ports are set to high, non-standard values to avoid errors.
+Depends on/creates another directory one step up called `data/` which holds all the permanent data being written like images, audiobooks and databases (all gitignored). Ports are set to high, non-standard values to avoid errors.
 
 ## What's running
 
@@ -117,23 +117,23 @@ A few services need config files seeded before first start, or they'll ignore se
 
 ```bash
 # qBittorrent
-mkdir -p homelab-data/qbittorrent/config/qBittorrent
-cp config-templates/qbittorrent/qBittorrent.conf homelab-data/qbittorrent/config/qBittorrent/qBittorrent.conf
-cp config-templates/qbittorrent/categories.json  homelab-data/qbittorrent/config/qBittorrent/categories.json
+mkdir -p data/qbittorrent/config/qBittorrent
+cp config-templates/qbittorrent/qBittorrent.conf data/qbittorrent/config/qBittorrent/qBittorrent.conf
+cp config-templates/qbittorrent/categories.json  data/qbittorrent/config/qBittorrent/categories.json
 # Set WebUI\Username in the .conf. Password hash is written automatically on first login.
 
 # Jackett
-mkdir -p homelab-data/jackett/config/Jackett
-cp config-templates/jackett/ServerConfig.json homelab-data/jackett/config/Jackett/ServerConfig.json
+mkdir -p data/jackett/config/Jackett
+cp config-templates/jackett/ServerConfig.json data/jackett/config/Jackett/ServerConfig.json
 # Set APIKey in ServerConfig.json to match JACKETT_API_KEY in your .env.
 
 ```
 
 The following templates are seeded automatically by `up-all.sh` on first run (only if the file doesn't already exist):
 
-- `config-templates/homepage/` → `homelab-data/homepage/config/` (services, settings, docker, widgets, bookmarks)
-- `config-templates/stirling-pdf/settings.yml` → `homelab-data/stirling-pdf/configs/settings.yml`
-- `config-templates/crosswatch/config.json` → `homelab-data/crosswatch/config.json`
+- `config-templates/homepage/` → `data/homepage/config/` (services, settings, docker, widgets, bookmarks)
+- `config-templates/stirling-pdf/settings.yml` → `data/stirling-pdf/configs/settings.yml`
+- `config-templates/crosswatch/config.json` → `data/crosswatch/config.json`
 
 Then bring everything up:
 
@@ -183,7 +183,7 @@ After `up-all.sh`, the music services need one-time setup:
 | --------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Navidrome**   | `:20070` | Create your admin account on first visit                                                                                                                                                                                                        |
 | **Octo-Fiesta** | `:20076` | Point your Subsonic clients here instead of Navidrome to enable transparent hi-res downloads. Configure the music provider via `OCTOFIESTA_MUSIC_SERVICE` in `.env` (default: SquidWTF — no credentials needed)                                 |
-| **Lidarr**      | `:20073` | Complete the setup wizard. Add Prowlarr as indexer sync source (see FIRST-RUN.md §10). Add qBittorrent as download client (`http://qbittorrent:20050`, credentials from `.env`, category `music`). Set music root folder to `/data/media/music` |
+| **Lidarr**      | `:20059` | Complete the setup wizard. Add Prowlarr as indexer sync source (see FIRST-RUN.md §10). Add qBittorrent as download client (`http://qbittorrent:20050`, credentials from `.env`, category `music`). Set music root folder to `/data/media/music` |
 
 **Feishin** (`:20072`) is pre-locked to Navidrome — just log in with your Navidrome credentials.
 

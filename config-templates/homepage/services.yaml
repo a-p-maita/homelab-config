@@ -96,35 +96,59 @@
       server: my-docker
       container: feishin
    - Lidarr:
-      href: http://100.106.40.5:20073
+      href: http://100.106.40.5:20059
       description: Music collection manager
       icon: lidarr.png
       server: my-docker
       container: lidarr
+      widget:
+       type: lidarr
+       url: http://lidarr:8686
+       key: "{{HOMEPAGE_VAR_LIDARR_API_KEY}}"
    - Prowlarr:
-      href: http://100.106.40.5:20083
+      href: http://100.106.40.5:20055
       description: Indexer manager for all *arr apps
       icon: prowlarr.png
       server: my-docker
       container: prowlarr
+      widget:
+       type: prowlarr
+       url: http://prowlarr:9696
+       key: "{{HOMEPAGE_VAR_PROWLARR_API_KEY}}"
    - Radarr:
-      href: http://100.106.40.5:20080
+      href: http://100.106.40.5:20056
       description: Movie collection manager
       icon: radarr.png
       server: my-docker
       container: radarr
+      widget:
+       type: radarr
+       url: http://radarr:7878
+       key: "{{HOMEPAGE_VAR_RADARR_API_KEY}}"
+       enableQueue: true
    - Sonarr:
-      href: http://100.106.40.5:20081
+      href: http://100.106.40.5:20057
       description: TV series collection manager
       icon: sonarr.png
       server: my-docker
       container: sonarr
-   - Readarr:
-      href: http://100.106.40.5:20082
-      description: Book/ebook collection manager
-      icon: readarr.png
+      widget:
+       type: sonarr
+       url: http://sonarr:8989
+       key: "{{HOMEPAGE_VAR_SONARR_API_KEY}}"
+       enableQueue: true
+   - LazyLibrarian:
+      href: http://100.106.40.5:20058
+      description: Book/ebook/magazine manager
+      icon: mdi-book-open-page-variant
       server: my-docker
-      container: readarr
+      container: lazylibrarian
+   - Byparr:
+      href: http://100.106.40.5:20060
+      description: Cloudflare anti-bot bypass (FlareSolverr successor)
+      icon: mdi-shield-check
+      server: my-docker
+      container: byparr
    - Octo-Fiesta:
       href: http://100.106.40.5:20076
       description: Subsonic proxy with hi-res streaming
@@ -137,14 +161,20 @@
       icon: qbittorrent.png
       server: my-docker
       container: qbittorrent
+      widget:
+       type: qbittorrent
+       url: http://qbittorrent:20050
+       username: "{{HOMEPAGE_VAR_QBT_USER}}"
+       password: "{{HOMEPAGE_VAR_QBT_PASS}}"
+       enableLeechProgress: true
    - Audiobookbay:
-      href: http://100.106.40.5:20060
+      href: http://100.106.40.5:20053
       description: Audiobook downloader
       icon: mdi-book-download
       server: my-docker
       container: audiobookbay-downloader
    - Jackett:
-      href: http://100.106.40.5:20065
+      href: http://100.106.40.5:20054
       description: Torrent indexer proxy (legacy — use Prowlarr for new indexers)
       icon: jackett.png
       server: my-docker

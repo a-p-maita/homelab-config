@@ -6,7 +6,7 @@ name: documents
 # Setup notes:
 #   paperless-ngx  → AUTOMATED. Superuser created from env vars on first start.
 #   stirling-pdf   → AUTOMATED. Login enabled. Set STIRLING_PDF_PASSWORD in .env.
-#   kiwix          → AUTOMATED. Drop .zim files into homelab-data/kiwix/ and
+#   kiwix          → AUTOMATED. Drop .zim files into data/kiwix/ and
 #                    restart; each .zim becomes a library entry.
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -17,7 +17,7 @@ services:
   container_name: paperless-redis
   restart: unless-stopped
   volumes:
-   - ../../homelab-data/paperless/redis:/data
+   - ../../data/paperless/redis:/data
   networks:
    - documents_net
   healthcheck:
@@ -40,7 +40,7 @@ services:
    - POSTGRES_PASSWORD=${PAPERLESS_DB_PASS}
    - POSTGRES_DB=paperless
   volumes:
-   - ../../homelab-data/paperless/db:/var/lib/postgresql/data
+   - ../../data/paperless/db:/var/lib/postgresql/data
   networks:
    - documents_net
   healthcheck:
@@ -86,10 +86,10 @@ services:
    - USERMAP_UID=${PUID}
    - USERMAP_GID=${PGID}
   volumes:
-   - ../../homelab-data/paperless/data:/usr/src/paperless/data
-   - ../../homelab-data/paperless/media:/usr/src/paperless/media
-   - ../../homelab-data/paperless/consume:/usr/src/paperless/consume
-   - ../../homelab-data/paperless/export:/usr/src/paperless/export
+   - ../../data/paperless/data:/usr/src/paperless/data
+   - ../../data/paperless/media:/usr/src/paperless/media
+   - ../../data/paperless/consume:/usr/src/paperless/consume
+   - ../../data/paperless/export:/usr/src/paperless/export
   networks:
    - homelab_net
    - documents_net
@@ -117,8 +117,8 @@ services:
   ports:
    - "${STIRLING_PDF_PORT}:8080"
   volumes:
-   - ../../homelab-data/stirling-pdf/configs:/configs
-   - ../../homelab-data/stirling-pdf/logs:/logs
+   - ../../data/stirling-pdf/configs:/configs
+   - ../../data/stirling-pdf/logs:/logs
   environment:
    # Security: login enabled, set initial credentials before first start
    # or override via env in .env: SECURITY_INITIALLOGIN_USERNAME / SECURITY_INITIALLOGIN_PASSWORD
@@ -143,7 +143,7 @@ services:
      memory: 512M
 
  # ── Kiwix ───────────────────────────────────────────────────────────────────
- # Drop .zim files into homelab-data/kiwix/ — they are served automatically.
+ # Drop .zim files into data/kiwix/ — they are served automatically.
  # Find ZIM files at: https://library.kiwix.org
  # kiwix-serve exits when there are no ZIM files in /data (expected behaviour).
  # To start kiwix after adding ZIM files:
@@ -157,7 +157,7 @@ services:
   ports:
    - "${KIWIX_PORT}:8080"
   volumes:
-   - ../../homelab-data/kiwix:/data
+   - ../../data/kiwix:/data
   # Directory mode — serves all .zim files in /data directly (no library.xml needed)
   command: "--port 8080 /data"
   networks:

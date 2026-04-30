@@ -18,8 +18,8 @@ services:
   ports:
    - "${ABS_PORT}:80"
   volumes:
-   - ../../homelab-data/audiobookshelf/config:/config
-   - ../../homelab-data/audiobookshelf/metadata:/metadata
+   - ../../data/audiobookshelf/config:/config
+   - ../../data/audiobookshelf/metadata:/metadata
    - ${DATA_ROOT}/media/audiobooks:/audiobooks
    - ${DATA_ROOT}/media/podcasts:/podcasts
   restart: unless-stopped
@@ -64,7 +64,7 @@ services:
    # then restart: docker compose -f dockerfiles/media/compose.yaml restart yamtrack
    - REGISTRATION=${YAMTRACK_REGISTRATION:-True}
   volumes:
-   - ../../homelab-data/yamtrack:/yamtrack/db
+   - ../../data/yamtrack:/yamtrack/db
   ports:
    - "${YAMTRACK_PORT}:8000"
   networks:
@@ -93,7 +93,7 @@ services:
   container_name: yamtrack-redis
   restart: unless-stopped
   volumes:
-   - ../../homelab-data/yamtrack/redis:/data
+   - ../../data/yamtrack/redis:/data
   networks:
    - homelab_net
   healthcheck:
@@ -122,7 +122,7 @@ services:
    - ND_SESSIONTIMEOUT=72h
    - ND_BASEURL=
   volumes:
-   - ../../homelab-data/navidrome/data:/data
+   - ../../data/navidrome/data:/data
    - ${DATA_ROOT}/media/music:/music:ro
   ports:
    - "${NAVIDROME_PORT}:4533"
@@ -239,7 +239,7 @@ services:
   environment:
    - TZ=Europe/London
   volumes:
-   - ../../homelab-data/crosswatch:/config
+   - ../../data/crosswatch:/config
   networks:
    - homelab_net
   healthcheck:

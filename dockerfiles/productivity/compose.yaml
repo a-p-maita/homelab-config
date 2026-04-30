@@ -16,7 +16,7 @@ services:
    - FORGEJO__server__SSH_DOMAIN=${FORGEJO__server__SSH_DOMAIN}
    - FORGEJO__server__OFFLINE_MODE=${FORGEJO__server__OFFLINE_MODE}
   volumes:
-   - ../../homelab-data/forgejo:/data
+   - ../../data/forgejo:/data
    - /etc/timezone:/etc/timezone:ro
    - /etc/localtime:/etc/localtime:ro
   ports:

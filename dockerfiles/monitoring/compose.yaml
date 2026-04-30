@@ -1,89 +1,98 @@
 name: monitoring
 
 services:
-  homepage:
-    image: ghcr.io/gethomepage/homepage:latest
-    container_name: homepage
-    ports:
-      - "${HOMEPAGE_PORT}:3000"
-    environment:
-      - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS}
-    volumes:
-      - ../../homelab-data/homepage/config:/app/config
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /etc/localtime:/etc/localtime:ro
-    restart: unless-stopped
-    networks:
-      - homelab_net
-    healthcheck:
-      # homepage (node:alpine) has wget (BusyBox) but not curl
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 > /dev/null"]
-      interval: 1m
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 256M
-        reservations:
-          cpus: '0.05'
-          memory: 64M
+ homepage:
+  image: ghcr.io/gethomepage/homepage:latest
+  container_name: homepage
+  ports:
+   - "${HOMEPAGE_PORT}:3000"
+  environment:
+   - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS}
+   # ── Arr widget API keys — set these in .env after first arr stack start ──
+   # Get each key from Settings → General inside the respective service UI.
+   - HOMEPAGE_VAR_RADARR_API_KEY=${RADARR_API_KEY:-}
+   - HOMEPAGE_VAR_SONARR_API_KEY=${SONARR_API_KEY:-}
+   - HOMEPAGE_VAR_LIDARR_API_KEY=${LIDARR_API_KEY:-}
+   - HOMEPAGE_VAR_PROWLARR_API_KEY=${PROWLARR_API_KEY:-}
+   # ── qBittorrent widget credentials (same as WebUI login) ─────────────────
+   - HOMEPAGE_VAR_QBT_USER=${QBITTORRENT_WEBUI_USER}
+   - HOMEPAGE_VAR_QBT_PASS=${QBITTORRENT_WEBUI_PASS}
+  volumes:
+   - ../../data/homepage/config:/app/config
+   - /var/run/docker.sock:/var/run/docker.sock:ro
+   - /etc/localtime:/etc/localtime:ro
+  restart: unless-stopped
+  networks:
+   - homelab_net
+  healthcheck:
+   # homepage (node:alpine) has wget (BusyBox) but not curl
+   test: ["CMD-SHELL", "wget -qO- http://localhost:3000 > /dev/null"]
+   interval: 1m
+   timeout: 10s
+   retries: 3
+   start_period: 30s
+  deploy:
+   resources:
+    limits:
+     cpus: "0.25"
+     memory: 256M
+    reservations:
+     cpus: "0.05"
+     memory: 64M
 
-  uptime-kuma:
-    image: louislam/uptime-kuma:1
-    container_name: uptime-kuma
-    ports:
-      - "${UPTIMEKUMA_PORT}:3001"
-    volumes:
-      - ../../homelab-data/uptime-kuma:/app/data
-      - /etc/localtime:/etc/localtime:ro
-    restart: unless-stopped
-    networks:
-      - homelab_net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001"]
-      interval: 1m
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 256M
-        reservations:
-          cpus: '0.05'
-          memory: 128M
+ uptime-kuma:
+  image: louislam/uptime-kuma:1
+  container_name: uptime-kuma
+  ports:
+   - "${UPTIMEKUMA_PORT}:3001"
+  volumes:
+   - ../../data/uptime-kuma:/app/data
+   - /etc/localtime:/etc/localtime:ro
+  restart: unless-stopped
+  networks:
+   - homelab_net
+  healthcheck:
+   test: ["CMD", "curl", "-f", "http://localhost:3001"]
+   interval: 1m
+   timeout: 10s
+   retries: 3
+   start_period: 30s
+  deploy:
+   resources:
+    limits:
+     cpus: "0.25"
+     memory: 256M
+    reservations:
+     cpus: "0.05"
+     memory: 128M
 
-  watchtower:
-    image: containrrr/watchtower:latest
-    container_name: watchtower
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /etc/localtime:/etc/localtime:ro
-    environment:
-      # Run at 3am daily — avoids surprise restarts during use
-      - WATCHTOWER_SCHEDULE=0 0 3 * * *
-      - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_INCLUDE_STOPPED=false
-      - WATCHTOWER_NO_STARTUP_MESSAGE=false
-      - TZ=Europe/London
-      # Compatibility with Docker Engine >= 26 (min API version raised to 1.40)
-      - DOCKER_API_VERSION=1.40
-    restart: unless-stopped
-    networks:
-      - homelab_net
-    deploy:
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 128M
-        reservations:
-          cpus: '0.05'
-          memory: 32M
+ watchtower:
+  image: containrrr/watchtower:latest
+  container_name: watchtower
+  volumes:
+   - /var/run/docker.sock:/var/run/docker.sock:ro
+   - /etc/localtime:/etc/localtime:ro
+  environment:
+   # Run at 3am daily — avoids surprise restarts during use
+   - WATCHTOWER_SCHEDULE=0 0 3 * * *
+   - WATCHTOWER_CLEANUP=true
+   - WATCHTOWER_INCLUDE_STOPPED=false
+   - WATCHTOWER_NO_STARTUP_MESSAGE=false
+   - TZ=Europe/London
+   # Compatibility with Docker Engine >= 26 (min API version raised to 1.40)
+   - DOCKER_API_VERSION=1.40
+  restart: unless-stopped
+  networks:
+   - homelab_net
+  deploy:
+   resources:
+    limits:
+     cpus: "0.25"
+     memory: 128M
+    reservations:
+     cpus: "0.05"
+     memory: 32M
 
 networks:
-  homelab_net:
-    external: true
+ homelab_net:
+  external: true
