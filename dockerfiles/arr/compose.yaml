@@ -1,0 +1,348 @@
+name: arr
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Arr stack: download automation (*arr apps + download clients + indexers)
+#
+# ⚠️  TAILSCALE / LOCAL ACCESS ONLY — do NOT add these to the Cloudflare tunnel.
+#
+# Service startup order:
+#   qbittorrent → (base)
+#   jackett     → (base)
+#   prowlarr    → (base)
+#   radarr      → depends_on: qbittorrent (healthy)
+#   sonarr      → depends_on: qbittorrent (healthy)
+#   lidarr      → depends_on: qbittorrent (healthy)
+#   readarr     → depends_on: qbittorrent (healthy)
+#   audiobookbay-downloader → depends_on: qbittorrent (healthy), jackett (healthy)
+#
+# VPN (optional): bring up with compose.vpn.yaml overlay:
+#   USE_VPN=true in .env  → scripts/up-all.sh handles automatically
+#   Manual: docker compose -f dockerfiles/arr/compose.yaml -f dockerfiles/arr/compose.vpn.yaml up -d
+#
+# Paths: all *arr apps and qbittorrent mount ${DATA_ROOT}:/data
+#   qBittorrent categories → /data/torrents/{movies,tv,music,books}
+#   *arr root folders      → /data/media/{movies,tv,music,books}
+#   abb-downloader         → qBittorrent category "abb-downloader" → /data/media/audiobooks
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+ # ── qBittorrent ─────────────────────────────────────────────────────────────
+ # ⚠️  FIRST RUN STEPS (see FIRST-RUN.md):
+ #   1. Enable "Bypass authentication for clients on localhost" (required for VPN port-sync)
+ #   2. Default save path → /data/torrents (pre-seeded via up-all.sh)
+ #   3. Categories pre-seeded from config-templates/qbittorrent/categories.json
+ qbittorrent:
+  image: lscr.io/linuxserver/qbittorrent:latest
+  container_name: qbittorrent
+  environment:
+   - PUID=${PUID}
+   - PGID=${PGID}
+   - TZ=Europe/London
+   - WEBUI_PORT=${QBITTORRENT_WEBUI_PORT}
+   - TORRENTING_PORT=${QBITTORRENT_TCP_PORT}
+   - WEBUI_ADDRESS=0.0.0.0
+   - WEBUI_USERNAME=${QBITTORRENT_WEBUI_USER}
+  volumes:
+   - ../../homelab-data/qbittorrent/config:/config
+   - ${DATA_ROOT}:/data
+  ports:
+   - "${QBITTORRENT_WEBUI_PORT}:${QBITTORRENT_WEBUI_PORT}"
+   - "${QBITTORRENT_TCP_PORT}:${QBITTORRENT_TCP_PORT}"
+   - "${QBITTORRENT_UDP_PORT}:${QBITTORRENT_UDP_PORT}/udp"
+  restart: unless-stopped
+  networks:
+   - homelab_net
+  healthcheck:
+   test: ["CMD", "curl", "-f", "http://localhost:${QBITTORRENT_WEBUI_PORT}"]
+   interval: 1m
+   timeout: 10s
+   retries: 3
+   start_period: 30s
+  deploy:
+   resources:
+    limits:
+     cpus: "1.0"
+     memory: 1G
+    reservations:
+     cpus: "0.25"
+     memory: 256M
+
+ # ── Jackett ─────────────────────────────────────────────────────────────────
+ # Kept for audiobookbay-downloader which uses Jackett's API format directly.
+ # Prowlarr handles indexers for all *arr apps.
+ jackett:
+  image: lscr.io/linuxserver/jackett:latest
+  container_name: jackett
+  environment:
+   - PUID=${PUID}
+   - PGID=${PGID}
+   - TZ=Europe/London
+   - AUTO_UPDATE=true
+  volumes:
+   - ../../homelab-data/jackett/config:/config
+   - ../../homelab-data/jackett/downloads:/downloads
+  ports:
+   - "${JACKETT_PORT}:9117"
+  restart: unless-stopped
+  networks:
+   - homelab_net
+  healthcheck:
+   test: ["CMD", "curl", "-f", "http://localhost:9117"]
+   interval: 1m
+   timeout: 10s
+   retries: 3
+   start_period: 60s
+  deploy:
+   resources:
+    limits:
+     cpus: "0.5"
+     memory: 256M
+    reservations:
+     cpus: "0.05"
+     memory: 128M
+
+ # ── Prowlarr ─────────────────────────────────────────────────────────────────
+ # Indexer manager. Add indexers here; Prowlarr syncs them to Radarr/Sonarr/Lidarr/Readarr.
+ # First run: Settings → Apps → Add each *arr app.
+ prowlarr:
+  image: lscr.io/linuxserver/prowlarr:latest
+  container_name: prowlarr
+  environment:
+   - PUID=${PUID}
+   - PGID=${PGID}
+   - TZ=Europe/London
+  volumes:
+   - ../../homelab-data/prowlarr/config:/config
+  ports:
+   - "${PROWLARR_PORT}:9696"
+  restart: unless-stopped
+  networks:
+   - homelab_net
+  healthcheck:
+   test: ["CMD", "curl", "-f", "http://localhost:9696/ping"]
+   interval: 1m
+   timeout: 10s
+   retries: 3
+   start_period: 60s
+  deploy:
+   resources:
+    limits:
+     cpus: "0.5"
+     memory: 256M
+    reservations:
+     cpus: "0.05"
+     memory: 128M
+
+ # ── Radarr ───────────────────────────────────────────────────────────────────
+ # Movies: root folder /data/media/movies, download client path /data/torrents/movies
+ radarr:
+  image: lscr.io/linuxserver/radarr:latest
+  container_name: radarr
+  environment:
+   - PUID=${PUID}
+   - PGID=${PGID}
+   - TZ=Europe/London
+  volumes:
+   - ../../homelab-data/radarr/config:/config
+   - ${DATA_ROOT}:/data
+  ports:
+   - "${RADARR_PORT}:7878"
+  restart: unless-stopped
+  networks:
+   - homelab_net
+  depends_on:
+   qbittorrent:
+    condition: service_healthy
+  healthcheck:
+   test: ["CMD", "curl", "-f", "http://localhost:7878/ping"]
+   interval: 1m
+   timeout: 10s
+   retries: 3
+   start_period: 60s
+  deploy:
+   resources:
+    limits:
+     cpus: "1.0"
+     memory: 512M
+    reservations:
+     cpus: "0.1"
+     memory: 128M
+
+ # ── Sonarr ───────────────────────────────────────────────────────────────────
+ # TV shows: root folder /data/media/tv, download client path /data/torrents/tv
+ sonarr:
+  image: lscr.io/linuxserver/sonarr:latest
+  container_name: sonarr
+  environment:
+   - PUID=${PUID}
+   - PGID=${PGID}
+   - TZ=Europe/London
+  volumes:
+   - ../../homelab-data/sonarr/config:/config
+   - ${DATA_ROOT}:/data
+  ports:
+   - "${SONARR_PORT}:8989"
+  restart: unless-stopped
+  networks:
+   - homelab_net
+  depends_on:
+   qbittorrent:
+    condition: service_healthy
+  healthcheck:
+   test: ["CMD", "curl", "-f", "http://localhost:8989/ping"]
+   interval: 1m
+   timeout: 10s
+   retries: 3
+   start_period: 60s
+  deploy:
+   resources:
+    limits:
+     cpus: "1.0"
+     memory: 512M
+    reservations:
+     cpus: "0.1"
+     memory: 128M
+
+ # ── Lidarr ───────────────────────────────────────────────────────────────────
+ # Music: root folder /data/media/music, download client path /data/torrents/music
+ # ⚠️  FIRST RUN: update root folder in Lidarr UI from /music → /data/media/music
+ lidarr:
+  image: lscr.io/linuxserver/lidarr:latest
+  container_name: lidarr
+  environment:
+   - PUID=${PUID}
+   - PGID=${PGID}
+   - TZ=Europe/London
+  volumes:
+   - ../../homelab-data/lidarr/config:/config
+   - ${DATA_ROOT}:/data
+  ports:
+   - "${LIDARR_PORT}:8686"
+  restart: unless-stopped
+  networks:
+   - homelab_net
+  depends_on:
+   qbittorrent:
+    condition: service_healthy
+  # Note: Lidarr uses Prowlarr for indexers in this setup (not Jackett directly)
+  healthcheck:
+   test: ["CMD", "curl", "-f", "http://localhost:8686/ping"]
+   interval: 1m
+   timeout: 10s
+   retries: 3
+   start_period: 60s
+  deploy:
+   resources:
+    limits:
+     cpus: "1.0"
+     memory: 512M
+    reservations:
+     cpus: "0.1"
+     memory: 128M
+
+ # ── Readarr ──────────────────────────────────────────────────────────────────
+ # Ebooks (epub/mobi/pdf): root folder /data/media/books, download path /data/torrents/books
+ # Note: Readarr uses the 'develop' branch — it has no stable release yet; develop is stable for daily use.
+ readarr:
+  image: linuxserver/readarr:0.4.19-nightly
+  container_name: readarr
+  environment:
+   - PUID=${PUID}
+   - PGID=${PGID}
+   - TZ=Europe/London
+  volumes:
+   - ../../homelab-data/readarr/config:/config
+   - ${DATA_ROOT}:/data
+  ports:
+   - "${READARR_PORT}:8787"
+  restart: unless-stopped
+  networks:
+   - homelab_net
+  depends_on:
+   qbittorrent:
+    condition: service_healthy
+  healthcheck:
+   test: ["CMD", "curl", "-f", "http://localhost:8787/ping"]
+   interval: 1m
+   timeout: 10s
+   retries: 3
+   start_period: 60s
+  deploy:
+   resources:
+    limits:
+     cpus: "0.5"
+     memory: 512M
+    reservations:
+     cpus: "0.1"
+     memory: 128M
+
+ # ── Audiobookbay Downloader ──────────────────────────────────────────────────
+ # Downloads audiobooks via Jackett → qBittorrent, category "abb-downloader"
+ # qBittorrent saves abb-downloader category directly to /data/media/audiobooks
+ # (no *arr import step needed — files ARE the final library files)
+ audiobookbay-downloader:
+  image: ghcr.io/moonblade/audiobookbay-downloader:latest
+  ports:
+   - "${ABB_PORT}:9000"
+  container_name: audiobookbay-downloader
+  depends_on:
+   qbittorrent:
+    condition: service_healthy
+   jackett:
+    condition: service_healthy
+  environment:
+   - JACKETT_API_URL=http://jackett:9117/api/v2.0/indexers/audiobookbay/results
+   - JACKETT_API_KEY=${JACKETT_API_KEY}
+   - TORRENT_CLIENT_TYPE=qbittorrent
+   - QBITTORRENT_URL=http://qbittorrent:${QBITTORRENT_WEBUI_PORT}
+   - QBITTORRENT_USERNAME=${QBITTORRENT_WEBUI_USER}
+   - QBITTORRENT_PASSWORD=${QBITTORRENT_WEBUI_PASS}
+   # This category's save path in qBittorrent is /data/media/audiobooks
+   - QBITTORRENT_CATEGORY=abb-downloader
+   - DB_PATH=/app/data
+   - DELETE_AFTER_DAYS=365
+   - STRICTLY_DELETE_AFTER_DAYS=365
+  volumes:
+   - ../../homelab-data/audiobookbay-downloader:/app/data
+  restart: unless-stopped
+  healthcheck:
+   test:
+    [
+     "CMD-SHELL",
+     'python3 -c "import urllib.request; urllib.request.urlopen(''http://localhost:9000'')"',
+    ]
+   interval: 1m
+   timeout: 10s
+   retries: 3
+   start_period: 30s
+  networks:
+   - homelab_net
+  deploy:
+   resources:
+    limits:
+     cpus: "0.25"
+     memory: 256M
+    reservations:
+     cpus: "0.05"
+     memory: 128M
+
+ # ── FlareSolverr (optional — uncomment to enable) ────────────────────────────
+ # Bypasses Cloudflare-protected torrent index pages for Prowlarr.
+ # After enabling: Prowlarr → Settings → Indexers → FlareSolverr → host: http://flaresolverr:8191
+ # Runs on the real IP (NOT through VPN) — Cloudflare challenges require a real browser fingerprint.
+ # Reference: https://github.com/FlareSolverr/FlareSolverr
+ # flaresolverr:
+ #  image: ghcr.io/flaresolverr/flaresolverr:latest
+ #  container_name: flaresolverr
+ #  environment:
+ #   - LOG_LEVEL=${LOG_LEVEL:-info}
+ #   - TZ=Europe/London
+ #  ports:
+ #   - "20084:8191"   # internal only — no Tailscale/Cloudflare exposure needed
+ #  restart: unless-stopped
+ #  networks:
+ #   - homelab_net
+
+networks:
+ homelab_net:
+  external: true

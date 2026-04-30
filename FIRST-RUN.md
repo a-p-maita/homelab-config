@@ -79,11 +79,12 @@ Signups are **disabled by default** (`SIGNUPS_ALLOWED=false`). The admin panel i
 
 ## 7. Lidarr — complete setup wizard
 
-1. Open `http://localhost:20073`
-2. Complete the initial configuration wizard
-3. Add **Jackett** as an indexer: URL `http://jackett:9117`, API key from `.env` (`JACKETT_API_KEY`)
-4. Add **qBittorrent** as a download client: URL `http://qbittorrent:20050`, credentials from `.env`
-5. Set the music root folder to `/music`
+See **Section 10** (\*arr Stack) for the full setup, including indexer and download client configuration.
+Quick reference:
+
+- Root folder: `/data/media/music`
+- Download client: qBittorrent at `http://qbittorrent:20050`, category `music`
+- Indexers: add via Prowlarr sync (see Section 10)
 
 ---
 
@@ -121,5 +122,227 @@ If you already started without setting a password, the `settings.yml` is seeded 
 | Octo-Fiesta    | No login — configured entirely via `.env`                                                                                                                                                                                            |
 | Kiwix          | Add ZIM files to `homelab-data/kiwix/` — auto-discovered                                                                                                                                                                             |
 | Stirling PDF   | Login enabled. Credentials set via `STIRLING_PDF_USERNAME`/`STIRLING_PDF_PASSWORD` in `.env`                                                                                                                                         |
-| Code Server    | Password set via `CODE_SERVER_PASSWORD` in `.env`                                                                                                                                                                                    |
-| LubeLogger     | Credentials set via `LUBELOGGER_ADMIN_USER/PASS` in `.env`                                                                                                                                                                           |
+
+---
+
+## 10. \*arr Stack — initial configuration
+
+Services: **Prowlarr**, **Radarr**, **Sonarr**, **Readarr**, **Lidarr**, **Jackett** (legacy), **qBittorrent**, **Audiobookbay Downloader**
+
+All arr services are Tailscale-only — access via `http://100.106.40.5:PORT`.
+
+**Recommended order:** qBittorrent → each \*arr app (get API keys) → Prowlarr (add apps + indexers) → Prowlarr syncs indexers automatically.
+
+---
+
+### Step 1: qBittorrent
+
+1. Open `http://100.106.40.5:20050`
+2. Log in with `QBITTORRENT_WEBUI_USER` / `QBITTORRENT_WEBUI_PASS` from `.env`
+3. **Tools → Options → Web UI → ☑ "Bypass authentication for clients on localhost"**
+   Required for VPN port-sync script. Safe — only containers in the same network namespace have localhost access.
+
+**Verify categories are loaded:**
+Categories are NOT in `Tools → Options → Downloads`. They appear in the **left panel** of the main qBittorrent window (you may need to enable it: `View → Side Panel`). You should see: `All`, `Uncategorized`, then `abb-downloader`, `books`, `movies`, `music`, `tv`.
+
+If the categories are missing, the container started before the file was in place. Fix:
+
+```bash
+docker restart qbittorrent
+```
+
+Wait ~30 seconds for the health check to pass, then refresh the WebUI.
+
+If categories still don't appear, add them manually: right-click any entry in the left panel → **Add Category**, or go to **Tools → Options → Downloads** scroll to the bottom — there is a Categories section (in some qBittorrent versions it's a separate sidebar item). Add each with these save paths:
+
+| Category         | Save path                |
+| ---------------- | ------------------------ |
+| `movies`         | `/data/torrents/movies`  |
+| `tv`             | `/data/torrents/tv`      |
+| `music`          | `/data/torrents/music`   |
+| `books`          | `/data/torrents/books`   |
+| `abb-downloader` | `/data/media/audiobooks` |
+
+4. **Tools → Options → Downloads → Saving Management:**
+   - Default Torrent Management Mode: **Automatic**
+   - (You confirmed this is already done)
+
+---
+
+### Step 2: Get API keys from each \*arr app
+
+Before setting up Prowlarr, collect the API key from each app:
+
+| App     | URL                         | Where to find API key                   |
+| ------- | --------------------------- | --------------------------------------- |
+| Radarr  | `http://100.106.40.5:20080` | Settings → General → Security → API Key |
+| Sonarr  | `http://100.106.40.5:20081` | Settings → General → Security → API Key |
+| Readarr | `http://100.106.40.5:20082` | Settings → General → Security → API Key |
+| Lidarr  | `http://100.106.40.5:20073` | Settings → General → Security → API Key |
+
+Each app shows a setup wizard on first visit — complete it (set UI language, etc.) to reach the Settings page.
+
+---
+
+### Step 3: Configure each \*arr app
+
+Do this for each app before connecting Prowlarr, so indexers sync correctly.
+
+#### Radarr (movies) — `http://100.106.40.5:20080`
+
+1. **Settings → Media Management**
+   - Enable: ☑ Rename Movies
+   - Root Folders → Add → type `/data/media/movies` → click OK
+2. **Settings → Download Clients → + Add**
+   - Type: **qBittorrent**
+   - Host: `qbittorrent`, Port: `20050`
+   - Username / Password: from `.env`
+   - Category: `movies` ← **critical** — this is how the save path is applied
+   - Test → Save
+3. **Settings → General → copy your API key** (needed for Prowlarr)
+
+#### Sonarr (TV) — `http://100.106.40.5:20081`
+
+1. **Settings → Media Management → Root Folders** → Add `/data/media/tv`
+2. **Settings → Download Clients → + Add → qBittorrent**
+   - Host: `qbittorrent`, Port: `20050`, credentials from `.env`, Category: `tv`
+3. Copy API key from Settings → General
+
+#### Readarr (books/ebooks) — `http://100.106.40.5:20082`
+
+1. **Settings → Media Management → Root Folders** → Add `/data/media/books`
+2. **Settings → Download Clients → + Add → qBittorrent**
+   - Host: `qbittorrent`, Port: `20050`, credentials from `.env`, Category: `books`
+3. Copy API key from Settings → General
+
+#### Lidarr (music) — `http://100.106.40.5:20073`
+
+1. **Settings → Media Management → Root Folders** → Add `/data/media/music`
+2. **Settings → Download Clients → + Add → qBittorrent**
+   - Host: `qbittorrent`, Port: `20050`, credentials from `.env`, Category: `music`
+3. Copy API key from Settings → General
+
+---
+
+### Step 4: Prowlarr — add indexers and connect apps
+
+1. Open `http://100.106.40.5:20083`
+2. Create your admin account on first visit
+
+#### Add your \*arr apps to Prowlarr
+
+This makes Prowlarr push indexers to each app automatically — you only manage indexers in one place.
+
+**Settings → Apps → + Add Application:**
+
+For each app below, the pattern is the same:
+
+- Click the app icon (Radarr / Sonarr / Readarr / Lidarr)
+- **Prowlarr Server:** `http://prowlarr:9696`
+- **App URL:** the internal Docker URL (e.g. `http://radarr:7878`)
+- **API Key:** paste from the app's Settings → General
+- Sync Level: **Full Sync** (Prowlarr adds/removes indexers in the app automatically)
+- Click **Test** — you should see a green tick — then **Save**
+
+| App     | App URL               | Port  |
+| ------- | --------------------- | ----- |
+| Radarr  | `http://radarr:7878`  | 20080 |
+| Sonarr  | `http://sonarr:8989`  | 20081 |
+| Readarr | `http://readarr:8787` | 20082 |
+| Lidarr  | `http://lidarr:8686`  | 20073 |
+
+#### Add indexers
+
+Indexers are torrent trackers. After adding an indexer in Prowlarr, it automatically syncs to all connected apps.
+
+**Indexers → Add Indexer** — search by name and select your trackers. Common ones:
+
+| Indexer type        | Examples                                        | Notes                                   |
+| ------------------- | ----------------------------------------------- | --------------------------------------- |
+| Public (no account) | 1337x, YTS, RARBG mirrors, EZTV, The Pirate Bay | Work immediately, no setup              |
+| Semi-private        | Nyaa (anime), MagnetDL                          | May need account for better results     |
+| Private             | PTP, BTN, HDB, etc.                             | Require invite, login via cookie or API |
+
+**For each indexer:**
+
+1. Search → click the indexer
+2. If it requires a cookie/API key: paste it in the fields shown
+3. Set **Categories** — important: select only what the indexer covers (e.g. Movies for YTS, TV for EZTV) so each app only gets relevant indexers
+4. **Test → Save**
+
+After saving, Prowlarr automatically pushes the indexer to all connected apps within a few seconds.
+
+#### Verify sync worked
+
+In Radarr: **Settings → Indexers** — you should see the indexers Prowlarr pushed.
+If the list is empty, go back to Prowlarr → Settings → Apps → click the app → **Sync App Indexers**.
+
+#### Jackett (legacy — for Audiobookbay Downloader only)
+
+Jackett is kept specifically because Audiobookbay Downloader only supports Jackett, not Prowlarr.
+The API key is pre-configured (`JACKETT_API_KEY` in `.env` and `ServerConfig.json` template).
+Open `http://100.106.40.5:20065` to add the `audiobookbay` tracker if not already present.
+
+---
+
+### Step 5: Audiobookbay Downloader — `http://100.106.40.5:20060`
+
+1. Go to **Settings** tab
+2. Verify the Jackett connection shows green
+3. Verify qBittorrent connection shows green
+4. The `abb-downloader` category saves to `/data/media/audiobooks` — Audiobookshelf picks it up automatically on next scan
+
+---
+
+### Step 6: Test a download end-to-end
+
+1. In Radarr, search for a movie → Add Movie → set root folder to `/data/media/movies`
+2. Use the **Interactive Search** (magnifying glass icon on a wanted movie) to manually trigger a search and pick a release
+3. Watch qBittorrent — the torrent should appear in the `movies` category
+4. Once complete, Radarr imports it to `/data/media/movies/` (rename + hardlink — instant)
+5. Jellyfin: Libraries → scan for it
+
+---
+
+## 11. ProtonVPN / Gluetun — enabling the VPN (optional, do after initial setup)
+
+**Prerequisites:**
+
+- ProtonVPN Plus subscription (required for port forwarding)
+- WireGuard private key — generate at: account.proton.me/u/0/vpn/WireGuard → Linux → WireGuard → Create
+
+**Steps:**
+
+1. Add the private key to `.env`:
+
+   ```
+   PROTONVPN_WIREGUARD_PRIVATE_KEY=<your-key>
+   ```
+
+2. Enable VPN in `.env`:
+
+   ```
+   USE_VPN=true
+   ```
+
+3. Restart the arr stack:
+
+   ```bash
+   cd ~/homelab-config
+   source .env
+   docker compose --env-file .env -f dockerfiles/arr/compose.yaml -f dockerfiles/arr/compose.vpn.yaml down
+   docker compose --env-file .env -f dockerfiles/arr/compose.yaml -f dockerfiles/arr/compose.vpn.yaml up -d
+   ```
+
+4. Verify the VPN tunnel is working (wait ~2 minutes for gluetun to connect, then):
+
+   ```bash
+   docker run --rm --network=container:gluetun alpine:3.18 sh -c "apk add -q wget && wget -qO- https://ipinfo.io"
+   ```
+
+   The IP shown should be a ProtonVPN server IP (not your home IP).
+
+5. Verify port forwarding — check gluetun logs:
+   ```bash
+   docker logs gluetun | grep -i port
+   ```

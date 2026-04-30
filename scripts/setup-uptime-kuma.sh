@@ -114,6 +114,30 @@ MONITORS = [
         "interval": 60,
     },
     {
+        "name":     "Prowlarr",
+        "type":     MonitorType.HTTP,
+        "url":      "http://prowlarr:9696/ping",
+        "interval": 60,
+    },
+    {
+        "name":     "Radarr",
+        "type":     MonitorType.HTTP,
+        "url":      "http://radarr:7878/ping",
+        "interval": 60,
+    },
+    {
+        "name":     "Sonarr",
+        "type":     MonitorType.HTTP,
+        "url":      "http://sonarr:8989/ping",
+        "interval": 60,
+    },
+    {
+        "name":     "Readarr",
+        "type":     MonitorType.HTTP,
+        "url":      "http://readarr:8787/ping",
+        "interval": 60,
+    },
+    {
         "name":     "Octo-Fiesta",
         "type":     MonitorType.HTTP,
         # Root path returns {"ok":true} with 200 — confirmed health endpoint

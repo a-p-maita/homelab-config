@@ -101,6 +101,30 @@
       icon: lidarr.png
       server: my-docker
       container: lidarr
+   - Prowlarr:
+      href: http://100.106.40.5:20083
+      description: Indexer manager for all *arr apps
+      icon: prowlarr.png
+      server: my-docker
+      container: prowlarr
+   - Radarr:
+      href: http://100.106.40.5:20080
+      description: Movie collection manager
+      icon: radarr.png
+      server: my-docker
+      container: radarr
+   - Sonarr:
+      href: http://100.106.40.5:20081
+      description: TV series collection manager
+      icon: sonarr.png
+      server: my-docker
+      container: sonarr
+   - Readarr:
+      href: http://100.106.40.5:20082
+      description: Book/ebook collection manager
+      icon: readarr.png
+      server: my-docker
+      container: readarr
    - Octo-Fiesta:
       href: http://100.106.40.5:20076
       description: Subsonic proxy with hi-res streaming
@@ -121,7 +145,7 @@
       container: audiobookbay-downloader
    - Jackett:
       href: http://100.106.40.5:20065
-      description: Torrent indexer proxy
+      description: Torrent indexer proxy (legacy — use Prowlarr for new indexers)
       icon: jackett.png
       server: my-docker
       container: jackett

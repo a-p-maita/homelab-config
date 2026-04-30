@@ -6,34 +6,45 @@ Depends on/creates another directory one step up called `homelab-data/` which ho
 
 ## What's running
 
+### Arr (torrent automation)
+
+| Service                                                                         | Purpose                                                                 |
+| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| [qBittorrent](https://www.qbittorrent.org/)                                     | Torrent client                                                          |
+| [Prowlarr](https://prowlarr.com/)                                               | Indexer manager — syncs trackers to all \*arr apps                      |
+| [Radarr](https://radarr.video/)                                                 | Automated movie collection manager                                      |
+| [Sonarr](https://sonarr.tv/)                                                    | Automated TV series collection manager                                  |
+| [Readarr](https://readarr.com/)                                                 | Automated book/ebook collection manager                                 |
+| [Lidarr](https://lidarr.audio/)                                                 | Automated music collection manager                                      |
+| [Jackett](https://github.com/Jackett/Jackett)                                   | Torrent indexer proxy (legacy — use Prowlarr for new indexers)          |
+| [Audiobookbay Downloader](https://github.com/moonblade/audiobookbay-downloader) | Search and download audiobooks via AudiobookBay                         |
+| [Gluetun](https://github.com/qdm12/gluetun) _(optional)_                        | VPN client (ProtonVPN WireGuard) — enable with `USE_VPN=true` in `.env` |
+| [deunhealth](https://github.com/qdm12/deunhealth) _(optional)_                  | Auto-restarts qBittorrent when VPN stalls                               |
+
 ### Media
 
-| Service                                                                         | Purpose                                                                  |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| [Audiobookshelf](https://www.audiobookshelf.org/)                               | Audiobook & podcast library with streaming                               |
-| [Audiobookbay Downloader](https://github.com/moonblade/audiobookbay-downloader) | Search and download audiobooks via AudiobookBay                          |
-| [Yamtrack](https://github.com/FuzzyGrim/Yamtrack)                               | Media tracker (TV, movies, games, manga, books)                          |
-| [CrossWatch](https://github.com/FuzzyGrim/crosswatch)                           | Sync watch history across Trakt, AniList, Jellyfin, Simkl                |
-| [qBittorrent](https://www.qbittorrent.org/)                                     | Torrent client                                                           |
-| [Jackett](https://github.com/Jackett/Jackett)                                   | Torrent indexer proxy                                                    |
-| [Navidrome](https://www.navidrome.org/)                                         | Music streaming server (Subsonic API)                                    |
-| [Octo-Fiesta](https://github.com/V1ck3s/octo-fiesta)                            | Subsonic API proxy — on-the-fly hi-res streaming from Deezer/Qobuz/Tidal |
-| [Feishin](https://github.com/jeffvli/feishin)                                   | Modern web UI for Navidrome                                              |
-| [Lidarr](https://lidarr.audio/)                                                 | Automated music collection manager via torrents                          |
+| Service                                               | Purpose                                                                  |
+| ----------------------------------------------------- | ------------------------------------------------------------------------ |
+| [Audiobookshelf](https://www.audiobookshelf.org/)     | Audiobook & podcast library with streaming                               |
+| [Yamtrack](https://github.com/FuzzyGrim/Yamtrack)     | Media tracker (TV, movies, games, manga, books)                          |
+| [CrossWatch](https://github.com/FuzzyGrim/crosswatch) | Sync watch history across Trakt, AniList, Jellyfin, Simkl                |
+| [Navidrome](https://www.navidrome.org/)               | Music streaming server (Subsonic API)                                    |
+| [Octo-Fiesta](https://github.com/V1ck3s/octo-fiesta)  | Subsonic API proxy — on-the-fly hi-res streaming from Deezer/Qobuz/Tidal |
+| [Feishin](https://github.com/jeffvli/feishin)         | Modern web UI for Navidrome                                              |
 
 ### Entertainment
 
-| Service                                 | Purpose                    |
-| --------------------------------------- | -------------------------- |
-| [Jellyfin](https://jellyfin.org/)       | Media server (video, TV)   |
+| Service                           | Purpose                  |
+| --------------------------------- | ------------------------ |
+| [Jellyfin](https://jellyfin.org/) | Media server (video, TV) |
 
 ### Documents
 
-| Service                                                   | Purpose                         |
-| --------------------------------------------------------- | ------------------------------- |
-| [Paperless-NGX](https://docs.paperless-ngx.com/)          | Document management & OCR       |
-| [Stirling PDF](https://stirlingpdf.io/)                   | PDF manipulation tools          |
-| [Kiwix](https://www.kiwix.org/)                           | Offline Wikipedia & ZIM content |
+| Service                                          | Purpose                         |
+| ------------------------------------------------ | ------------------------------- |
+| [Paperless-NGX](https://docs.paperless-ngx.com/) | Document management & OCR       |
+| [Stirling PDF](https://stirlingpdf.io/)          | PDF manipulation tools          |
+| [Kiwix](https://www.kiwix.org/)                  | Offline Wikipedia & ZIM content |
 
 ### Tools
 
@@ -48,9 +59,9 @@ Depends on/creates another directory one step up called `homelab-data/` which ho
 
 ### Personal
 
-| Service                               | Purpose                       |
-| ------------------------------------- | ----------------------------- |
-| [Mealie](https://mealie.io/)          | Recipe manager & meal planner |
+| Service                      | Purpose                       |
+| ---------------------------- | ----------------------------- |
+| [Mealie](https://mealie.io/) | Recipe manager & meal planner |
 
 ### Home
 
@@ -168,11 +179,11 @@ With this setup: web UI at `/app` requires Access auth, but `/rest/*` and `/api/
 
 After `up-all.sh`, the music services need one-time setup:
 
-| Service         | URL      | What to do                                                                                                                                                                                                                  |
-| --------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Navidrome**   | `:20070` | Create your admin account on first visit                                                                                                                                                                                    |
-| **Octo-Fiesta** | `:20076` | Point your Subsonic clients here instead of Navidrome to enable transparent hi-res downloads. Configure the music provider via `OCTOFIESTA_MUSIC_SERVICE` in `.env` (default: SquidWTF — no credentials needed)             |
-| **Lidarr**      | `:20073` | Complete the setup wizard. Add Jackett as indexer (`http://jackett:9117`, API key from `.env`). Add qBittorrent as download client (`http://qbittorrent:20050`, credentials from `.env`). Set music root folder to `/music` |
+| Service         | URL      | What to do                                                                                                                                                                                                                                      |
+| --------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Navidrome**   | `:20070` | Create your admin account on first visit                                                                                                                                                                                                        |
+| **Octo-Fiesta** | `:20076` | Point your Subsonic clients here instead of Navidrome to enable transparent hi-res downloads. Configure the music provider via `OCTOFIESTA_MUSIC_SERVICE` in `.env` (default: SquidWTF — no credentials needed)                                 |
+| **Lidarr**      | `:20073` | Complete the setup wizard. Add Prowlarr as indexer sync source (see FIRST-RUN.md §10). Add qBittorrent as download client (`http://qbittorrent:20050`, credentials from `.env`, category `music`). Set music root folder to `/data/media/music` |
 
 **Feishin** (`:20072`) is pre-locked to Navidrome — just log in with your Navidrome credentials.
 

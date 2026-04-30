@@ -30,6 +30,8 @@ services:
   volumes:
    - ../../homelab-data/jellyfin/config:/config
    - ../../homelab-data/jellyfin/cache:/cache
+   - ${DATA_ROOT}/media/movies:/data/movies:ro
+   - ${DATA_ROOT}/media/tv:/data/tv:ro
    # Add media mounts below as needed, e.g.:
    # - ../../homelab-data/music:/data/music:ro
    # - /path/to/movies:/data/movies:ro

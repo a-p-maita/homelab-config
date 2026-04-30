@@ -11,8 +11,20 @@ else
   ENV_FILE_ARG=""
 fi
 
+USE_VPN=$(grep -E '^USE_VPN=' .env 2>/dev/null | head -1 | cut -d= -f2-)
+
+# Pull both compose files when VPN is enabled (gluetun + deunhealth images)
+if [ "${USE_VPN}" = "true" ]; then
+  ARR_COMPOSE="-f dockerfiles/arr/compose.yaml -f dockerfiles/arr/compose.vpn.yaml"
+else
+  ARR_COMPOSE="-f dockerfiles/arr/compose.yaml"
+fi
+
 echo "Pulling core images..."
 docker compose $ENV_FILE_ARG -f dockerfiles/core/compose.yaml pull
+
+echo "Pulling arr images..."
+docker compose $ENV_FILE_ARG $ARR_COMPOSE pull
 
 echo "Pulling media images..."
 docker compose $ENV_FILE_ARG -f dockerfiles/media/compose.yaml pull

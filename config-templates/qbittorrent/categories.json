@@ -1,5 +1,7 @@
 {
-    "abb-downloader": {
-        "save_path": "/audiobooks"
-    }
+ "books": { "save_path": "/data/torrents/books" },
+ "movies": { "save_path": "/data/torrents/movies" },
+ "music": { "save_path": "/data/torrents/music" },
+ "tv": { "save_path": "/data/torrents/tv" },
+ "abb-downloader": { "save_path": "/data/media/audiobooks" }
 }

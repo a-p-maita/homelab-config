@@ -1,16 +1,27 @@
 name: media
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Media stack: audiobooks, podcasts, music, media tracking
+#
+# Services moved to dockerfiles/arr/compose.yaml:
+#   qbittorrent, jackett, audiobookbay-downloader, lidarr
+# ─────────────────────────────────────────────────────────────────────────────
+
 services:
  audiobookshelf:
   image: ghcr.io/advplyr/audiobookshelf:latest
   container_name: audiobookshelf
+  environment:
+   - PUID=${PUID} # ensures container writes podcast episodes as the host user
+   - PGID=${PGID} # fixes podcast download persistence (write access to /podcasts)
+   - TZ=Europe/London
   ports:
    - "${ABS_PORT}:80"
   volumes:
    - ../../homelab-data/audiobookshelf/config:/config
    - ../../homelab-data/audiobookshelf/metadata:/metadata
-   - ../../homelab-data/audiobooks:/audiobooks
-   - ../../homelab-data/podcasts:/podcasts
+   - ${DATA_ROOT}/media/audiobooks:/audiobooks
+   - ${DATA_ROOT}/media/podcasts:/podcasts
   restart: unless-stopped
   networks:
    - homelab_net
@@ -100,123 +111,6 @@ services:
      cpus: "0.05"
      memory: 64M
 
- qbittorrent:
-  image: lscr.io/linuxserver/qbittorrent:latest
-  container_name: qbittorrent
-  environment:
-   - PUID=${PUID}
-   - PGID=${PGID}
-   - TZ=Europe/London
-   - WEBUI_PORT=${QBITTORRENT_WEBUI_PORT}
-   - TORRENTING_PORT=${QBITTORRENT_TCP_PORT}
-   - WEBUI_ADDRESS=0.0.0.0
-   - WEBUI_USERNAME=${QBITTORRENT_WEBUI_USER}
-  volumes:
-   - ../../homelab-data/qbittorrent/config:/config
-   - ../../homelab-data/qbittorrent-downloads:/downloads
-   - ../../homelab-data/audiobooks:/audiobooks
-  ports:
-   - "${QBITTORRENT_WEBUI_PORT}:${QBITTORRENT_WEBUI_PORT}"
-   - "${QBITTORRENT_TCP_PORT}:${QBITTORRENT_TCP_PORT}"
-   - "${QBITTORRENT_UDP_PORT}:${QBITTORRENT_UDP_PORT}/udp"
-  restart: unless-stopped
-  networks:
-   - homelab_net
-  healthcheck:
-   test: ["CMD", "curl", "-f", "http://localhost:${QBITTORRENT_WEBUI_PORT}"]
-   interval: 1m
-   timeout: 10s
-   retries: 3
-   start_period: 30s
-  deploy:
-   resources:
-    limits:
-     cpus: "1.0"
-     memory: 1G
-    reservations:
-     cpus: "0.25"
-     memory: 256M
-
- jackett:
-  image: lscr.io/linuxserver/jackett:latest
-  container_name: jackett
-  environment:
-   - PUID=${PUID}
-   - PGID=${PGID}
-   - TZ=Europe/London
-   - AUTO_UPDATE=true
-  volumes:
-   - ../../homelab-data/jackett/config:/config
-   - ../../homelab-data/jackett/downloads:/downloads
-  ports:
-   - "${JACKETT_PORT}:9117"
-  restart: unless-stopped
-  networks:
-   - homelab_net
-  healthcheck:
-   test: ["CMD", "curl", "-f", "http://localhost:9117"]
-   interval: 1m
-   timeout: 10s
-   retries: 3
-   start_period: 60s
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 256M
-    reservations:
-     cpus: "0.05"
-     memory: 128M
-
- audiobookbay-downloader:
-  image: ghcr.io/moonblade/audiobookbay-downloader:latest
-  ports:
-   - "${ABB_PORT}:9000"
-  container_name: audiobookbay-downloader
-  depends_on:
-   qbittorrent:
-    condition: service_healthy
-   jackett:
-    condition: service_healthy
-  environment:
-   - JACKETT_API_URL=http://jackett:9117/api/v2.0/indexers/audiobookbay/results
-   - JACKETT_API_KEY=${JACKETT_API_KEY}
-   - TORRENT_CLIENT_TYPE=qbittorrent
-   - QBITTORRENT_URL=http://qbittorrent:${QBITTORRENT_WEBUI_PORT}
-   - QBITTORRENT_USERNAME=${QBITTORRENT_WEBUI_USER}
-   - QBITTORRENT_PASSWORD=${QBITTORRENT_WEBUI_PASS}
-   # Category whose save path in qBittorrent should be set to /audiobooks
-   - QBITTORRENT_CATEGORY=abb-downloader
-   # Persist app config (Jackett API key, settings changed via UI) across restarts
-   - DB_PATH=/app/data
-   # Disable auto-deletion of files — audiobooks should live in /audiobooks permanently
-   - DELETE_AFTER_DAYS=365
-   - STRICTLY_DELETE_AFTER_DAYS=365
-  volumes:
-   - ../../homelab-data/audiobookbay-downloader:/app/data
-  restart: unless-stopped
-  healthcheck:
-   # image is Python-based — no curl available, use Python urllib
-   test:
-    [
-     "CMD-SHELL",
-     'python3 -c "import urllib.request; urllib.request.urlopen(''http://localhost:9000'')"',
-    ]
-   interval: 1m
-   timeout: 10s
-   retries: 3
-   start_period: 30s
-  networks:
-   - homelab_net
-  deploy:
-   resources:
-    limits:
-     cpus: "0.25"
-     memory: 256M
-    reservations:
-     cpus: "0.05"
-     memory: 128M
-
  navidrome:
   image: deluan/navidrome:latest
   container_name: navidrome
@@ -229,7 +123,7 @@ services:
    - ND_BASEURL=
   volumes:
    - ../../homelab-data/navidrome/data:/data
-   - ../../homelab-data/music:/music:ro
+   - ${DATA_ROOT}/media/music:/music:ro
   ports:
    - "${NAVIDROME_PORT}:4533"
   restart: unless-stopped
@@ -286,44 +180,6 @@ services:
      cpus: "0.05"
      memory: 32M
 
- lidarr:
-  image: lscr.io/linuxserver/lidarr:latest
-  container_name: lidarr
-  environment:
-   - PUID=${PUID}
-   - PGID=${PGID}
-   - TZ=Europe/London
-  volumes:
-   - ../../homelab-data/lidarr/config:/config
-   # Shared with qBittorrent — same host path enables hardlinks during import
-   - ../../homelab-data/qbittorrent-downloads:/downloads
-   - ../../homelab-data/music:/music
-  ports:
-   - "${LIDARR_PORT}:8686"
-  restart: unless-stopped
-  networks:
-   - homelab_net
-  depends_on:
-   qbittorrent:
-    condition: service_healthy
-   jackett:
-    condition: service_healthy
-  healthcheck:
-   # /ping responds without API key
-   test: ["CMD", "curl", "-f", "http://localhost:8686/ping"]
-   interval: 1m
-   timeout: 10s
-   retries: 3
-   start_period: 60s
-  deploy:
-   resources:
-    limits:
-     cpus: "1.0"
-     memory: 512M
-    reservations:
-     cpus: "0.1"
-     memory: 128M
-
  octo-fiesta:
   image: ghcr.io/v1ck3s/octo-fiesta:latest
   container_name: octo-fiesta
@@ -355,7 +211,7 @@ services:
    - Yandex__Quality=${OCTOFIESTA_YANDEX_QUALITY:-}
   volumes:
    # Read-write so downloads are saved directly into the music library
-   - ../../homelab-data/music:/app/downloads
+   - ${DATA_ROOT}/media/music:/app/downloads
   depends_on:
    navidrome:
     condition: service_healthy

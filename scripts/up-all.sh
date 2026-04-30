@@ -4,17 +4,65 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-# Ensure homelab-data subdirs exist
+# ── Read DATA_ROOT from .env ──────────────────────────────────────────────────
+DATA_ROOT=$(grep -E '^DATA_ROOT=' .env 2>/dev/null | head -1 | cut -d= -f2- | sed "s/^['\"]//; s/['\"]$//")
+if [ -z "$DATA_ROOT" ]; then
+  echo "ERROR: DATA_ROOT not set in .env"
+  exit 1
+fi
+PUID=$(grep -E '^PUID=' .env 2>/dev/null | head -1 | cut -d= -f2-)
+PGID=$(grep -E '^PGID=' .env 2>/dev/null | head -1 | cut -d= -f2-)
+USE_VPN=$(grep -E '^USE_VPN=' .env 2>/dev/null | head -1 | cut -d= -f2-)
+
+echo "DATA_ROOT: $DATA_ROOT"
+echo "USE_VPN:   ${USE_VPN:-false}"
+
+# ── Migrate legacy data dirs to new media/ layout (idempotent) ────────────────
+if [ -d "./homelab-data/audiobooks" ] && [ ! -d "${DATA_ROOT}/media/audiobooks" ]; then
+  echo "Migrating homelab-data/audiobooks → ${DATA_ROOT}/media/audiobooks ..."
+  mkdir -p "${DATA_ROOT}/media"
+  mv "./homelab-data/audiobooks" "${DATA_ROOT}/media/audiobooks"
+fi
+if [ -d "./homelab-data/music" ] && [ ! -d "${DATA_ROOT}/media/music" ]; then
+  echo "Migrating homelab-data/music → ${DATA_ROOT}/media/music ..."
+  mkdir -p "${DATA_ROOT}/media"
+  mv "./homelab-data/music" "${DATA_ROOT}/media/music"
+fi
+if [ -d "./homelab-data/podcasts" ] && [ ! -d "${DATA_ROOT}/media/podcasts" ]; then
+  echo "Migrating homelab-data/podcasts → ${DATA_ROOT}/media/podcasts ..."
+  mkdir -p "${DATA_ROOT}/media"
+  mv "./homelab-data/podcasts" "${DATA_ROOT}/media/podcasts"
+fi
+# Remove empty legacy download dir (was never used for actual data)
+if [ -d "./homelab-data/qbittorrent-downloads" ]; then
+  rmdir --ignore-fail-on-non-empty "./homelab-data/qbittorrent-downloads"
+fi
+
+# ── Ensure all required data directories exist ────────────────────────────────
 mkdir -p \
-  ./homelab-data/audiobooks \
-  ./homelab-data/podcasts \
+  "${DATA_ROOT}/media/audiobooks" \
+  "${DATA_ROOT}/media/podcasts" \
+  "${DATA_ROOT}/media/music" \
+  "${DATA_ROOT}/media/movies" \
+  "${DATA_ROOT}/media/tv" \
+  "${DATA_ROOT}/media/books" \
+  "${DATA_ROOT}/torrents/movies" \
+  "${DATA_ROOT}/torrents/tv" \
+  "${DATA_ROOT}/torrents/music" \
+  "${DATA_ROOT}/torrents/books" \
+  "${DATA_ROOT}/torrents/incomplete" \
   ./homelab-data/audiobookshelf/config \
   ./homelab-data/audiobookshelf/metadata \
-  ./homelab-data/qbittorrent-downloads \
   ./homelab-data/qbittorrent/config \
   ./homelab-data/jackett/config \
   ./homelab-data/jackett/downloads \
   ./homelab-data/audiobookbay-downloader \
+  ./homelab-data/prowlarr/config \
+  ./homelab-data/radarr/config \
+  ./homelab-data/sonarr/config \
+  ./homelab-data/readarr/config \
+  ./homelab-data/lidarr/config \
+  ./homelab-data/gluetun \
   ./homelab-data/forgejo \
   ./homelab-data/immich_db \
   ./homelab-data/immich_upload \
@@ -23,9 +71,7 @@ mkdir -p \
   ./homelab-data/crosswatch \
   ./homelab-data/homepage/config \
   ./homelab-data/uptime-kuma \
-  ./homelab-data/music \
   ./homelab-data/navidrome/data \
-  ./homelab-data/lidarr/config \
   ./homelab-data/paperless/redis \
   ./homelab-data/paperless/db \
   ./homelab-data/paperless/data \
@@ -43,10 +89,33 @@ mkdir -p \
   ./homelab-data/jellyfin/cache \
   ./homelab-data/home-assistant
 
-# Ensure the shared external network exists (stacks declare it external so it must pre-exist)
-docker network create homelab_net 2>/dev/null || true
+# ── Fix ABS podcast write permissions ────────────────────────────────────────
+# ABS needs to write episode files as the host user (PUID:PGID)
+if [ -n "$PUID" ] && [ -n "$PGID" ]; then
+  chown -R "${PUID}:${PGID}" "${DATA_ROOT}/media/podcasts" "${DATA_ROOT}/media/audiobooks" 2>/dev/null || true
+fi
 
-# Seed Homepage config from template if not already present (containers never started yet)
+# ── Patch existing qBittorrent config (critical: sed runs even if file exists) ─
+QBT_CONF="./homelab-data/qbittorrent/config/qBittorrent/qBittorrent.conf"
+if [ -f "$QBT_CONF" ]; then
+  echo "Patching existing qBittorrent.conf paths ..."
+  sed -i \
+    's|/downloads/incomplete/|/data/torrents/incomplete/|g; s|/downloads/|/data/torrents/|g' \
+    "$QBT_CONF"
+fi
+
+# ── Force-update qBittorrent categories (always sync from template) ───────────
+QBT_CAT_DIR="./homelab-data/qbittorrent/config/qBittorrent"
+mkdir -p "$QBT_CAT_DIR"
+cp config-templates/qbittorrent/categories.json "${QBT_CAT_DIR}/categories.json"
+echo "Updated qBittorrent categories.json from template."
+
+# ── Seed configs from templates if not yet present ───────────────────────────
+if [ ! -f "$QBT_CONF" ]; then
+  mkdir -p "$(dirname "$QBT_CONF")"
+  cp config-templates/qbittorrent/qBittorrent.conf "$QBT_CONF"
+  echo "Seeded qBittorrent.conf from config-templates."
+fi
 if [ ! -f ./homelab-data/homepage/config/services.yaml ]; then
   cp config-templates/homepage/services.yaml ./homelab-data/homepage/config/services.yaml
   echo "Seeded Homepage services.yaml from config-templates."
@@ -67,31 +136,44 @@ if [ ! -f ./homelab-data/homepage/config/bookmarks.yaml ]; then
   cp config-templates/homepage/bookmarks.yaml ./homelab-data/homepage/config/bookmarks.yaml
   echo "Seeded Homepage bookmarks.yaml from config-templates."
 fi
-
-# Seed Stirling PDF settings from template if not already present
 if [ ! -f ./homelab-data/stirling-pdf/configs/settings.yml ]; then
   cp config-templates/stirling-pdf/settings.yml ./homelab-data/stirling-pdf/configs/settings.yml
   echo "Seeded Stirling PDF settings.yml from config-templates."
 fi
-
-# Seed CrossWatch config from template if not already present
 if [ ! -f ./homelab-data/crosswatch/config.json ]; then
   cp config-templates/crosswatch/config.json ./homelab-data/crosswatch/config.json
   echo "Seeded CrossWatch config.json from config-templates."
 fi
+if [ ! -f ./homelab-data/slskd/slskd.yml ]; then
+  mkdir -p ./homelab-data/slskd
+  cp config-templates/slskd/slskd.yml ./homelab-data/slskd/slskd.yml
+  echo "Seeded slskd config from config-templates."
+fi
 
-# Create kiwix data dir (kiwix-serve serves any .zim files dropped here directly)
-mkdir -p ./homelab-data/kiwix
+# ── Ensure the shared external network exists ─────────────────────────────────
+docker network create homelab_net 2>/dev/null || true
 
-# Always use --env-file .env for all stacks if present
+# ── Always use --env-file .env for all stacks ─────────────────────────────────
 if [ -f .env ]; then
   ENV_FILE_ARG="--env-file .env"
 else
   ENV_FILE_ARG=""
 fi
 
+# ── Arr stack: compose files depend on USE_VPN flag ──────────────────────────
+if [ "${USE_VPN}" = "true" ]; then
+  ARR_COMPOSE="-f dockerfiles/arr/compose.yaml -f dockerfiles/arr/compose.vpn.yaml"
+  echo "VPN mode enabled — arr stack will use gluetun."
+else
+  ARR_COMPOSE="-f dockerfiles/arr/compose.yaml"
+  echo "VPN mode disabled — arr stack running without VPN."
+fi
+
 echo "Bringing up core..."
 docker compose $ENV_FILE_ARG -f dockerfiles/core/compose.yaml up -d
+
+echo "Bringing up arr..."
+docker compose $ENV_FILE_ARG $ARR_COMPOSE up -d
 
 echo "Bringing up media..."
 docker compose $ENV_FILE_ARG -f dockerfiles/media/compose.yaml up -d

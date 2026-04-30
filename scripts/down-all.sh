@@ -11,6 +11,15 @@ else
   ENV_FILE_ARG=""
 fi
 
+USE_VPN=$(grep -E '^USE_VPN=' .env 2>/dev/null | head -1 | cut -d= -f2-)
+
+# Arr stack compose files depend on USE_VPN flag
+if [ "${USE_VPN}" = "true" ]; then
+  ARR_COMPOSE="-f dockerfiles/arr/compose.yaml -f dockerfiles/arr/compose.vpn.yaml"
+else
+  ARR_COMPOSE="-f dockerfiles/arr/compose.yaml"
+fi
+
 echo "Bringing down home..."
 docker compose $ENV_FILE_ARG -f dockerfiles/home/compose.yaml down
 
@@ -37,6 +46,9 @@ docker compose $ENV_FILE_ARG -f dockerfiles/productivity/compose.yaml down
 
 echo "Bringing down media..."
 docker compose $ENV_FILE_ARG -f dockerfiles/media/compose.yaml down
+
+echo "Bringing down arr..."
+docker compose $ENV_FILE_ARG $ARR_COMPOSE down
 
 echo "Bringing down core..."
 docker compose $ENV_FILE_ARG -f dockerfiles/core/compose.yaml down
