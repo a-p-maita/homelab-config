@@ -5,7 +5,8 @@
 **Scope:** This plan covers what to change, why, and in what order. Implementation is phase-by-phase.  
 **Revision note (v2):** Revised to correct stack consolidation over-simplification, add missing critical apps (Unpackerr, Maintainerr, autobrr), replace NPM with Caddy, and add backup strategy.  
 **Revision note (v4):** Added Phase 10 (Usenet), Known Plan Pain Points section, and corrected Readarr retirement throughout.  
-**Revision note (v5):** Evaluated expanded \*arr app list; added Wizarr, Cleanuparr, Listenarr, Lingarr, Posterizarr verdicts; updated Profilarr status; added Phase 11 (Real-Debrid).
+**Revision note (v5):** Evaluated expanded \*arr app list; added Wizarr, Cleanuparr, Listenarr, Lingarr, Posterizarr verdicts; updated Profilarr status; added Phase 11 (Real-Debrid).  
+**Revision note (v6):** Replaced Recyclarr with Profilarr (WebUI philosophy); replaced Kavita with Komga+Calibre-Web (no subscription tier); confirmed autobrr and Youtarr as additions; removed Real-Debrid phase (user keeps Stremio+RD separate); added Authelia for 2FA/SSO; added Cloudflare tunnel config; updated Usenet to comment-out-after-testing pattern.
 
 ---
 
@@ -22,7 +23,10 @@
 | Jackett               | Running alongside Prowlarr                            | Redundant for all \*arr apps; only kept for audiobookbay-downloader                                                                                                                                                                                                                                                 |
 | LazyLibrarian         | Running                                               | Upstream source code dead (last commit 2018); LinuxServer Docker image is still maintained but the application itself is abandoned                                                                                                                                                                                  |
 | autobrr               | Missing                                               | IRC/announce-based torrent grabbing for private tracker ratio maintenance                                                                                                                                                                                                                                           |
-| Recyclarr             | Working but no profile alternative noted              | Profilarr (Dictionarry) is an alternative worth knowing about — **now 2.1k ⭐, V2 actively developed; upgrade path when V2 stable**                                                                                                                                                                                 |
+| Recyclarr             | Running, CLI-only config sync                         | **Replace with Profilarr** — Profilarr has a WebUI that fits the low-CLI homelab philosophy; Recyclarr requires editing YAML files to update quality profiles                                                                                                                                                       |
+| Kavita                | Planned for book reading                              | **Kavita+ subscription gates basic features** (AniList sync, reviews, etc.) — replace with **Komga** (completely free, MIT, same feature set for ebooks/comics/manga) + **Calibre-Web** for library management + **BookBounty** for search-and-download                                                             |
+| 2FA / SSO             | No authentication layer                               | No 2FA protection on any service; a compromised Tailscale device can access everything. **Add Authelia** — lightweight SSO+2FA companion for Caddy; ~10MB RAM; TOTP, WebAuthn, passkeys                                                                                                                             |
+| Cloudflare tunnels    | cloudflared running but not documented                | Which services are tunnelled is undocumented; no reference configuration for the tunnel routes                                                                                                                                                                                                                      |
 | Reverse proxy         | NPM recommended in v1 of this plan                    | **Wrong choice for a git-tracked homelab** — NPM stores config in SQLite which can't be version-controlled; Caddy uses a plain-text `Caddyfile`                                                                                                                                                                     |
 | Monitoring            | Homepage + Uptime Kuma + Watchtower only              | No metrics, no disk SMART monitoring; Watchtower auto-updates all containers unguarded                                                                                                                                                                                                                              |
 | Backup                | **No backup strategy**                                | **Critical on a single NVMe** — no redundancy means a drive failure loses everything                                                                                                                                                                                                                                |
@@ -151,16 +155,16 @@ home/           (homeassistant) → home       ← keep isolated (may need host 
 
 **Proposed 6 stacks:**
 
-| Stack            | Services                                                                                                                                                                         | Why separate                                                                                 |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `infrastructure` | cloudflared, caddy, homepage, uptime-kuma, watchtower, scrutiny                                                                                                                  | Start first; everything depends on DNS/routing being up                                      |
-| `arr`            | gluetun, deunhealth, qbittorrent, sabnzbd\*, prowlarr, byparr, radarr, sonarr, lidarr, bookbounty\*, bazarr, jackett\*, recyclarr, unpackerr, autobrr\*, cleanuparr, listenarr\* | VPN namespace requires gluetun+qbittorrent in same compose; all download automation together |
-| `media`          | jellyfin, seerr, audiobookshelf, navidrome, feishin, octo-fiesta, crosswatch, yamtrack, maintainerr, kavita\*                                                                    | Pure playback/streaming/tracking; no VPN dependency                                          |
-| `cloud`          | immich-server, immich-ml, immich-postgres, immich-redis                                                                                                                          | Isolated internal network; ML workloads separate                                             |
-| `services`       | vaultwarden, actual-budget, joplin+postgres, paperless+redis+postgres, stirling-pdf, kiwix, mealie, forgejo, drawio, excalidraw, it-tools, wizarr                                | All productivity/personal services                                                           |
-| `home`           | home-assistant                                                                                                                                                                   | May need `network_mode: host` for mDNS/Zigbee; keep isolated                                 |
+| Stack            | Services                                                                                                                                                                                  | Why separate                                                                                 |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `infrastructure` | cloudflared, caddy, authelia, authelia-redis, homepage, uptime-kuma, watchtower, scrutiny                                                                                                 | Start first; everything depends on DNS/routing being up                                      |
+| `arr`            | gluetun, deunhealth, qbittorrent, sabnzbd\*, prowlarr, byparr, radarr, sonarr, lidarr, bookbounty\*, bazarr, jackett\*, profilarr, unpackerr, autobrr, cleanuparr, listenarr\*, youtarr\* | VPN namespace requires gluetun+qbittorrent in same compose; all download automation together |
+| `media`          | jellyfin, seerr, audiobookshelf, navidrome, feishin, octo-fiesta, crosswatch, yamtrack, maintainerr, komga\*, calibre-web\*                                                               | Pure playback/streaming/tracking; no VPN dependency                                          |
+| `cloud`          | immich-server, immich-ml, immich-postgres, immich-redis                                                                                                                                   | Isolated internal network; ML workloads separate                                             |
+| `services`       | vaultwarden, actual-budget, joplin+postgres, paperless+redis+postgres, stirling-pdf, kiwix, mealie, forgejo, drawio, excalidraw, it-tools, wizarr                                         | All productivity/personal services                                                           |
+| `home`           | home-assistant                                                                                                                                                                            | May need `network_mode: host` for mDNS/Zigbee; keep isolated                                 |
 
-\ \* jackett: pending audiobookbay-downloader/listenarr migration decision. autobrr: optional. bookbounty: optional if ebook automation desired. kavita: optional if ebook/comics reading needed. sabnzbd: add when Usenet is set up (Phase 10). listenarr: beta software — run alongside abb-downloader initially.
+\ \* jackett: pending audiobookbay-downloader/listenarr migration decision. bookbounty: optional if ebook automation desired. komga/calibre-web: optional if ebook/comics reading needed. sabnzbd: add when Usenet is set up (Phase 10), comment out after testing. listenarr: beta software — run alongside abb-downloader initially. youtarr: optional, add if archiving YouTube channels.
 
 **Why `arr` stays separate from `media`:**
 
@@ -192,7 +196,7 @@ All 40+ containers are on `homelab_net`. A compromised container (e.g. a public-
 ```
 homelab_net (external bridge — services that need to communicate cross-stack)
   ├── infrastructure: caddy, cloudflared, homepage, uptime-kuma
-  ├── arr: prowlarr, radarr, sonarr, lidarr, bookbounty, bazarr, recyclarr
+  ├── arr: prowlarr, radarr, sonarr, lidarr, bookbounty, bazarr, profilarr, autobrr
   │         gluetun (also on homelab_net for WebUI access)
   │         qbittorrent (via gluetun network namespace — NOT directly on homelab_net)
   ├── media: jellyfin, seerr, audiobookshelf, navidrome, maintainerr
@@ -308,39 +312,40 @@ The Caddyfile stays identical. The only change is DNS records and who's terminat
 
 > **Note on GitHub verification (April 2026):** All tools below have been checked against GitHub activity. Stars, last push date, and archived status confirmed via GitHub API.
 
-| App               | Role                                                        | GitHub Status (Apr 2026)                                                            | Verdict                                                                                                                                                                                                         |
-| ----------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Sonarr**        | TV show PVR                                                 | 13.7k ⭐, active, not archived                                                      | ✅ Keep — core                                                                                                                                                                                                  |
-| **Radarr**        | Movie PVR                                                   | 13.5k ⭐, active, not archived                                                      | ✅ Keep — core                                                                                                                                                                                                  |
-| **Lidarr**        | Music PVR                                                   | 5.3k ⭐, active, not archived                                                       | ✅ Keep — core                                                                                                                                                                                                  |
-| **Bazarr**        | Subtitle automation                                         | 3.9k ⭐, active, not archived                                                       | ✅ Keep — integrated with Sonarr/Radarr                                                                                                                                                                         |
-| **Prowlarr**      | Indexer aggregator (torrent **and Usenet**)                 | 6.4k ⭐, active, not archived                                                       | ✅ Keep — handles both torrent trackers AND Usenet indexers (Newznab protocol); no NZBHydra2 needed                                                                                                             |
-| **Byparr**        | Cloudflare bypass (FlareSolverr replacement)                | 1.4k ⭐, active, not archived                                                       | ✅ Keep — actively maintained                                                                                                                                                                                   |
-| **Recyclarr**     | Quality profile/format sync (TRaSH guides)                  | 1.9k ⭐, active, not archived                                                       | ✅ Keep — already working                                                                                                                                                                                       |
-| **Unpackerr**     | RAR/ZIP extraction for \*arr imports                        | 1.4k ⭐, active, not archived                                                       | ✅ **Add immediately** — critical gap                                                                                                                                                                           |
-| **Seerr**         | Media request portal (Overseerr + Jellyseerr fork)          | 11k ⭐, active, not archived                                                        | ✅ Keep — running (note: upstream Overseerr is archived; Seerr is the correct active continuation)                                                                                                              |
-| **Maintainerr**   | Automated cleanup of unwatched media                        | 1.9k ⭐, active, not archived                                                       | ✅ Add — disk space critical                                                                                                                                                                                    |
-| **autobrr**       | IRC announce-based torrent grabbing                         | 2.7k ⭐, active, not archived                                                       | 🟡 Optional — for private tracker ratio                                                                                                                                                                         |
-| **Jackett**       | Legacy indexer proxy                                        | Active but superseded by Prowlarr                                                   | ⚠️ Remove if audiobookbay-downloader migrates                                                                                                                                                                   |
-| **Kavita**        | Ebook / comics / manga reading server                       | 10.4k ⭐, active, not archived                                                      | ✅ Add — modern reading server, replaces LazyLibrarian's UI                                                                                                                                                     |
-| **BookBounty**    | Automated ebook download from Library Genesis               | 275 ⭐, active (Apr 2026)                                                           | 🟡 Optional — fills Readarr gap for ebook automation                                                                                                                                                            |
-| **LazyLibrarian** | Book manager                                                | Upstream dead since 2018; Docker OK                                                 | ❌ Remove — upstream abandoned 2018; replace with Kavita + BookBounty                                                                                                                                           |
-| **Readarr**       | Books/ebooks PVR (\*arr-style)                              | **ARCHIVED Jun 2025** — metadata broken                                             | ❌ **Do not add** — officially retired by the Servarr team; metadata source broken                                                                                                                              |
-| **Profilarr**     | Profile/format sync; build/test/deploy configs              | **2.1k ⭐**, V1 stable (v1.1.4 Jan 2026), **V2 actively developed (commits daily)** | ✅ Upgrade path — V1 usable now; V2 adds automated upgrades, renames, jobs. Migrate when V2 goes stable. More capable than Recyclarr long-term.                                                                 |
-| **Kapowarr**      | Comic book automated downloading                            | 943 ⭐, active, not archived                                                        | 🟡 Add if comics are in use (pairs with Komga/Kavita)                                                                                                                                                           |
-| **Komga**         | Comic/manga reading server                                  | 6.1k ⭐, active, not archived                                                       | 🟡 Alternative to Kavita for comics-only setups                                                                                                                                                                 |
-| **SuggestArr**    | Auto-request recommendations from watch history             | Active                                                                              | 🟡 Optional quality-of-life                                                                                                                                                                                     |
-| **Tdarr**         | Distributed transcoding automation                          | 4k ⭐, active                                                                       | ❌ Skip — too resource-intensive on laptop                                                                                                                                                                      |
-| **Youtarr**       | YouTube channel mirroring                                   | Active                                                                              | 🟡 Optional — only if needed                                                                                                                                                                                    |
-| **Wizarr**        | Automated user invitation for Jellyfin/ABS/Kavita           | **2.8k ⭐**, active (v2026.4.0, 29 days ago), 120 contributors                      | ✅ **Add** — automates Jellyfin (+ Audiobookshelf, Kavita, Romm) user onboarding; send a link, user is added automatically with guided setup wizard                                                             |
-| **Cleanuparr**    | Removes stalled/blocked/malware downloads from \*arr queues | **2.2k ⭐**, active (v2.9.10, 3 days ago), 131 releases                             | ✅ **Add** — **distinct role from Maintainerr**: Maintainerr manages the _library_ (unwatched content), Cleanuparr manages the _download queue_ (blocked, stalled, malware-flagged torrents that need removing) |
-| **Listenarr**     | Audiobook PVR — Sonarr/Radarr but for audiobooks            | **709 ⭐**, active (v0.2.75, yesterday), C# + Vue; **beta software**                | ✅ **Add (user-requested)** — run alongside `audiobookbay-downloader` initially; replace abb-downloader once confirmed stable. **Note:** developer-labeled beta; maintain abb-downloader as fallback.           |
-| **Lingarr**       | Automated subtitle translation (local + SaaS)               | **763 ⭐**, active (7 days ago), C#                                                 | 🟡 Optional — useful if non-English subtitle translation is needed; supports local models + DeepL/OpenAI                                                                                                        |
-| **Posterizarr**   | Automated textless poster artwork for Jellyfin              | **849 ⭐**, active (v2.2.39, 2 weeks ago), 240 releases                             | 🟡 Optional — fetches textless posters from Fanart.tv/TMDB/TVDB; web UI; triggers from Sonarr/Radarr; PowerShell-based                                                                                          |
-| **Dispatcharr**   | IPTV/EPG stream management                                  | 3.2k ⭐, active (v0.23.0, 2 weeks ago)                                              | ❌ Skip — IPTV stream aggregator; no IPTV use case in this homelab                                                                                                                                              |
-| **Watcharr**      | Watched-list tracker (movies/TV/anime/games)                | 1.3k ⭐, active (v3.0.1, Mar 2026)                                                  | ❌ Skip — overlaps with yamtrack (already in stack); yamtrack covers the same use case                                                                                                                          |
-| **Homarr**        | Dashboard alternative to Homepage                           | **3.7k ⭐** (homarr-labs/homarr), v1.59.3 last week, extremely active               | ❌ Skip — Homepage already in stack. Homarr (v1+, new repo `homarr-labs/homarr`) is a more capable alternative (40+ integrations, OIDC, WebSocket updates) but not worth switching dashboards                   |
-| **Riven**         | All-in-one Real-Debrid integration + VFS                    | 784 ⭐, last release Aug 2025 (8 months ago)                                        | ⚠️ Watch — impressive scope but activity slowing; Plex-primary; complex FUSE setup. See Phase 11 for RD strategy.                                                                                               |
+| App               | Role                                                        | GitHub Status (Apr 2026)                                                             | Verdict                                                                                                                                                                                                         |
+| ----------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Sonarr**        | TV show PVR                                                 | 13.7k ⭐, active, not archived                                                       | ✅ Keep — core                                                                                                                                                                                                  |
+| **Radarr**        | Movie PVR                                                   | 13.5k ⭐, active, not archived                                                       | ✅ Keep — core                                                                                                                                                                                                  |
+| **Lidarr**        | Music PVR                                                   | 5.3k ⭐, active, not archived                                                        | ✅ Keep — core                                                                                                                                                                                                  |
+| **Bazarr**        | Subtitle automation                                         | 3.9k ⭐, active, not archived                                                        | ✅ Keep — integrated with Sonarr/Radarr                                                                                                                                                                         |
+| **Prowlarr**      | Indexer aggregator (torrent **and Usenet**)                 | 6.4k ⭐, active, not archived                                                        | ✅ Keep — handles both torrent trackers AND Usenet indexers (Newznab protocol); no NZBHydra2 needed                                                                                                             |
+| **Byparr**        | Cloudflare bypass (FlareSolverr replacement)                | 1.4k ⭐, active, not archived                                                        | ✅ Keep — actively maintained                                                                                                                                                                                   |
+| **Recyclarr**     | Quality profile/format sync (TRaSH guides) — CLI only       | 1.9k ⭐, active, not archived                                                        | ❌ **Replace with Profilarr** — Recyclarr requires YAML editing for every profile change; Profilarr has a full WebUI that fits the low-CLI philosophy                                                           |
+| **Unpackerr**     | RAR/ZIP extraction for \*arr imports                        | 1.4k ⭐, active, not archived                                                        | ✅ **Add immediately** — critical gap                                                                                                                                                                           |
+| **Seerr**         | Media request portal (Overseerr + Jellyseerr fork)          | 11k ⭐, active, not archived                                                         | ✅ Keep — running (note: upstream Overseerr is archived; Seerr is the correct active continuation)                                                                                                              |
+| **Maintainerr**   | Automated cleanup of unwatched media                        | 1.9k ⭐, active, not archived                                                        | ✅ Add — disk space critical                                                                                                                                                                                    |
+| **autobrr**       | IRC announce-based torrent grabbing                         | 2.7k ⭐, active, not archived                                                        | ✅ **Add** — critical for private tracker ratio maintenance; also handles RSS feeds and filter-based auto-grabbing for public trackers                                                                          |
+| **Jackett**       | Legacy indexer proxy                                        | Active but superseded by Prowlarr                                                    | ⚠️ Remove if audiobookbay-downloader migrates                                                                                                                                                                   |
+| **Kavita**        | Ebook / comics / manga reading server                       | 10.4k ⭐, active; **Kavita+ subscription gates AniList sync, reviews, and more**     | ❌ **Skip — subscription tier locks basic features** (AniList integration, reviews, etc.). Replace with Komga (free, MIT) + Calibre-Web (free, GPL)                                                             |
+| **BookBounty**    | Automated ebook download from Library Genesis               | 275 ⭐, active (Apr 2026)                                                            | 🟡 Optional — fills Readarr gap for ebook automation                                                                                                                                                            |
+| **LazyLibrarian** | Book manager                                                | Upstream dead since 2018; Docker OK                                                  | ❌ Remove — upstream abandoned 2018; replace with Komga + BookBounty                                                                                                                                            |
+| **Readarr**       | Books/ebooks PVR (\*arr-style)                              | **ARCHIVED Jun 2025** — metadata broken                                              | ❌ **Do not add** — officially retired by the Servarr team; metadata source broken                                                                                                                              |
+| **Profilarr**     | Quality profile/format sync — full WebUI                    | **2.1k ⭐**, V1 stable (v1.1.4 Jan 2026), **V2 actively developed (commits daily)**  | ✅ **Add (replaces Recyclarr)** — full WebUI for profile management; no YAML editing; fits low-CLI philosophy. V1 works with Sonarr/Radarr/Lidarr today; V2 adds automation and renames.                        |
+| **Kapowarr**      | Comic book automated downloading                            | 943 ⭐, active, not archived                                                         | 🟡 Add if comics are in use (pairs with Komga)                                                                                                                                                                  |
+| **Komga**         | Comics / manga / ebooks / magazines reading server          | **6.2k ⭐**, active (v1.24.4, last week), MIT — **completely free, no subscription** | ✅ **Add (replaces Kavita)** — handles ebooks, comics, manga, magazines; OPDS v1+v2; Kobo sync; KOReader sync; all features free forever                                                                        |
+| **Calibre-Web**   | Web frontend for Calibre ebook library                      | **17k ⭐**, active (5 days ago, v0.6.26), GPL-3.0 — completely free                  | ✅ **Add** — browse, read, and **download** ebooks from a Calibre database; search + download functionality; Kobo sync; OPDS; no subscription                                                                   |
+| **SuggestArr**    | Auto-request recommendations from watch history             | Active                                                                               | ❌ Skip — user explicitly does not want this                                                                                                                                                                    |
+| **Tdarr**         | Distributed transcoding automation                          | 4k ⭐, active                                                                        | ❌ Skip — too resource-intensive on laptop                                                                                                                                                                      |
+| **Youtarr**       | YouTube channel mirroring / downloading                     | **1.0k ⭐** (`DialmasterOrg/Youtarr`), TypeScript, active (updated yesterday)        | ✅ **Add** — automates downloading and organising YouTube channel content; supports Plex/Emby/Jellyfin; scheduler for new uploads                                                                               |
+| **Wizarr**        | Automated user invitation for Jellyfin/ABS/Komga            | **2.8k ⭐**, active (v2026.4.0, 29 days ago), 120 contributors                       | ✅ **Add** — automates Jellyfin (+ Audiobookshelf, Komga, Romm) user onboarding; send a link, user is added automatically with guided setup wizard                                                              |
+| **Cleanuparr**    | Removes stalled/blocked/malware downloads from \*arr queues | **2.2k ⭐**, active (v2.9.10, 3 days ago), 131 releases                              | ✅ **Add** — **distinct role from Maintainerr**: Maintainerr manages the _library_ (unwatched content), Cleanuparr manages the _download queue_ (blocked, stalled, malware-flagged torrents that need removing) |
+| **Listenarr**     | Audiobook PVR — Sonarr/Radarr but for audiobooks            | **709 ⭐**, active (v0.2.75, yesterday), C# + Vue; **beta software**                 | ✅ **Add (user-requested)** — run alongside `audiobookbay-downloader` initially; replace abb-downloader once confirmed stable. **Note:** developer-labeled beta; maintain abb-downloader as fallback.           |
+| **Lingarr**       | Automated subtitle translation (local + SaaS)               | **763 ⭐**, active (7 days ago), C#                                                  | 🟡 Optional — useful if non-English subtitle translation is needed; supports local models + DeepL/OpenAI                                                                                                        |
+| **Posterizarr**   | Automated textless poster artwork for Jellyfin              | **849 ⭐**, active (v2.2.39, 2 weeks ago), 240 releases                              | 🟡 Optional — fetches textless posters from Fanart.tv/TMDB/TVDB; web UI; triggers from Sonarr/Radarr; PowerShell-based                                                                                          |
+| **Dispatcharr**   | IPTV/EPG stream management                                  | 3.2k ⭐, active (v0.23.0, 2 weeks ago)                                               | ❌ Skip — IPTV stream aggregator; no IPTV use case in this homelab                                                                                                                                              |
+| **Watcharr**      | Watched-list tracker (movies/TV/anime/games)                | 1.3k ⭐, active (v3.0.1, Mar 2026)                                                   | ❌ Skip — overlaps with yamtrack (already in stack); yamtrack covers the same use case                                                                                                                          |
+| **Homarr**        | Dashboard alternative to Homepage                           | **3.7k ⭐** (homarr-labs/homarr), v1.59.3 last week, extremely active                | ❌ Skip — Homepage already in stack. Homarr (v1+, new repo `homarr-labs/homarr`) is a more capable alternative (40+ integrations, OIDC, WebSocket updates) but not worth switching dashboards                   |
+| **Riven**         | All-in-one Real-Debrid integration + VFS                    | 784 ⭐, last release Aug 2025 (8 months ago)                                         | ⚠️ Watch — impressive scope but activity slowing; Plex-primary; complex FUSE setup. See Phase 11 for RD strategy.                                                                                               |
 
 ---
 
@@ -402,47 +407,89 @@ Configure rules in the Maintainerr UI pointing to Jellyfin, Sonarr, Radarr, and 
 
 ---
 
-### Priority 3: Book Management — Replace LazyLibrarian with Kavita + BookBounty
+### Priority 3: Book Management — Replace LazyLibrarian with Komga + Calibre-Web + BookBounty
 
 > **⚠️ IMPORTANT:** The previous version of this plan recommended replacing LazyLibrarian with Readarr. **Readarr has been officially retired by the Servarr team** (archived June 2025). Their README states: _"the project's metadata has become unusable, we no longer have the time to remake or repair it"_. Do not add Readarr.
+
+> **⚠️ IMPORTANT (v6 correction):** This plan previously recommended Kavita as the reading server. **Kavita+ subscription gates basic features** including AniList integration, reviews, and additional sync capabilities. In a self-hosted homelab, paying a subscription to unlock features of software you're running yourself defeats the purpose. Replaced with **Komga** (completely free, MIT, no subscription tier ever).
 
 **State of book automation (as of April 2026):**
 
 This is a genuine community-wide gap. The two most common book tools are either retired or abandoned:
 
 - **Readarr** — officially retired by Servarr; metadata source broken
-- **LazyLibrarian** (DobyTang upstream) — last upstream commit was December 2018; LinuxServer builds a Docker image from it but the application itself is effectively abandoned
+- **LazyLibrarian** (DobyTang upstream) — last upstream commit was December 2018; LinuxServer builds a Docker image but the application itself is effectively abandoned
 
-The selfhosted community has no direct \*arr-equivalent for ebooks that is still active.
+**Recommended book stack:**
 
-**Recommended book stack (two options, pick based on your usage):**
+#### A. Komga — Reading Server (Comics, Manga, Ebooks, Magazines)
 
-**Option A — Kavita only (if mostly reading, not heavy automated downloading):**
-
-Kavita (10.4k ⭐, actively maintained) is the correct modern replacement for a book-reading server. It handles ebooks (EPUB, PDF), comics, and manga from a single web UI — similar to what Jellyfin is for video. No \*arr-integration needed; you manage a folder and Kavita serves it.
+Komga (6.2k ⭐, MIT, completely free — **no subscription tier**) is the correct modern reading server. It handles all static formats (EPUB, CBZ, CBR, PDF, etc.) via a clean web UI with mobile reading, Kobo sync, KOReader sync, and OPDS v1+v2. Every feature is free.
 
 ```yaml
-kavita:
- image: lscr.io/linuxserver/kavita:latest
- container_name: kavita
+komga:
+ image: gotson/komga:latest
+ container_name: komga
  environment:
-  - PUID=${PUID}
-  - PGID=${PGID}
   - TZ=${TZ}
+ user: "${PUID}:${PGID}"
  volumes:
-  - ../../data/kavita/config:/config
+  - ../../data/komga/config:/config
   - ${DATA_ROOT}/media/books:/data/books
   - ${DATA_ROOT}/media/comics:/data/comics
  ports:
-  - "${KAVITA_PORT}:5000"
+  - "${KOMGA_PORT}:25600"
  restart: unless-stopped
  networks:
   - homelab_net
 ```
 
-**Option B — Kavita + BookBounty (if you want automated ebook downloading):**
+Add to `.env`:
 
-BookBounty (275 ⭐, actively maintained, last pushed April 2026) was specifically created to fill the gap left by Readarr. It searches Library Genesis for missing books and downloads them. It monitors a Readarr-compatible library path, making it a drop-in workflow replacement.
+```dotenv
+KOMGA_PORT=20077
+```
+
+#### B. Calibre-Web — Ebook Library Management + Download
+
+Calibre-Web (17k ⭐, GPL-3.0, free) provides a web interface for a Calibre library (`metadata.db`). It adds:
+
+- **Download button** for each book (the "search any book, click download" interface)
+- Send-to-Kindle / send-to-Kobo one-click delivery
+- Metadata editing, cover management
+- OPDS catalog for mobile reader apps
+- Kobo sync
+
+**Requirement:** Calibre-Web needs an existing Calibre database (`metadata.db`). If you don't have one, create it by running the Calibre desktop app once and pointing it at your books folder. The LinuxServer image includes the `ebook-convert` binary via the `universal-calibre` mod.
+
+```yaml
+calibre-web:
+ image: lscr.io/linuxserver/calibre-web:latest
+ container_name: calibre-web
+ environment:
+  - PUID=${PUID}
+  - PGID=${PGID}
+  - TZ=${TZ}
+  - DOCKER_MODS=linuxserver/mods:universal-calibre # adds ebook-convert binary
+ volumes:
+  - ../../data/calibre-web/config:/config
+  - ${DATA_ROOT}/media/books:/books
+ ports:
+  - "${CALIBREWEB_PORT}:8083"
+ restart: unless-stopped
+ networks:
+  - homelab_net
+```
+
+Add to `.env`:
+
+```dotenv
+CALIBREWEB_PORT=20078
+```
+
+#### C. BookBounty — Search Any Book, Click Download (Library Genesis)
+
+BookBounty (275 ⭐, TheWicklowWolf, actively maintained) provides the **Seerr-like "search and click download"** experience for ebooks. Enter a book title or author, it searches Library Genesis, and you click to add the download. The downloaded book lands in your Calibre/Komga library folder.
 
 ```yaml
 bookbounty:
@@ -463,19 +510,26 @@ bookbounty:
   - homelab_net
 ```
 
+Add to `.env`:
+
+```dotenv
+BOOKBOUNTY_PORT=20079
+```
+
 **Decision table:**
 
-| Scenario                            | Action                                        |
-| ----------------------------------- | --------------------------------------------- |
-| Audiobooks only                     | audiobookshelf already handles this ✅        |
-| Ebooks — reading server only        | Add Kavita, remove LazyLibrarian              |
-| Ebooks — want automated downloading | Add Kavita + BookBounty, remove LazyLibrarian |
-| Comics/manga                        | Kavita handles these natively too             |
-| No active ebook usage               | Remove LazyLibrarian, skip Kavita             |
+| Scenario                         | Action                                                     |
+| -------------------------------- | ---------------------------------------------------------- |
+| Audiobooks only                  | audiobookshelf already handles this ✅                     |
+| Ebooks — reading server only     | Add Komga, remove LazyLibrarian                            |
+| Ebooks — want search+download    | Add Komga + BookBounty, remove LazyLibrarian               |
+| Full ebook management + download | Add Komga + Calibre-Web + BookBounty, remove LazyLibrarian |
+| Comics/manga                     | Komga handles these natively too                           |
+| No active ebook usage            | Remove LazyLibrarian, skip all three                       |
 
 **Migration from LazyLibrarian:**
 
-LazyLibrarian's book library at `${DATA_ROOT}/media/books` can be pointed to directly by Kavita as a library folder. Kavita will scan and display all existing files. No import needed.
+LazyLibrarian's book library at `${DATA_ROOT}/media/books` can be pointed to directly by Komga as a library folder. Komga will scan and display all existing files. No import needed.
 
 ---
 
@@ -491,13 +545,49 @@ If audiobookbay-downloader supports Torznab, remove `jackett`. If not, keep it �
 
 ---
 
-### Recyclarr vs Profilarr — Keep Recyclarr
+### Priority 4: Replace Recyclarr with Profilarr (WebUI — Low-CLI Philosophy)
 
-**Recyclarr** syncs quality profiles and custom formats from the TRaSH Guides community database. It's established, well-documented, and already working in this setup.
+> **Why replace Recyclarr?** Recyclarr syncs TRaSH Guide quality profiles and custom formats via a YAML config file edited by hand. Every profile change means editing `recyclarr.yml`, understanding its `!env_var` custom YAML syntax, and running a CLI sync. This is the opposite of the low-CLI homelab philosophy.
 
-**Profilarr** (from Dictionarry.dev) is a newer alternative that pulls from the Dictionarry profile database. It uses a more scientific approach to quality scoring (efficiency metrics, Golden Popcorn standards) but requires reconfiguring from scratch and the database is less mature.
+**Profilarr** (`Dictionarry-Hub/profilarr`) does the same job — syncing quality profiles and custom formats into Radarr/Sonarr/Lidarr — but via a **full WebUI**. You click through a web dashboard to select profiles from the Dictionarry database, configure them, and apply changes. No YAML editing, no CLI.
 
-**Verdict:** Keep Recyclarr. The TRaSH guide profiles are production-tested for years. Note Profilarr as a future upgrade path if you want to move to Dictionarry's quality methodology.
+**Current state (as of April 2026):**
+
+- 2.1k ⭐, V1 stable (`v1.1.4`, January 2026), V2 in active development (commits daily)
+- V1 supports Radarr, Sonarr, Lidarr — same scope as Recyclarr
+- V2 adds automated upgrades, job scheduling, profile rename handling
+- Dictionarry's quality database uses a more scientific scoring approach (efficiency metrics, Golden Popcorn standards)
+
+**Migration plan:**
+
+1. Export your current Recyclarr quality profiles from Radarr/Sonarr (Settings → Quality Profiles → screenshot/export)
+2. Deploy Profilarr, connect to Radarr/Sonarr/Lidarr
+3. Configure equivalent profiles in Profilarr WebUI
+4. Disable and remove Recyclarr once confirmed
+5. Check existing quality profiles have the same custom formats applied
+
+```yaml
+profilarr:
+ image: ghcr.io/dictionarry-hub/profilarr:latest
+ container_name: profilarr
+ environment:
+  - TZ=${TZ}
+ volumes:
+  - ../../data/profilarr/config:/config
+ ports:
+  - "${PROFILARR_PORT}:7474"
+ restart: unless-stopped
+ networks:
+  - homelab_net
+```
+
+Add to `.env`:
+
+```dotenv
+PROFILARR_PORT=20075
+```
+
+> **Note on Recyclarr's `!env_var` syntax:** Recyclarr uses a custom YAML extension tag `!env_var` in its config that is not standard YAML — generic linters reject it. This is another reason to move to Profilarr's WebUI approach.
 
 ---
 
@@ -516,9 +606,9 @@ If your setup is primarily public trackers or Usenet, skip it. autobrr is lightw
 
 ### Priority 5: Add Wizarr (User Invitation System)
 
-Wizarr (`wizarrrr/wizarr`) automates adding users to Jellyfin, Audiobookshelf, Kavita, and Romm. Instead of manually creating accounts and explaining the setup, you send a time-limited invite link — the user clicks it, enters their name, and is automatically added to all configured media services. The wizard guides them through downloading apps, setting up the request system (Seerr), etc.
+Wizarr (`wizarrrr/wizarr`) automates adding users to Jellyfin, Audiobookshelf, Komga, and Romm. Instead of manually creating accounts and explaining the setup, you send a time-limited invite link — the user clicks it, enters their name, and is automatically added to all configured media services. The wizard guides them through downloading apps, setting up the request system (Seerr), etc.
 
-Supports: Plex, Jellyfin, Emby, Audiobookshelf, Romm, Komga, Kavita, OIDC SSO.
+Supports: Plex, Jellyfin, Emby, Audiobookshelf, Romm, Komga, OIDC SSO.
 
 ```yaml
 wizarr:
@@ -638,7 +728,81 @@ LISTENARR_PORT=20073
 
 **Note on audiobookbay-downloader:** Keep it running in parallel during the evaluation period. Both can coexist without conflict as they use separate library paths and download queues.
 
---- (Critical on Single NVMe)
+---
+
+### Priority 8: Add autobrr (Torrent Filter + Announce Grabbing)
+
+autobrr (2.7k ⭐, `autobrr/autobrr`) is a modern torrent automation tool that:
+
+- Connects to **IRC announce channels** from private trackers and grabs matching releases the instant they are announced (before the swarm even starts — ensures you get a slot)
+- Can also monitor RSS feeds and apply filter rules
+- Has a **full WebUI** for managing filters, release history, and indexer connections
+- Works with qBittorrent, Deluge, Transmission, rTorrent
+- Supports Radarr/Sonarr push (send directly to arr app rather than client)
+
+Even if you only use public trackers, autobrr is valuable for filter-based auto-grabbing (e.g. "grab any 4K Remux that appears on a specific tracker") without needing to open Radarr.
+
+```yaml
+autobrr:
+ image: ghcr.io/autobrr/autobrr:latest
+ container_name: autobrr
+ user: "${PUID}:${PGID}"
+ environment:
+  - TZ=${TZ}
+ volumes:
+  - ../../data/autobrr/config:/config
+ ports:
+  - "${AUTOBRR_PORT}:7474"
+ restart: unless-stopped
+ networks:
+  - homelab_net
+```
+
+Add to `.env`:
+
+```dotenv
+AUTOBRR_PORT=20074
+```
+
+Configure via the WebUI at `http://localhost:20074`. Add IRC networks for your private trackers, create filters matching your release criteria, and connect to qBittorrent.
+
+---
+
+### Priority 9: Add Youtarr (YouTube Channel Archiving)
+
+Youtarr (`DialmasterOrg/Youtarr`, 1.0k ⭐, TypeScript) automates downloading and organising YouTube channel content:
+
+- Subscribe to specific channels or playlists
+- Scheduler for checking and grabbing new uploads automatically
+- Organises content into folders compatible with Jellyfin/Plex/Emby/Kodi
+- Full WebUI — no CLI needed
+- yt-dlp-based backend with quality selection
+
+```yaml
+youtarr:
+ image: ghcr.io/dialmasterorg/youtarr:latest
+ container_name: youtarr
+ environment:
+  - TZ=${TZ}
+ volumes:
+  - ../../data/youtarr/config:/app/config
+  - ${DATA_ROOT}/media/youtube:/downloads
+ ports:
+  - "${YOUTARR_PORT}:9762"
+ restart: unless-stopped
+ networks:
+  - homelab_net
+```
+
+Add to `.env`:
+
+```dotenv
+YOUTARR_PORT=20076
+```
+
+Add the `${DATA_ROOT}/media/youtube` path to Jellyfin as a separate library folder with content type "Movies" or "Video".
+
+---
 
 This was missing from the original plan. On a single NVMe with no RAID or redundancy, a drive failure is total data loss. Backup must be implemented before doing any structural overhaul.
 
@@ -850,11 +1014,12 @@ homelab-config/
 │   │                             # prometheus, node-exporter, grafana, scrutiny
 │   ├── arr/
 │   │   ├── compose.yaml          # qbittorrent, prowlarr, byparr, radarr, sonarr, lidarr,
-│   │   │                         # bookbounty*, bazarr, jackett*, recyclarr, unpackerr, autobrr*
+│   │   │                         # bookbounty*, bazarr, jackett*, profilarr, unpackerr,
+│   │   │                         # autobrr, cleanuparr, listenarr*, youtarr*
 │   │   └── compose.vpn.yaml      # gluetun, deunhealth overlay
 │   ├── media/
 │   │   └── compose.yaml          # jellyfin, seerr, audiobookshelf, navidrome, feishin,
-│   │                             # octo-fiesta, crosswatch, yamtrack, maintainerr, kavita*
+│   │                             # octo-fiesta, crosswatch, yamtrack, maintainerr, komga*, calibre-web*
 │   ├── cloud/
 │   │   ├── compose.yaml          # immich (upstream file — update from upstream periodically)
 │   │   └── compose.override.yaml # our volume paths, network, labels
@@ -978,15 +1143,15 @@ No compose file changes needed except removing/commenting `cloudflared`. This is
 
 ### Memory pressure analysis
 
-With new services added (Unpackerr, Maintainerr, autobrr, Caddy, Prometheus, Grafana, node-exporter, Scrutiny, Kavita, SABnzbd, Wizarr, Cleanuparr, Listenarr), the container count grows to ~58. Estimate:
+With new services added (Unpackerr, Maintainerr, autobrr, Caddy, Prometheus, Grafana, node-exporter, Scrutiny, Komga, Calibre-Web, SABnzbd, Wizarr, Cleanuparr, Listenarr, Profilarr, Youtarr, Authelia, authelia-redis), the container count grows to ~65. Estimate:
 
-| Tier                     | Services                                                           | Est. RAM    |
-| ------------------------ | ------------------------------------------------------------------ | ----------- |
-| Heavy                    | immich-ml (2G), immich-server (2G), jellyfin (1G)                  | ~5G         |
-| Medium                   | paperless, radarr, sonarr, lidarr, kavita, home-assistant, grafana | ~2.5G       |
-| Light                    | all others combined (~40 containers)                               | ~3G         |
-| System + Docker overhead |                                                                    | ~2G         |
-| **Total**                |                                                                    | ~12.5G peak |
+| Tier                     | Services                                                          | Est. RAM    |
+| ------------------------ | ----------------------------------------------------------------- | ----------- |
+| Heavy                    | immich-ml (2G), immich-server (2G), jellyfin (1G)                 | ~5G         |
+| Medium                   | paperless, radarr, sonarr, lidarr, komga, home-assistant, grafana | ~2.5G       |
+| Light                    | all others combined (~40 containers)                              | ~3G         |
+| System + Docker overhead |                                                                   | ~2G         |
+| **Total**                |                                                                   | ~12.5G peak |
 
 14GB RAM — still acceptable with ~1.5G headroom. If memory pressure shows in Grafana:
 
@@ -1076,11 +1241,13 @@ Stop and remove: `docker stop docker-model-runner && docker rm docker-model-runn
 
 ### 6. `.env.example` completeness
 
-Every new service added (Kavita, BookBounty, Maintainerr, Unpackerr, Caddy, Prometheus, Grafana, Scrutiny, autobrr, SABnzbd) needs port and API key variables documented in `.env.example` with placeholder values and comments.
+Every new service added (Komga, Calibre-Web, BookBounty, Maintainerr, Unpackerr, Caddy, Prometheus, Grafana, Scrutiny, autobrr, Profilarr, Youtarr, Authelia, SABnzbd) needs port and API key variables documented in `.env.example` with placeholder values and comments.
 
 ---
 
 ## Phase 10 — Usenet Integration
+
+> **Implementation approach:** Configure fully, test with a free/freemium indexer (NZBFinder free tier), confirm the pipeline works end-to-end, then **comment out the SABnzbd service in the compose file** until you decide to subscribe to a paid provider. The compose snippet, path structure, and \*arr integrations should all be written and tested before committing to a subscription.
 
 Usenet is a distinct download pipeline that complements torrents. It should be considered alongside the \*arr stack, not as a replacement for it.
 
@@ -1171,6 +1338,8 @@ All indexers are configured in **Prowlarr** (Settings → Indexers → Add Index
 
 Add to the `arr` stack (`stacks/arr/compose.yaml`). SABnzbd runs on `homelab_net` directly — it does **not** route through gluetun. Usenet providers are connected to over SSL (port 563 or 443), no VPN needed:
 
+> **Testing approach:** Add the full snippet below. Test with NZBFinder (free tier — no payment required). Once you've confirmed the pipeline works (SABnzbd → Prowlarr → Radarr/Sonarr), **comment out the `sabnzbd:` service block** in the compose file until you decide on a paid provider subscription. The `${DATA_ROOT}/usenet/` path structure and \*arr integrations can stay configured; they won't be active while SABnzbd is commented out.
+
 ```yaml
 sabnzbd:
  image: lscr.io/linuxserver/sabnzbd:latest
@@ -1187,6 +1356,7 @@ sabnzbd:
  restart: unless-stopped
  networks:
   - homelab_net
+ ## COMMENT OUT the above block after testing — re-enable when subscribing to a provider
 ```
 
 Add to `.env`:
@@ -1265,102 +1435,286 @@ Usenet's principal advantage is **reliability for older or obscure content** tha
 
 ---
 
-## Phase 11 — Real-Debrid Integration (Optional)
+## Phase 11 — Authentication Layer: Authelia (2FA + SSO for All Services)
 
-> **Context:** User has Real-Debrid access and runs Stremio + RD for easy low-configuration streaming. This phase evaluates whether and how the homelab \*arr stack should also interact with Real-Debrid.
+> **Why not Authentik?** Authentik (21.3k ⭐) is a full enterprise-grade IdP. It requires postgres + redis + a worker container on top of the server, totalling ~500MB–1GB RAM. For a single-user homelab, that overhead is not justified. Authelia (27.7k ⭐) is a lightweight Go binary (~10MB RAM) that does exactly what this homelab needs: 2FA protection via TOTP/WebAuthn, per-route access policies, and native Caddy `forward_auth` integration.
 
-### What is Real-Debrid?
+> **Note on Aegis:** Aegis Authenticator is an Android app for managing TOTP codes on your phone. It is not a server-side tool you self-host. Use Aegis (or any TOTP app) on your phone as the client. Authelia is the server-side authentication layer.
 
-Real-Debrid (RD) is a "debrid" service: a cloud-hosted torrent caching system. When you add a magnet link to RD, if that torrent is already in their cache, the files are immediately available over HTTPS at full speed with no seeding, no ratio, and no VPN required for downloading. If it's not cached, RD downloads it to their servers on your behalf.
+### What Authelia Does
 
-The practical benefit: nearly all popular torrents (movies, TV) are in the RD cache. You get instant full-speed access to them without running a torrent client or managing a seeding ratio.
+Authelia sits between Caddy and your services. When a request arrives at a protected subdomain, Caddy forwards it to Authelia. Authelia:
 
-### Current Setup — Keep As-Is (Recommended Starting Point)
+1. Presents a login portal (username + password)
+2. If 2FA is enabled for that user, prompts for TOTP code or WebAuthn/passkey
+3. On success, issues a session cookie — the user is not prompted again until the session expires
+4. On failure, blocks the request
 
-The user's current Stremio + RD setup handles **casual streaming** beautifully: search, click, watch. No configuration needed.
+This means **every service** gets 2FA protection without modifying the service itself. Your \*arr apps, Grafana, Uptime Kuma, Paperless — all protected by one login.
 
-**This is the correct primary use case for RD.** The homelab \*arr stack handles everything else: library organisation, subtitles (Bazarr), audiobooks, music, request management (Seerr), metadata scrapers (Recyclarr), and long-tail content.
+**Access policy flexibility:** You can configure different protection levels per route:
 
-**The two systems work independently** — there is no technical conflict between running both.
-
-### Homelab Stack Integration Options (Evaluated)
-
-If you want \*arr apps to also use RD as a content source (so Radarr/Sonarr search the RD cache), there are three approaches. They are listed in order of increasing complexity:
-
----
-
-#### Option 1: Torrentio as a Prowlarr Indexer (Zero Extra Containers)
-
-Torrentio is a Stremio addon that also exposes a Torznab-compatible API. It sources results from the RD cache (and other services). Prowlarr can use a Torrentio instance as a Torznab indexer.
-
-**How it works:**
-
-1. Add a Torrentio instance (public or self-hosted) to Prowlarr as a Torznab indexer with your RD API key
-2. Radarr/Sonarr search Prowlarr → Torrentio returns cached RD links
-3. A download client (e.g. `rdt-client`) intercepts RD links and triggers the RD cloud download instead of a real torrent download
-4. Files arrive directly from RD servers at full speed
-
-**Practical limitation:** This requires `rdt-client` (a small container that acts as a fake qBittorrent client but actually calls the RD API). Additional complexity for minimal gain if the main use case is already covered by Stremio.
-
-**Verdict:** Possible but adds `rdt-client` complexity. Most useful if you want Radarr/Sonarr to automatically grab new releases via RD cache.
-
----
-
-#### Option 2: Zurg + rclone FUSE Mount (Complex, Most Powerful)
-
-**Zurg** (`debridmediamanager/zurg-testing`) mounts your entire RD torrent library as a WebDAV filesystem via rclone. Every torrent you've added to RD appears as a local directory — \*arr apps and Jellyfin see it as local files.
-
-**Current state:**
-
-- Public free version: `v0.9.3-final` (July 2024) — functional but 10 months behind
-- Newer `v0.10.x` is sponsorware (Patreon-gated) — not freely available
-- 859 ⭐ on `zurg-testing` repo
-
-**How it works:**
-
-```
-RD cache → Zurg WebDAV → rclone FUSE mount → /mnt/realdebrid/ on host → Jellyfin/Radarr volume
+```yaml
+# Examples in authelia config:
+# /admin/* → require 2FA
+# /api/* → bypass (for *arr app API calls)
+# Internal IPs (Tailscale range) → bypass
+# Public subdomains → require 2FA
 ```
 
-**Implementation complexity (high):**
+### Resource Requirements
 
-- Requires `user_allow_other` in `/etc/fuse.conf`
-- Requires `--allow-other` on the rclone FUSE mount
-- Requires the mount directory to be a bind-mount marked `rshared` (run once per boot)
-- Docker volume propagation: containers need `:rshared` or `:rslave` bind mounts
-- Stale mount handling after crashes (need `fusermount -uz` before restart)
-- systemd unit or fstab entry to survive reboots
+| Component      | RAM   | Notes                                                                 |
+| -------------- | ----- | --------------------------------------------------------------------- |
+| authelia       | ~10MB | Single Go binary; SQLite backend (no postgres needed for single-user) |
+| authelia-redis | ~5MB  | Optional but recommended for session persistence across restarts      |
 
-**Verdict:** Powerful for building a full RD-backed library, but the public version is behind and the setup complexity is non-trivial on a laptop homelab. Worth revisiting if `v0.10.x` sponsorware becomes free.
+### Compose Snippet
+
+Add to the `infrastructure` stack:
+
+```yaml
+authelia:
+ image: authelia/authelia:latest
+ container_name: authelia
+ environment:
+  - TZ=${TZ}
+ volumes:
+  - ../../config/authelia:/config
+ ports:
+  - "${AUTHELIA_PORT}:9091"
+ restart: unless-stopped
+ networks:
+  - homelab_net
+ labels:
+  - "com.centurylinklabs.watchtower.enable=true"
+
+authelia-redis:
+ image: redis:7-alpine
+ container_name: authelia-redis
+ volumes:
+  - ../../data/authelia/redis:/data
+ restart: unless-stopped
+ networks:
+  - homelab_net
+```
+
+Add to `.env`:
+
+```dotenv
+AUTHELIA_PORT=9091
+```
+
+### Authelia Config (`config/authelia/configuration.yml`)
+
+```yaml
+---
+server:
+ address: tcp://0.0.0.0:9091
+
+log:
+ level: info
+
+theme: dark
+
+totp:
+ issuer: homelab.yourdomain.com
+ period: 30
+ skew: 1
+
+authentication_backend:
+ file:
+  path: /config/users_database.yml
+  password:
+   algorithm: argon2
+   argon2:
+    iterations: 3
+    memory: 65536
+    parallelism: 4
+    key_length: 32
+    salt_length: 16
+
+access_control:
+ default_policy: two_factor # require 2FA everywhere by default
+ rules:
+  # API endpoints bypass auth (arr apps need these unauthenticated)
+  - domain: "*.yourdomain.com"
+    resources:
+     - "^/api/.*$"
+     - "^/identity/.*$"
+     - "^/trigger/.*$"
+    policy: bypass
+  # Tailscale IP range — bypass auth on LAN (optional, adjust to taste)
+  - domain: "*.yourdomain.com"
+    networks:
+     - "100.64.0.0/10" # Tailscale CGNAT range
+    policy: bypass
+  # Public services — one-factor (password only, no TOTP for family sharing)
+  - domain:
+     - "jellyfin.yourdomain.com"
+     - "seerr.yourdomain.com"
+    policy: one_factor
+
+session:
+ name: authelia_session
+ secret: ${AUTHELIA_SESSION_SECRET} # generate: openssl rand -hex 32
+ expiration: 1h
+ inactivity: 10m
+ remember_me: 1M
+ redis:
+  host: authelia-redis
+  port: 6379
+
+regulation:
+ max_retries: 5
+ find_time: 2m
+ ban_time: 15m
+
+storage:
+ local:
+  path: /config/db.sqlite3
+ encryption_key: ${AUTHELIA_STORAGE_KEY} # generate: openssl rand -hex 32
+
+notifier:
+ smtp:
+  address: smtp://youremail:587
+  username: you@youremail.com
+  password: ${AUTHELIA_SMTP_PASSWORD}
+  sender: authelia@yourdomain.com
+  subject: "[Authelia] {title}"
+```
+
+**Users file (`config/authelia/users_database.yml`):**
+
+```yaml
+users:
+ yourusername:
+  displayname: "Your Name"
+  password: "$argon2id$v=19$..." # generate: authelia crypto hash generate argon2 --password yourpassword
+  email: you@yourdomain.com
+  groups:
+   - admins
+```
+
+### Caddy Integration (`forward_auth` directive)
+
+In the Caddyfile, protect a service by inserting `forward_auth` before the reverse proxy:
+
+```caddyfile
+radarr.home.arpa {
+    forward_auth authelia:9091 {
+        uri /api/verify?rd=https://auth.yourdomain.com
+        copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+    }
+    reverse_proxy radarr:7878
+}
+
+# Public service with lighter protection:
+jellyfin.yourdomain.com {
+    forward_auth authelia:9091 {
+        uri /api/verify?rd=https://auth.yourdomain.com
+        copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+    }
+    reverse_proxy jellyfin:8096
+}
+
+# Authelia portal itself:
+auth.yourdomain.com {
+    reverse_proxy authelia:9091
+}
+```
+
+### Setup Steps
+
+1. Generate secrets: `openssl rand -hex 32` twice (session secret + storage key)
+2. Create `users_database.yml` with your user entry
+3. Generate password hash: `docker run --rm authelia/authelia:latest authelia crypto hash generate argon2 --password yourpassword`
+4. Start Authelia: `docker compose up -d authelia authelia-redis`
+5. Visit `http://localhost:9091`, complete TOTP setup (scan QR code with Aegis or any TOTP app)
+6. Update Caddyfile to add `forward_auth` blocks to each protected service
 
 ---
 
-#### Option 3: Riven (All-in-One RD Integration)
+## Phase 12 — Cloudflare Tunnel Configuration
 
-Riven (`rivenmedia/riven`, 784 ⭐) combines RD integration, a virtual filesystem (RivenVFS), watchlist sync from Overseerr/Trakt/Plex, and scraping from Torrentio/Comet/Jackett into one container. It creates symlinks in a VFS directory; Plex/Jellyfin serve files from there while RD actually streams them.
+The homelab already runs `cloudflared`. This phase documents the correct tunnel route configuration and which services should be publicly exposed.
 
-**Current state:**
+### Principle: Minimal Public Exposure
 
-- Last stable release: `v0.23.6` (August 2025 — **8 months ago**)
-- Most recent commits are 3–5 weeks old (maintenance only)
-- Activity has clearly slowed compared to its peak
-- Plex-primary by design; Jellyfin support is listed but less tested
-- Complex startup order, shared bind mounts, FUSE requirements identical to Zurg
+Only services that require external access (family access, mobile app sync, remote access) go through the Cloudflare tunnel. Everything else stays on Tailscale or LAN only.
 
-**Verdict:** Impressive scope but maintenance trajectory is concerning for a self-hosted dependency. Not recommended for a production homelab right now. Revisit if development resumes actively.
+### Services Exposure Matrix
 
----
+| Service             | Via Cloudflare Tunnel              | Via Tailscale / LAN Only | Notes                                         |
+| ------------------- | ---------------------------------- | ------------------------ | --------------------------------------------- |
+| **Jellyfin**        | ✅ `jellyfin.yourdomain.com`       | ✅ `jellyfin.home.arpa`  | Family streaming access                       |
+| **Immich**          | ✅ `immich.yourdomain.com`         | ✅                       | Family photo access + mobile app              |
+| **Vaultwarden**     | ✅ `vault.yourdomain.com`          | ✅                       | Bitwarden mobile apps require HTTPS           |
+| **Navidrome**       | ✅ `music.yourdomain.com`          | ✅                       | Feishin remote URL                            |
+| **Audiobookshelf**  | ✅ `abs.yourdomain.com`            | ✅                       | Mobile app sync                               |
+| **Forgejo**         | ✅ `git.yourdomain.com`            | ✅                       | Git push from anywhere                        |
+| **Seerr**           | ✅ `seerr.yourdomain.com`          | ✅                       | Submit media requests from mobile             |
+| **Wizarr**          | ✅ `join.yourdomain.com`           | ✅                       | User invite links must be publicly accessible |
+| **Authelia portal** | ✅ `auth.yourdomain.com`           | ✅                       | SSO login page                                |
+| **Homepage**        | ❌ Never public                    | ✅ Tailscale only        | Admin dashboard                               |
+| **Radarr/Sonarr**   | ❌                                 | ✅ Tailscale only        | \*arr apps never public                       |
+| **qBittorrent**     | ❌                                 | ✅ Tailscale only        | Too sensitive                                 |
+| **Grafana**         | ❌                                 | ✅ Tailscale only        | Metrics dashboard                             |
+| **Paperless**       | ❌                                 | ✅ Tailscale only        | Private documents                             |
+| **Uptime Kuma**     | ❌                                 | ✅ Tailscale only        | —                                             |
+| **Authelia**        | ❌ (portal yes, container port no) | —                        | Only the portal subdomain via tunnel          |
 
-### Recommended Strategy
+### Cloudflare Zero Trust Tunnel Configuration
 
-| Priority                 | Action                                           | Reason                                                                                     |
-| ------------------------ | ------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| **Immediate**            | Keep Stremio + RD as-is                          | It works perfectly for casual streaming; zero overhead                                     |
-| **Optional later**       | Add `rdt-client` + Torrentio indexer in Prowlarr | If you want Radarr/Sonarr to automatically grab releases via RD cache; one extra container |
-| **Future consideration** | Zurg + rclone mount                              | If `v0.10.x` becomes freely available and you want RD as your primary library source       |
-| **Skip**                 | Riven                                            | Activity too slow; Plex-primary; complex FUSE setup                                        |
+In the Cloudflare Zero Trust dashboard (one.dash.cloudflare.com → Access → Tunnels → your tunnel → Public Hostname):
 
-**The clean architecture:** Stremio + RD for "what's new and popular" (streaming). Homelab \*arr stack for "full library, long-tail content, audiobooks, music, subtitles, backlog". The two are complementary, not competing.
+```
+# Each row is one Public Hostname entry in the Zero Trust dashboard:
+
+Subdomain          | Domain           | Type  | URL
+-------------------------------------------------------------------
+jellyfin           | yourdomain.com   | HTTPS | caddy:443  (Caddy terminates TLS internally)
+immich             | yourdomain.com   | HTTPS | caddy:443
+vault              | yourdomain.com   | HTTPS | caddy:443
+music              | yourdomain.com   | HTTPS | caddy:443
+abs                | yourdomain.com   | HTTPS | caddy:443
+git                | yourdomain.com   | HTTPS | caddy:443
+seerr              | yourdomain.com   | HTTPS | caddy:443
+join               | yourdomain.com   | HTTPS | caddy:443
+auth               | yourdomain.com   | HTTPS | caddy:443
+```
+
+**All tunnel routes point to Caddy** — Caddy handles routing to the correct backend service, TLS termination, and Authelia `forward_auth`. The tunnel itself only needs one connection to Caddy.
+
+### `cloudflared` Compose Snippet
+
+```yaml
+cloudflared:
+ image: cloudflare/cloudflared:latest
+ container_name: cloudflared
+ command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+ environment:
+  - TZ=${TZ}
+ restart: unless-stopped
+ networks:
+  - homelab_net
+```
+
+Add to `.env`:
+
+```dotenv
+CLOUDFLARE_TUNNEL_TOKEN=  # from Zero Trust dashboard → Tunnels → your tunnel → Configure
+```
+
+### Security Note: Authelia Protects Tunnelled Services
+
+All eight publicly tunnelled services flow through `forward_auth authelia:9091` in the Caddyfile. This means:
+
+- `jellyfin.yourdomain.com` → Caddy → Authelia (one-factor: password) → Jellyfin
+- `vault.yourdomain.com` → Caddy → Authelia (two-factor: password + TOTP) → Vaultwarden
+- `radarr` etc. are **never** in the tunnel at all — accessible only on Tailscale
+
+Even if Cloudflare's tunnel were somehow compromised, the attacker still needs your Authelia credentials + TOTP to reach any service.
 
 ---
 
@@ -1368,24 +1722,27 @@ Riven (`rivenmedia/riven`, 784 ⭐) combines RD integration, a virtual filesyste
 
 The original v1 order had Phase 5 (file structure) coming after Phase 1 (consolidation), which is backwards — you want the new structure in place when writing new compose files.
 
-| Phase                        | What                                                        | Effort | Risk   | When                                |
-| ---------------------------- | ----------------------------------------------------------- | ------ | ------ | ----------------------------------- |
-| Phase 9 (quick wins)         | TZ, BAZARR_PORT, docker-model-runner                        | Low    | None   | **Do now**                          |
-| Phase 4 (backup)             | `backup-dbs.sh`, rclone offsite setup                       | Medium | None   | **Before any structural change**    |
-| Phase 3, P1: Unpackerr       | Add to arr stack                                            | Low    | None   | **Do now**                          |
-| Phase 3, P5: Wizarr          | Add to services stack                                       | Low    | None   | **Do now**                          |
-| Phase 3, P6: Cleanuparr      | Add to arr stack                                            | Low    | None   | **Do now**                          |
-| Phase 3, P7: Listenarr       | Add to arr stack (alongside abb-downloader initially)       | Low    | None   | **Do now — beta caveat applies**    |
-| Phase 3, P3: Book management | Remove LazyLibrarian, add Kavita (+ BookBounty if desired)  | Medium | Low    | After deciding on book usage (Q2)   |
-| Phase 3, P2: Maintainerr     | Add to media stack                                          | Low    | None   | After book stack stable             |
-| Phase 6 (file structure)     | `dockerfiles/` → `stacks/`, `config-templates/` → `config/` | Medium | Low    | **Before Phase 1**                  |
-| Phase 1 (consolidation)      | 11 → 6 stacks                                               | High   | Medium | After backup + Phase 6              |
-| Phase 2 (networking + Caddy) | Network segmentation, add Caddy                             | High   | Medium | After Phase 1                       |
-| Phase 5 (monitoring)         | Prometheus + Grafana + Scrutiny                             | Medium | None   | After Phase 1 (use new infra stack) |
-| Phase 7 (access layer)       | Caddy routing config for all services                       | Medium | Low    | After Phase 2                       |
-| Phase 8 (resource tuning)    | Hardware transcoding, swappiness, iGPU                      | Low    | None   | After Grafana shows data            |
-| Phase 10 (Usenet)            | SABnzbd, provider setup, Usenet indexers in Prowlarr        | Medium | Low    | After arr stack stable (Phase 1)    |
-| Phase 11 (Real-Debrid)       | Optional: rdt-client + Torrentio in Prowlarr                | Low    | None   | After arr stack stable; answer Q12  |
+| Phase                        | What                                                                 | Effort | Risk   | When                                |
+| ---------------------------- | -------------------------------------------------------------------- | ------ | ------ | ----------------------------------- |
+| Phase 9 (quick wins)         | TZ, BAZARR_PORT, docker-model-runner                                 | Low    | None   | **Do now**                          |
+| Phase 4 (backup)             | `backup-dbs.sh`, rclone offsite setup                                | Medium | None   | **Before any structural change**    |
+| Phase 3, P1: Unpackerr       | Add to arr stack                                                     | Low    | None   | **Do now**                          |
+| Phase 3, P5: Wizarr          | Add to services stack                                                | Low    | None   | **Do now**                          |
+| Phase 3, P6: Cleanuparr      | Add to arr stack                                                     | Low    | None   | **Do now**                          |
+| Phase 3, P7: Listenarr       | Add to arr stack (alongside abb-downloader initially)                | Low    | None   | **Do now — beta caveat applies**    |
+| Phase 3, P8: autobrr         | Add to arr stack                                                     | Low    | None   | **Do now**                          |
+| Phase 3, P4: Profilarr       | Replace Recyclarr; configure profiles via WebUI                      | Low    | Low    | After arr stack stable              |
+| Phase 3, P9: Youtarr         | Add to arr stack; point Jellyfin at `/data/media/youtube`            | Low    | None   | After arr stack stable              |
+| Phase 3, P3: Book management | Remove LazyLibrarian, add Komga + Calibre-Web + BookBounty           | Medium | Low    | After deciding on book usage (Q2)   |
+| Phase 3, P2: Maintainerr     | Add to media stack                                                   | Low    | None   | After book stack stable             |
+| Phase 6 (file structure)     | `dockerfiles/` → `stacks/`, `config-templates/` → `config/`          | Medium | Low    | **Before Phase 1**                  |
+| Phase 1 (consolidation)      | 11 → 6 stacks                                                        | High   | Medium | After backup + Phase 6              |
+| Phase 2 (networking + Caddy) | Network segmentation, add Caddy                                      | High   | Medium | After Phase 1                       |
+| Phase 5 (monitoring)         | Prometheus + Grafana + Scrutiny                                      | Medium | None   | After Phase 1 (use new infra stack) |
+| Phase 7 (access layer)       | Caddy routing + Cloudflare tunnel config for all services            | Medium | Low    | After Phase 2                       |
+| Phase 11 (Authelia)          | Add to infrastructure stack; configure Caddy `forward_auth`          | Medium | Low    | After Phase 2 + Caddy working       |
+| Phase 8 (resource tuning)    | Hardware transcoding, swappiness, iGPU                               | Low    | None   | After Grafana shows data            |
+| Phase 10 (Usenet)            | SABnzbd, test with NZBFinder free tier, comment out until subscribed | Medium | Low    | After arr stack stable (Phase 1)    |
 
 ---
 
@@ -1395,7 +1752,7 @@ Before Phase 1 (consolidation) and Phase 2 (networking), these need answers:
 
 1. **Jackett/audiobookbay-downloader:** Are you actively using audiobookbay-downloader? If yes, I'll test Prowlarr Torznab compatibility before removing Jackett. If no, remove both.
 
-2. **Book management (LazyLibrarian replacement):** Readarr has been officially retired — it cannot be used. Is the current LazyLibrarian setup actively in use for ebook/audiobook downloads? Options: (a) Remove entirely if not used, (b) Add Kavita as a reading server only (no auto-download), (c) Add Kavita + BookBounty for automated downloading from Library Genesis. Audiobooks are handled by audiobookshelf already.
+2. **Book management (LazyLibrarian replacement):** Readarr has been officially retired — it cannot be used. Is the current LazyLibrarian setup actively in use for ebook/audiobook downloads? Options: (a) Remove entirely if not used, (b) Add Komga as a reading server only (free, no subscription), (c) Add Komga + Calibre-Web + BookBounty for full library management and search-and-download from Library Genesis. Audiobooks are handled by audiobookshelf already.
 
 3. **Watchtower:** Adopt opt-in mode (recommended) or remove entirely and update manually?
 
@@ -1405,16 +1762,18 @@ Before Phase 1 (consolidation) and Phase 2 (networking), these need answers:
 
 6. **Local domain strategy:** Do you want `jellyfin.home.arpa` style subdomains on your LAN (requires adding Caddy as DNS resolver or editing `/etc/hosts` on each client), or do port-based URLs (`http://100.106.40.5:8096`) work fine for LAN access?
 
-7. **autobrr:** Do you use any private trackers that require ratio maintenance? If yes, add autobrr. If all public trackers, skip.
+7. **autobrr:** autobrr is now added as a standard component. Do you use any private trackers? If yes, configure IRC announce channels in autobrr. If public trackers only, it still works as an RSS filter/auto-grab tool.
 
-8. **Comics:** Is there a comic book collection that needs management? If yes, Kavita handles comics natively; Kapowarr can automate downloading (943 ⭐, active). No separate comic server needed if Kavita is added.
+8. **Comics:** Is there a comic book collection that needs management? If yes, Komga handles comics natively (CBZ/CBR); Kapowarr (943 ⭐, active) can automate comic downloading and integrates with Komga. Komga replaces Kavita as the recommended reading server.
 
 9. **Immich ML:** Is face recognition / smart search actively used in Immich? If not, disabling `immich-machine-learning` frees ~2GB RAM.
 
 10. **Stack migration approach:** Phase 1 as a single migration (downtime involved, one pass) or incremental stack-by-stack? Incremental is safer on a live system.
 
-11. **Usenet:** Do you want to add Usenet alongside torrents? If yes: (a) Which provider — Eweka (EU, recommended) or another? (b) Do you want a secondary block provider (FrugalUsenet recommended)? (c) Any existing indexer accounts (NZBGeek, NZBFinder)? This will add SABnzbd to the arr stack and configure Prowlarr Usenet indexers.
+11. **Usenet:** Do you want to set up Usenet? Plan is: configure fully, test with NZBFinder free tier to confirm the pipeline works, then comment out SABnzbd until ready to subscribe to a paid provider. If yes: (a) Which paid provider when ready — Eweka (EU, recommended) or another? (b) Any existing indexer accounts (NZBGeek, NZBFinder)?
 
-12. **Real-Debrid homelab integration:** You already have Stremio + RD for casual streaming (keep as-is — correct choice). Do you also want *arr apps to use RD as a download source? If yes: (a) Minimal path — add `rdt-client` container + Torrentio indexer in Prowlarr (one extra container, no FUSE); (b) Full RD library path — Zurg + rclone FUSE mount (complex setup, public version is 10 months behind). Riven is not recommended due to slowing activity. Or: keep RD and the *arr stack independent (cleanest architecture).
+12. **Authelia 2FA:** Which services do you want behind two-factor authentication vs one-factor? Suggested: public services (Jellyfin, Seerr) require only password; admin services (Radarr, Grafana, Paperless) require TOTP. Do you want family/friends to also use the Authelia login portal, or bypass it for shared services (Jellyfin)?
 
-13. **Listenarr evaluation timeline:** Listenarr is beta software. How long do you want to run it alongside `audiobookbay-downloader` before deciding whether to retire abb-downloader? Suggested: 4–8 weeks. Are there any specific audiobook series you want Listenarr to manage as an initial test?
+13. **Youtarr / YouTube archiving:** Are there specific YouTube channels you want to archive? This helps configure Youtarr's initial channel list and naming format for Jellyfin compatibility.
+
+14. **Listenarr evaluation timeline:** Listenarr is beta software. How long do you want to run it alongside `audiobookbay-downloader` before deciding whether to retire abb-downloader? Suggested: 4–8 weeks.
