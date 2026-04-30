@@ -6,9 +6,11 @@
 #               ☑ "Bypass authentication for clients on localhost"
 #               This is safe: only processes in gluetun's namespace have localhost access.
 
-PORT=$(cat /tmp/gluetun/forwarded_port 2>/dev/null | tr -d '[:space:]')
+# gluetun sets $FORWARDED_PORT env var when calling this command.
+# Fall back to the status file in case the env var isn't set (e.g. manual invocation).
+PORT="${FORWARDED_PORT:-$(cat /tmp/gluetun/forwarded_port 2>/dev/null | tr -d '[:space:]')}"
 if [ -z "$PORT" ] || [ "$PORT" = "0" ]; then
-  echo "[port-sync] No valid forwarded port in status file, skipping"
+  echo "[port-sync] No valid forwarded port available yet (VPN still connecting), skipping"
   exit 0
 fi
 
@@ -43,3 +45,12 @@ else
   echo "[port-sync] Ensure 'Bypass auth for localhost' is enabled in qBittorrent Web UI settings"
   exit 1
 fi
+
+# Force all torrents to re-announce with the new port so trackers update their peer lists.
+# Without this, peers won't discover this seeder until the next regular announce interval
+# (which can be 30+ minutes), causing the torrent to sit in stalledUP with no peers.
+wget -q -O /dev/null \
+  --post-data "hashes=all" \
+  "http://localhost:${QBITTORRENT_WEBUI_PORT}/api/v2/torrents/reannounce" \
+  && echo "[port-sync] Re-announced all torrents with new port $PORT" \
+  || echo "[port-sync] Re-announce failed (non-fatal — will retry at next tracker interval)"

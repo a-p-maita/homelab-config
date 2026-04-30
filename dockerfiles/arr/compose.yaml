@@ -404,6 +404,46 @@ services:
     reservations:
      cpus: "0.1"
      memory: 64M
+
+ # ── Recyclarr ─────────────────────────────────────────────────────────────────
+ # Syncs TRaSH Guide quality profiles, custom formats, and naming to Radarr/Sonarr.
+ # Runs once on startup then daily at 04:00 via the built-in daemon scheduler.
+ #
+ # Config: data/recyclarr/config/recyclarr.yml (seeded from config-templates/ on first run)
+ # Manual sync: docker compose --env-file .env -f dockerfiles/arr/compose.yaml run --rm recyclarr sync
+ # Dry-run:     docker compose --env-file .env -f dockerfiles/arr/compose.yaml run --rm recyclarr sync --dry-run
+ recyclarr:
+  image: ghcr.io/recyclarr/recyclarr:latest
+  container_name: recyclarr
+  user: "${PUID}:${PGID}"
+  # Syncs once on startup, then again every 24 hours.
+  # Override the recyclarr binary entrypoint to get a shell for the sleep loop.
+  entrypoint: ["/bin/sh"]
+  command: ["-c", "recyclarr sync; while sleep 86400; do recyclarr sync; done"]
+  environment:
+   - TZ=Europe/London
+   # API keys read from .env — recyclarr config references these via !env_var
+   - RADARR_API_KEY=${RADARR_API_KEY}
+   - SONARR_API_KEY=${SONARR_API_KEY}
+  volumes:
+   - ../../data/recyclarr/config:/config
+  restart: unless-stopped
+  networks:
+   - homelab_net
+  depends_on:
+   radarr:
+    condition: service_healthy
+   sonarr:
+    condition: service_healthy
+  deploy:
+   resources:
+    limits:
+     cpus: "0.25"
+     memory: 256M
+    reservations:
+     cpus: "0.05"
+     memory: 64M
+
 networks:
  homelab_net:
   external: true

@@ -88,6 +88,7 @@ mkdir -p \
   ./data/jellyfin/config \
   ./data/jellyfin/cache \
   ./data/seerr/config \
+  ./data/recyclarr/config \
   ./data/home-assistant
 
 # ── Fix ABS podcast write permissions ────────────────────────────────────────
@@ -144,6 +145,16 @@ fi
 if [ ! -f ./data/crosswatch/config.json ]; then
   cp config-templates/crosswatch/config.json ./data/crosswatch/config.json
   echo "Seeded CrossWatch config.json from config-templates."
+fi
+if [ ! -f ./data/recyclarr/config/recyclarr.yml ]; then
+  cp config-templates/recyclarr/recyclarr.yml ./data/recyclarr/config/recyclarr.yml
+  echo "Seeded Recyclarr recyclarr.yml from config-templates."
+fi
+if [ ! -f ./data/recyclarr/config/configs/hd-bluray-web.yml ]; then
+  mkdir -p ./data/recyclarr/config/configs
+  cp config-templates/recyclarr/configs/hd-bluray-web.yml ./data/recyclarr/config/configs/hd-bluray-web.yml
+  cp config-templates/recyclarr/configs/web-1080p.yml ./data/recyclarr/config/configs/web-1080p.yml
+  echo "Seeded Recyclarr profile configs from config-templates."
 fi
 
 # ── Ensure the shared external network exists ─────────────────────────────────
