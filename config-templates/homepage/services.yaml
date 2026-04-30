@@ -101,12 +101,6 @@
       icon: lidarr.png
       server: my-docker
       container: lidarr
-   - Soulseek (slskd):
-      href: http://100.106.40.5:20075
-      description: P2P music sourcing
-      icon: slskd.png
-      server: my-docker
-      container: slskd
    - Octo-Fiesta:
       href: http://100.106.40.5:20076
       description: Subsonic proxy with hi-res streaming
@@ -167,12 +161,6 @@
       icon: paperless-ngx.png
       server: my-docker
       container: paperless-ngx
-   - Paperless-GPT:
-      href: http://100.106.40.5:20302
-      description: AI document tagging
-      icon: mdi-robot
-      server: my-docker
-      container: paperless-gpt
    - Stirling PDF:
       href: http://100.106.40.5:20303
       description: PDF tools
@@ -188,12 +176,6 @@
 
 # Tools stack
 - Tools:
-   - Code Server:
-      href: http://100.106.40.5:20310
-      description: VS Code in the browser
-      icon: code-server.png
-      server: my-docker
-      container: code-server
    - Draw.io:
       href: http://100.106.40.5:20311
       description: Diagram editor
@@ -212,12 +194,6 @@
       icon: mdi-tools
       server: my-docker
       container: it-tools
-   - LibreOffice:
-      href: http://100.106.40.5:20314
-      description: Office suite (browser)
-      icon: mdi-file-document-multiple
-      server: my-docker
-      container: libreoffice
    - Vaultwarden:
       href: http://100.106.40.5:20315
       description: Password manager
@@ -236,12 +212,6 @@
       icon: joplin.png
       server: my-docker
       container: joplin
-   - MeshCentral:
-      href: http://100.106.40.5:20319
-      description: Remote device management
-      icon: mdi-remote-desktop
-      server: my-docker
-      container: meshcentral
 
 # Personal stack
 - Personal:
@@ -251,24 +221,6 @@
       icon: mealie.png
       server: my-docker
       container: mealie
-   - LubeLogger:
-      href: http://100.106.40.5:20322
-      description: Vehicle maintenance tracker
-      icon: mdi-car-wrench
-      server: my-docker
-      container: lubelogger
-   - Monica:
-      href: http://100.106.40.5:20323
-      description: Personal CRM
-      icon: mdi-account-heart
-      server: my-docker
-      container: monica
-   - World Monitor:
-      href: http://100.106.40.5:20324
-      description: Global news & events map
-      icon: mdi-earth
-      server: my-docker
-      container: worldmonitor
 
 # Entertainment stack
 - Entertainment:
@@ -278,12 +230,6 @@
       icon: jellyfin.png
       server: my-docker
       container: jellyfin
-   - RomM:
-      href: http://100.106.40.5:20331
-      description: ROM manager & game library
-      icon: mdi-gamepad-variant
-      server: my-docker
-      container: romm
 
 # Smart Home
 - Home:

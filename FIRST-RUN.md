@@ -69,42 +69,7 @@ Signups are **disabled by default** (`SIGNUPS_ALLOWED=false`). The admin panel i
 
 ---
 
-## 6. Monica — register first user
-
-1. Open `http://localhost:20323`
-2. Click **Register** to create your account
-3. Monica's first account is the primary user
-
----
-
-## 7. MeshCentral — run setup wizard
-
-1. Open `http://localhost:20319`
-2. MeshCentral presents a setup wizard on first visit — follow the steps to create your admin account
-3. After setup, add your devices via the agent installer or network scan
-
----
-
-## 8. RomM — admin created automatically from `.env`
-
-RomM auto-creates the admin user on first start using:
-
-```
-ROMM_ADMIN_USER=...
-ROMM_ADMIN_PASS=...
-```
-
-Set these in `.env` before running `up-all.sh`. No web UI signup required.
-
-After first start:
-
-1. Open `http://localhost:20331`
-2. Log in with the credentials you set in `.env`
-3. Add your ROM library paths and run an initial scan
-
----
-
-## 9. Navidrome — create admin account on first visit
+## 6. Navidrome — create admin account on first visit
 
 1. Open `http://localhost:20070`
 2. The first login page asks you to create an admin account
@@ -112,7 +77,7 @@ After first start:
 
 ---
 
-## 10. Lidarr — complete setup wizard
+## 7. Lidarr — complete setup wizard
 
 1. Open `http://localhost:20073`
 2. Complete the initial configuration wizard
@@ -122,21 +87,13 @@ After first start:
 
 ---
 
-## 11. slskd (Soulseek) — log in with `.env` credentials
-
-1. Open `http://localhost:20075`
-2. Log in with `SLSKD_USERNAME` / `SLSKD_PASSWORD` from `.env`
-3. slskd will connect to the Soulseek network automatically
-
----
-
-## 12. Paperless-NGX — already set up
+## 8. Paperless-NGX — already set up
 
 Already completed. Documents are consumed from `homelab-data/paperless/consume/`.
 
 ---
 
-## 13. Stirling PDF — set credentials before first start
+## 9. Stirling PDF — set credentials before first start
 
 Login is **enabled by default**. Set your credentials in `.env` before running `up-all.sh`:
 

@@ -45,9 +45,8 @@ services:
    - REDIS_URL=redis://yamtrack-redis:6379
    # URLS: comma-separated trusted origins (sets CSRF + ALLOWED_HOSTS)
    - URLS=${YAMTRACK_EXTERNAL_URL}
-   # Reuse ROMM IGDB credentials (same Twitch Developer app)
-   - IGDB_ID=${ROMM_IGDB_CLIENT_ID}
-   - IGDB_SECRET=${ROMM_IGDB_CLIENT_SECRET}
+   - IGDB_ID=${IGDB_CLIENT_ID}
+   - IGDB_SECRET=${IGDB_CLIENT_SECRET}
    # TMDB_API: optional v3 API key — a default is built-in if left blank
    - TMDB_API=${YAMTRACK_TMDB_API:-}
    # Set YAMTRACK_REGISTRATION=False in .env after creating your admin account,
@@ -324,44 +323,6 @@ services:
     reservations:
      cpus: "0.1"
      memory: 128M
-
- slskd:
-  image: slskd/slskd:latest
-  container_name: slskd
-  environment:
-   - PUID=${PUID}
-   - PGID=${PGID}
-   - SLSKD_REMOTE_CONFIGURATION=false
-   # slskd env vars override YAML — fixes ${VAR} literal issue in slskd.yml
-   - SLSKD_SOULSEEK_USERNAME=${SLSKD_USERNAME}
-   - SLSKD_SOULSEEK_PASSWORD=${SLSKD_PASSWORD}
-   - SLSKD_WEB_AUTHENTICATION_USERNAME=${SLSKD_USERNAME}
-   - SLSKD_WEB_AUTHENTICATION_PASSWORD=${SLSKD_PASSWORD}
-  volumes:
-   # slskd.yml must be seeded from config-templates/slskd/slskd.yml before first boot
-   - ../../homelab-data/slskd:/app
-   - ../../homelab-data/music:/music
-  ports:
-   - "${SLSKD_PORT}:5030"
-   # Soulseek P2P port — expose for better download queue priority
-   - "${SLSKD_P2P_PORT}:50300"
-  restart: unless-stopped
-  networks:
-   - homelab_net
-  healthcheck:
-   test: ["CMD-SHELL", "wget -qO- http://localhost:5030 > /dev/null"]
-   interval: 1m
-   timeout: 10s
-   retries: 3
-   start_period: 30s
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 256M
-    reservations:
-     cpus: "0.05"
-     memory: 64M
 
  octo-fiesta:
   image: ghcr.io/v1ck3s/octo-fiesta:latest

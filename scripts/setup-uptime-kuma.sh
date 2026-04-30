@@ -114,12 +114,6 @@ MONITORS = [
         "interval": 60,
     },
     {
-        "name":     "Soulseek (slskd)",
-        "type":     MonitorType.HTTP,
-        "url":      "http://slskd:5030",
-        "interval": 60,
-    },
-    {
         "name":     "Octo-Fiesta",
         "type":     MonitorType.HTTP,
         # Root path returns {"ok":true} with 200 — confirmed health endpoint
@@ -131,12 +125,6 @@ MONITORS = [
         "name":     "Paperless-NGX",
         "type":     MonitorType.HTTP,
         "url":      "http://paperless-ngx:8000",
-        "interval": 60,
-    },
-    {
-        "name":     "Paperless-GPT",
-        "type":     MonitorType.HTTP,
-        "url":      "http://paperless-gpt:8080",
         "interval": 60,
     },
     {
@@ -153,12 +141,6 @@ MONITORS = [
     },
     # ── Tools stack ──────────────────────────────────────────────────────────
     {
-        "name":     "Code Server",
-        "type":     MonitorType.HTTP,
-        "url":      "http://code-server:8443",
-        "interval": 60,
-    },
-    {
         "name":     "Draw.io",
         "type":     MonitorType.HTTP,
         "url":      "http://drawio:8080",
@@ -174,12 +156,6 @@ MONITORS = [
         "name":     "IT-Tools",
         "type":     MonitorType.HTTP,
         "url":      "http://it-tools:80",
-        "interval": 120,
-    },
-    {
-        "name":     "LibreOffice",
-        "type":     MonitorType.HTTP,
-        "url":      "http://libreoffice:3000",
         "interval": 120,
     },
     {
@@ -200,12 +176,6 @@ MONITORS = [
         "url":      "http://joplin:22300",
         "interval": 60,
     },
-    {
-        "name":     "MeshCentral",
-        "type":     MonitorType.HTTP,
-        "url":      "http://meshcentral:80",
-        "interval": 120,
-    },
     # ── Personal stack ───────────────────────────────────────────────────────
     {
         "name":     "Mealie",
@@ -213,35 +183,11 @@ MONITORS = [
         "url":      "http://mealie:9000/api/app/about",
         "interval": 60,
     },
-    {
-        "name":     "LubeLogger",
-        "type":     MonitorType.HTTP,
-        "url":      "http://lubelogger:8080",
-        "interval": 120,
-    },
-    {
-        "name":     "Monica",
-        "type":     MonitorType.HTTP,
-        "url":      "http://monica:80",
-        "interval": 60,
-    },
-    {
-        "name":     "World Monitor",
-        "type":     MonitorType.HTTP,
-        "url":      "http://worldmonitor:80",
-        "interval": 120,
-    },
     # ── Entertainment stack ──────────────────────────────────────────────────
     {
         "name":     "Jellyfin",
         "type":     MonitorType.HTTP,
         "url":      "http://jellyfin:8096/health",
-        "interval": 60,
-    },
-    {
-        "name":     "RomM",
-        "type":     MonitorType.HTTP,
-        "url":      "http://romm:8080",
         "interval": 60,
     },
     # ── Home stack ───────────────────────────────────────────────────────────
@@ -340,7 +286,11 @@ def monitor_key(m):
     return {"type": m["type"], "url": m.get("url")}
 
 # Monitors to delete if they still exist (services that have been removed)
-DELETE_MONITORS = ["spotDL", "SpotDL", "Ryot", "Ryot (external)"]
+DELETE_MONITORS = [
+    "spotDL", "SpotDL", "Ryot", "Ryot (external)",
+    "Soulseek (slskd)", "Paperless-GPT", "Code Server", "LibreOffice",
+    "MeshCentral", "LubeLogger", "Monica", "World Monitor", "RomM",
+]
 
 api = UptimeKumaApi("http://uptime-kuma:3001")
 try:

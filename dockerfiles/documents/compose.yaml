@@ -1,13 +1,10 @@
 name: documents
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Documents stack: paperless-ngx, paperless-gpt, stirling-pdf, kiwix
+# Documents stack: paperless-ngx, stirling-pdf, kiwix
 #
 # Setup notes:
 #   paperless-ngx  → AUTOMATED. Superuser created from env vars on first start.
-#   paperless-gpt  → ⚠️  SEMI-MANUAL: After first paperless start, generate an
-#                    API token at /api/auth/token/ or Admin > Auth Tokens, then
-#                    set PAPERLESS_GPT_API_TOKEN in .env and restart this stack.
 #   stirling-pdf   → AUTOMATED. Login enabled. Set STIRLING_PDF_PASSWORD in .env.
 #   kiwix          → AUTOMATED. Drop .zim files into homelab-data/kiwix/ and
 #                    restart; each .zim becomes a library entry.
@@ -111,39 +108,6 @@ services:
     reservations:
      cpus: "0.5"
      memory: 512M
-
- # ── Paperless-GPT ───────────────────────────────────────────────────────────
- # ⚠️  Requires PAPERLESS_GPT_API_TOKEN — generate in paperless Admin > Auth Tokens
- paperless-gpt:
-  image: ghcr.io/icereed/paperless-gpt:latest
-  container_name: paperless-gpt
-  restart: unless-stopped
-  depends_on:
-   paperless-ngx:
-    condition: service_healthy
-  ports:
-   - "${PAPERLESS_GPT_PORT}:8080"
-  environment:
-   - PAPERLESS_BASE_URL=http://paperless-ngx:8000
-   - PAPERLESS_API_TOKEN=${PAPERLESS_GPT_API_TOKEN}
-   - PAPERLESS_PUBLIC_URL=${PAPERLESS_EXTERNAL_URL}
-   - LLM_PROVIDER=${PAPERLESS_GPT_LLM_PROVIDER}
-   - LLM_MODEL=${PAPERLESS_GPT_LLM_MODEL}
-   - OLLAMA_HOST=${PAPERLESS_GPT_OLLAMA_HOST}
-   - LLM_LANGUAGE=English
-   - LOG_LEVEL=info
-  volumes:
-   - ../../homelab-data/paperless/gpt-prompts:/app/prompts
-  extra_hosts:
-   - "host.docker.internal:host-gateway"
-  networks:
-   - homelab_net
-   - documents_net
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 256M
 
  # ── Stirling PDF ────────────────────────────────────────────────────────────
  stirling-pdf:

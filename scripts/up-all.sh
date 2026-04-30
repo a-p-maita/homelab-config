@@ -26,38 +26,21 @@ mkdir -p \
   ./homelab-data/music \
   ./homelab-data/navidrome/data \
   ./homelab-data/lidarr/config \
-  ./homelab-data/slskd \
   ./homelab-data/paperless/redis \
   ./homelab-data/paperless/db \
   ./homelab-data/paperless/data \
   ./homelab-data/paperless/media \
   ./homelab-data/paperless/consume \
   ./homelab-data/paperless/export \
-  ./homelab-data/paperless/gpt-prompts \
   ./homelab-data/stirling-pdf/configs \
   ./homelab-data/stirling-pdf/logs \
   ./homelab-data/kiwix \
-  ./homelab-data/code-server/config \
   ./homelab-data/vaultwarden \
   ./homelab-data/actual-budget \
   ./homelab-data/joplin/db \
-  ./homelab-data/meshcentral/data \
-  ./homelab-data/meshcentral/user-files \
-  ./homelab-data/meshcentral/backups \
   ./homelab-data/mealie \
-  ./homelab-data/lubelogger/data \
-  ./homelab-data/lubelogger/documents \
-  ./homelab-data/lubelogger/images \
-  ./homelab-data/lubelogger/translations \
-  ./homelab-data/lubelogger/keys \
-  ./homelab-data/monica/db \
-  ./homelab-data/monica/storage \
   ./homelab-data/jellyfin/config \
   ./homelab-data/jellyfin/cache \
-  ./homelab-data/romm/db \
-  ./homelab-data/romm/library \
-  ./homelab-data/romm/assets \
-  ./homelab-data/romm/config \
   ./homelab-data/home-assistant
 
 # Ensure the shared external network exists (stacks declare it external so it must pre-exist)
@@ -89,12 +72,6 @@ fi
 if [ ! -f ./homelab-data/stirling-pdf/configs/settings.yml ]; then
   cp config-templates/stirling-pdf/settings.yml ./homelab-data/stirling-pdf/configs/settings.yml
   echo "Seeded Stirling PDF settings.yml from config-templates."
-fi
-
-# Seed MeshCentral config from template if not already present
-if [ ! -f ./homelab-data/meshcentral/data/config.json ]; then
-  cp config-templates/meshcentral/config.json ./homelab-data/meshcentral/data/config.json
-  echo "Seeded MeshCentral config.json from config-templates."
 fi
 
 # Seed CrossWatch config from template if not already present

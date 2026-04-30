@@ -20,21 +20,18 @@ Depends on/creates another directory one step up called `homelab-data/` which ho
 | [Octo-Fiesta](https://github.com/V1ck3s/octo-fiesta)                            | Subsonic API proxy — on-the-fly hi-res streaming from Deezer/Qobuz/Tidal |
 | [Feishin](https://github.com/jeffvli/feishin)                                   | Modern web UI for Navidrome                                              |
 | [Lidarr](https://lidarr.audio/)                                                 | Automated music collection manager via torrents                          |
-| [Soulseek (slskd)](https://github.com/slskd/slskd)                              | P2P music sourcing for rare and lossless files                           |
 
 ### Entertainment
 
 | Service                                 | Purpose                    |
 | --------------------------------------- | -------------------------- |
 | [Jellyfin](https://jellyfin.org/)       | Media server (video, TV)   |
-| [RomM](https://github.com/rommapp/romm) | ROM manager & game library |
 
 ### Documents
 
 | Service                                                   | Purpose                         |
 | --------------------------------------------------------- | ------------------------------- |
 | [Paperless-NGX](https://docs.paperless-ngx.com/)          | Document management & OCR       |
-| [Paperless-GPT](https://github.com/icereed/paperless-gpt) | AI-assisted document tagging    |
 | [Stirling PDF](https://stirlingpdf.io/)                   | PDF manipulation tools          |
 | [Kiwix](https://www.kiwix.org/)                           | Offline Wikipedia & ZIM content |
 
@@ -42,22 +39,18 @@ Depends on/creates another directory one step up called `homelab-data/` which ho
 
 | Service                                                   | Purpose                                 |
 | --------------------------------------------------------- | --------------------------------------- |
-| [Code Server](https://github.com/coder/code-server)       | VS Code in the browser                  |
 | [Draw.io](https://github.com/jgraph/drawio)               | Diagram editor                          |
 | [Excalidraw](https://excalidraw.com/)                     | Collaborative whiteboard                |
 | [IT-Tools](https://github.com/CorentinTh/it-tools)        | Developer utilities collection          |
 | [Vaultwarden](https://github.com/dani-garcia/vaultwarden) | Password manager (Bitwarden-compatible) |
 | [Actual Budget](https://actualbudget.org/)                | Local-first personal finance            |
 | [Joplin Server](https://joplinapp.org/)                   | Note-taking sync server                 |
-| [MeshCentral](https://meshcentral.com/)                   | Remote device management                |
 
 ### Personal
 
 | Service                               | Purpose                       |
 | ------------------------------------- | ----------------------------- |
 | [Mealie](https://mealie.io/)          | Recipe manager & meal planner |
-| [LubeLogger](https://lubelogger.com/) | Vehicle maintenance tracker   |
-| [Monica](https://www.monicahq.com/)   | Personal CRM                  |
 
 ### Home
 
@@ -93,7 +86,7 @@ Every container has `deploy.resources.limits` set. The budget leaves ~2 cores an
 
 | Tier     | Services                                                          | CPU limit  | RAM limit     |
 | -------- | ----------------------------------------------------------------- | ---------- | ------------- |
-| Heavy    | Immich server/ML, Jellyfin, Paperless-NGX, Code Server            | 2.0        | 2 GB          |
+| Heavy    | Immich server/ML, Jellyfin, Paperless-NGX                         | 2.0        | 2 GB          |
 | Medium   | Audiobookshelf, qBittorrent, Lidarr, Stirling PDF, Home Assistant | 1.0        | 512 M – 1 G   |
 | Light    | Most other services                                               | 0.25 – 0.5 | 128 M – 512 M |
 | DB/cache | postgres, redis, mysql                                            | 0.25 – 0.5 | 256 M – 1 G   |
@@ -123,17 +116,12 @@ mkdir -p homelab-data/jackett/config/Jackett
 cp config-templates/jackett/ServerConfig.json homelab-data/jackett/config/Jackett/ServerConfig.json
 # Set APIKey in ServerConfig.json to match JACKETT_API_KEY in your .env.
 
-# slskd (Soulseek)
-mkdir -p homelab-data/slskd
-cp config-templates/slskd/slskd.yml homelab-data/slskd/slskd.yml
-# Credentials are set via SLSKD_USERNAME / SLSKD_PASSWORD in .env — no edits needed in the yml.
 ```
 
 The following templates are seeded automatically by `up-all.sh` on first run (only if the file doesn't already exist):
 
 - `config-templates/homepage/` → `homelab-data/homepage/config/` (services, settings, docker, widgets, bookmarks)
 - `config-templates/stirling-pdf/settings.yml` → `homelab-data/stirling-pdf/configs/settings.yml`
-- `config-templates/meshcentral/config.json` → `homelab-data/meshcentral/data/config.json`
 - `config-templates/crosswatch/config.json` → `homelab-data/crosswatch/config.json`
 
 Then bring everything up:
@@ -185,7 +173,6 @@ After `up-all.sh`, the music services need one-time setup:
 | **Navidrome**   | `:20070` | Create your admin account on first visit                                                                                                                                                                                    |
 | **Octo-Fiesta** | `:20076` | Point your Subsonic clients here instead of Navidrome to enable transparent hi-res downloads. Configure the music provider via `OCTOFIESTA_MUSIC_SERVICE` in `.env` (default: SquidWTF — no credentials needed)             |
 | **Lidarr**      | `:20073` | Complete the setup wizard. Add Jackett as indexer (`http://jackett:9117`, API key from `.env`). Add qBittorrent as download client (`http://qbittorrent:20050`, credentials from `.env`). Set music root folder to `/music` |
-| **slskd**       | `:20075` | Log in with the credentials from `SLSKD_USERNAME` / `SLSKD_PASSWORD` in `.env`. Search and download music directly to the shared music library                                                                              |
 
 **Feishin** (`:20072`) is pre-locked to Navidrome — just log in with your Navidrome credentials.
 

@@ -1,15 +1,12 @@
 name: entertainment
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Entertainment stack: Jellyfin, RomM, Kiwix-style ROM streaming
+# Entertainment stack: Jellyfin media server
 #
 # Service statuses:
 #   jellyfin → ⚠️  STOP: First-time setup wizard required in browser.
 #              Open http://localhost:${JELLYFIN_PORT} and follow the wizard to
 #              create your admin account and configure media libraries.
-#   romm     → AUTOMATED. Admin user created from ROMM_FIRST_USERNAME/PASSWORD
-#              env vars on first start. IGDB API keys needed for metadata.
-#              Register at https://dev.twitch.tv → Applications → New App.
 #
 # Commented-out services:
 #   peertube → Requires SMTP/email configuration + admin creation CLI command.
@@ -51,75 +48,6 @@ services:
      cpus: "2.0"
      memory: 2G
     reservations:
-     cpus: "0.5"
-     memory: 512M
-
- # ── RomM (ROM Manager) ──────────────────────────────────────────────────────
- # Admin user auto-created from ROMM_FIRST_USERNAME/PASSWORD on first start.
- # IGDB API keys are optional but strongly recommended for game metadata.
- # Register at https://dev.twitch.tv → Applications → New App (Category: Other)
- # then go to Client Secrets → New Secret.
- romm-db:
-  image: mariadb:11
-  container_name: romm-db
-  restart: unless-stopped
-  environment:
-   - MYSQL_ROOT_PASSWORD=${ROMM_DB_ROOT_PASS}
-   - MYSQL_DATABASE=romm
-   - MYSQL_USER=${ROMM_DB_USER}
-   - MYSQL_PASSWORD=${ROMM_DB_PASS}
-  volumes:
-   - ../../homelab-data/romm/db:/var/lib/mysql
-  networks:
-   - entertainment_net
-  healthcheck:
-   test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-   interval: 30s
-   timeout: 10s
-   retries: 5
-   start_period: 60s
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 256M
-
- romm:
-  image: rommapp/romm:latest
-  container_name: romm
-  restart: unless-stopped
-  depends_on:
-   romm-db:
-    condition: service_healthy
-  ports:
-   - "${ROMM_PORT}:8080"
-  environment:
-   - DB_HOST=romm-db
-   - DB_NAME=romm
-   - DB_USER=${ROMM_DB_USER}
-   - DB_PASSWD=${ROMM_DB_PASS}
-   - ROMM_AUTH_SECRET_KEY=${ROMM_SECRET_KEY}
-   - ROMM_FIRST_USERNAME=${ROMM_ADMIN_USER}
-   - ROMM_FIRST_PASSWORD=${ROMM_ADMIN_PASS}
-   # IGDB API keys for game metadata (optional but recommended)
-   - IGDB_CLIENT_ID=${ROMM_IGDB_CLIENT_ID}
-   - IGDB_CLIENT_SECRET=${ROMM_IGDB_CLIENT_SECRET}
-  volumes:
-   - ../../homelab-data/romm/library:/romm/library
-   - ../../homelab-data/romm/assets:/romm/assets
-   - ../../homelab-data/romm/config:/romm/config
-  networks:
-   - homelab_net
-   - entertainment_net
-  healthcheck:
-   test: ["CMD", "curl", "-f", "http://localhost:8080"]
-   interval: 30s
-   timeout: 10s
-   retries: 3
-   start_period: 60s
-  deploy:
-   resources:
-    limits:
      cpus: "0.5"
      memory: 512M
 
@@ -181,5 +109,3 @@ services:
 networks:
  homelab_net:
   external: true
- entertainment_net:
-  internal: true

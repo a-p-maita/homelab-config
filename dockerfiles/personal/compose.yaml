@@ -1,15 +1,11 @@
 name: personal
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Personal stack: recipes, vehicle logs, personal CRM, world news, budgeting
+# Personal stack: recipes and meal planning
 #
 # Service statuses:
 #   mealie       → AUTOMATED. Default admin: changeme@example.com / MyPassword.
 #                  Change credentials on first login.
-#   lubelogger   → AUTOMATED. Admin username/password set via env vars.
-#   monica       → AUTOMATED. DB auto-migrated on first start. Visit UI to
-#                  create the first user account (no wizard, just signup).
-#   worldmonitor → AUTOMATED. No auth or environment variables needed.
 #
 # Commented-out services:
 #   habitica     → Too complex for automated setup (MongoDB + microservices +
@@ -52,124 +48,6 @@ services:
      cpus: "0.5"
      memory: 512M
 
- # ── LubeLogger ──────────────────────────────────────────────────────────────
- lubelogger:
-  image: ghcr.io/hargata/lubelogger:latest
-  container_name: lubelogger
-  restart: unless-stopped
-  ports:
-   - "${LUBELOGGER_PORT}:8080"
-  environment:
-   - Authentication__Username=${LUBELOGGER_ADMIN_USER}
-   - Authentication__Password=${LUBELOGGER_ADMIN_PASS}
-   - LUBELOGGER_ALLOWED_FILE_EXTENSIONS=.jpg,.jpeg,.png,.pdf
-   - TZ=Europe/London
-  volumes:
-   - ../../homelab-data/lubelogger/data:/app/data
-   - ../../homelab-data/lubelogger/documents:/app/wwwroot/documents
-   - ../../homelab-data/lubelogger/images:/app/wwwroot/images
-   - ../../homelab-data/lubelogger/translations:/app/translations
-   - ../../homelab-data/lubelogger/keys:/root/.aspnet/DataProtection-Keys
-  networks:
-   - homelab_net
-  healthcheck:
-   # lubelogger image has no curl/wget; use bash /dev/tcp for port-open check
-   test: ["CMD", "bash", "-c", "echo > /dev/tcp/localhost/8080"]
-   interval: 30s
-   timeout: 10s
-   retries: 3
-   start_period: 15s
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 256M
-
- # ── Monica (Personal CRM) ───────────────────────────────────────────────────
- monica-db:
-  image: mariadb:11
-  container_name: monica-db
-  restart: unless-stopped
-  environment:
-   - MYSQL_ROOT_PASSWORD=${MONICA_DB_ROOT_PASS}
-   - MYSQL_DATABASE=monica
-   - MYSQL_USER=${MONICA_DB_USER}
-   - MYSQL_PASSWORD=${MONICA_DB_PASS}
-  volumes:
-   - ../../homelab-data/monica/db:/var/lib/mysql
-  networks:
-   - personal_net
-  healthcheck:
-   test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-   interval: 30s
-   timeout: 10s
-   retries: 5
-   start_period: 60s
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 256M
-
- monica:
-  image: monica:latest
-  container_name: monica
-  restart: unless-stopped
-  depends_on:
-   monica-db:
-    condition: service_healthy
-  ports:
-   - "${MONICA_PORT}:80"
-  environment:
-   - APP_URL=${MONICA_EXTERNAL_URL}
-   - APP_KEY=${MONICA_APP_KEY}
-   - DB_HOST=monica-db
-   - DB_DATABASE=monica
-   - DB_USERNAME=${MONICA_DB_USER}
-   - DB_PASSWORD=${MONICA_DB_PASS}
-   - DB_PORT=3306
-  volumes:
-   - ../../homelab-data/monica/storage:/var/www/html/storage
-  networks:
-   - homelab_net
-   - personal_net
-  healthcheck:
-   test: ["CMD", "curl", "-f", "http://localhost:80"]
-   interval: 30s
-   timeout: 10s
-   retries: 3
-   start_period: 60s
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 512M
-
- # ── World Monitor ───────────────────────────────────────────────────────────
- # ⚠️  Image ghcr.io/koala73/worldmonitor:latest is a private GHCR package —
- # access is denied unless you authenticate to the registry with a PAT that has
- # read:packages scope.  Keeping this commented out until the image is public
- # or until you log in with: docker login ghcr.io -u <github-user>
- #
- # worldmonitor:
- #  image: ghcr.io/koala73/worldmonitor:latest
- #  container_name: worldmonitor
- #  restart: unless-stopped
- #  ports:
- #   - "${WORLDMONITOR_PORT}:80"
- #  networks:
- #   - homelab_net
- #  healthcheck:
- #   test: ["CMD", "wget", "-q", "--spider", "http://localhost:80"]
- #   interval: 60s
- #   timeout: 10s
- #   retries: 3
- #  deploy:
- #   resources:
- #    limits:
- #     cpus: "0.5"
- #     memory: 256M
-
  # ── Habitica ────────────────────────────────────────────────────────────────
  # ⚠️  STOP: Habitica requires MongoDB, multiple microservices, email server
  # configuration, and complex initial setup. Not suitable for simple Docker
@@ -194,5 +72,3 @@ services:
 networks:
  homelab_net:
   external: true
- personal_net:
-  internal: true
