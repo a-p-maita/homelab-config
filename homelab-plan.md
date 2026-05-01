@@ -959,27 +959,32 @@ Fix: `chmod 777 data/yamtrack/redis` then restart yamtrack-redis and yamtrack.
 
 Youtarr's setup endpoint only accepts requests from localhost. The web UI shows a lockout screen when accessed remotely before admin account is created.
 Fix (run from host shell, not browser):
+
 ```bash
 curl -s -X POST http://localhost:20080/setup/create-auth \
   -H 'Content-Type: application/json' \
   -d '{"username":"a-p-maita","password":"homelab-youtarr-2024!"}'
 ```
+
 This returns a session token confirming setup is complete.
 
 ### N17 — Youtarr temp dir root-owned
 
 Youtarr crashed with `EACCES: permission denied, mkdir '/usr/src/app/data/.youtarr_tmp'` because `/data/media/youtube` was root-owned.
 Fix via alpine container (avoids needing sudo for chown):
+
 ```bash
 docker run --rm -v /home/a-p-maita/homelab-config/data/media/youtube:/data \
   alpine sh -c "chown -R 1000:1000 /data"
 ```
+
 After restart, Youtarr creates `.youtarr_tmp` successfully.
 
 ### N18 — Joplin email confirmation stuck (no SMTP)
 
 Email confirmation link was sent to the default `admin@localhost` address; there was no SMTP configured so the email was never delivered, and the account was stuck unconfirmed.
 Fix (DB bypass to confirm email directly):
+
 ```sql
 BEGIN;
 UPDATE users SET email = 'andymaita@protonmail.com', email_confirmed = 1 WHERE id = 'NmXsfFPahNulOsMZ98iYhA';
@@ -987,7 +992,9 @@ DELETE FROM tokens WHERE user_id = 'NmXsfFPahNulOsMZ98iYhA';
 UPDATE emails SET sent_success = 1 WHERE recipient_id = 'NmXsfFPahNulOsMZ98iYhA';
 COMMIT;
 ```
+
 Long-term fix: add SMTP vars to joplin service in `stacks/services/compose.yaml`:
+
 ```
 MAILER_ENABLED=${JOPLIN_MAILER_ENABLED:-0}
 MAILER_HOST=${JOPLIN_MAILER_HOST:-}
@@ -998,6 +1005,7 @@ MAILER_AUTH_PASSWORD=${JOPLIN_MAILER_PASS:-}
 MAILER_NOREPLY_NAME=Joplin Server
 MAILER_NOREPLY_EMAIL=${JOPLIN_MAILER_FROM:-noreply@andreasmaita.com}
 ```
+
 Set `JOPLIN_MAILER_ENABLED=1` and fill in SMTP details in `.env` to enable.
 
 ### N19 — qBittorrent set to remove completed torrents when ratio reached
@@ -1010,16 +1018,18 @@ Value `0` = Pause (not Remove) when seeding ratio reached.
 
 Calibre-Web showed "Invalid calibre library path" on first run because no `metadata.db` existed.
 Fix:
+
 1. `docker exec calibre-web calibredb --with-library=/books list` — creates empty `metadata.db`
 2. `docker exec -u root calibre-web chown -R abc:abc /books/` — fix ownership
 3. `python3 -c "import sqlite3; c=sqlite3.connect('data/calibre-web/config/app.db').cursor(); c.execute(\"UPDATE settings SET config_calibre_dir='/books' WHERE id=1\")"` — set path in app.db
 4. `docker restart calibre-web`
-Library is empty; add ebooks via web UI or by dropping files into `data/media/books/`.
+   Library is empty; add ebooks via web UI or by dropping files into `data/media/books/`.
 
 ### N21 — Navidrome album art missing (no cover.jpg in FLAC dirs)
 
 Music files are FLAC with no embedded art and no `cover.jpg`/`folder.jpg` sidecar files. Navidrome shows grey placeholder art.
 Fix: enable Lidarr's Kodi/Emby metadata plugin (writes `cover.jpg` files to artist/album dirs) and trigger a RefreshArtist command:
+
 ```bash
 # Enable metadata plugin (id=1)
 curl -s "http://localhost:20059/api/v1/metadata/1" -H "X-Api-Key: LIDARR_KEY" | \
@@ -1028,22 +1038,26 @@ curl -s "http://localhost:20059/api/v1/metadata/1" -H "X-Api-Key: LIDARR_KEY" | 
 # Trigger refresh
 curl -s -X POST "http://localhost:20059/api/v1/command" -H "X-Api-Key: LIDARR_KEY" -H "Content-Type: application/json" -d '{"name":"RefreshArtist"}'
 ```
+
 After refresh completes, Navidrome will pick up `cover.jpg` files on next library scan.
 
 ### N22 — Maintainerr data dir root-owned (loading loop)
 
 Maintainerr showed a loading spinner indefinitely. Root cause: `data/maintainerr/` was owned by root; the app (UID 1000) could not create its SQLite file.
 Fix via alpine container:
+
 ```bash
 docker run --rm -v /home/a-p-maita/homelab-config/data/maintainerr:/data \
   alpine sh -c "chown -R 1000:1000 /data"
 ```
+
 After restart, Maintainerr starts and creates `maintainerr.sqlite`. Still needs Jellyfin connection configured in UI at `http://100.106.40.5:6246`.
 
 ### N23 — Actual Budget SharedArrayBuffer error
 
 Actual Budget showed "SharedArrayBuffer not available" because those browser APIs require either `localhost` or an HTTPS origin with `COOP`/`COEP` headers.
 Fix: Add headers to Caddyfile for `actual-budget.andreasmaita.com` and create a CF tunnel public hostname for it:
+
 ```caddyfile
 http://actual-budget.andreasmaita.com {
     header {
@@ -1053,12 +1067,14 @@ http://actual-budget.andreasmaita.com {
     reverse_proxy actual-budget:5006
 }
 ```
+
 CF tunnel public hostname: `actual-budget.andreasmaita.com` → `http://caddy:80`
 
 ### N24 — Missing Cloudflare tunnel routes for new services
 
 After adding yamtrack, feishin, octo-fiesta, and actual-budget to Caddyfile, their CF tunnel public hostnames did not exist.
 **Manual action required in CF dashboard**: add public hostnames for:
+
 - `yamtrack.andreasmaita.com` → `http://caddy:80`
 - `feishin.andreasmaita.com` → `http://caddy:80`
 - `octo-fiesta.andreasmaita.com` → `http://caddy:80`
@@ -1073,11 +1089,32 @@ Fix: Increase memory limit to 1536M in `stacks/services/compose.yaml`. Also dele
 
 Komga crashed with `[SQLITE_CANTOPEN] Unable to open the database file` and `Failed to create parent directories for [/config/logs/komga.log]`. Root cause: `data/komga/config/` was owned by root; the app (UID 1000) couldn't write.
 Fix via alpine container:
+
 ```bash
 docker run --rm -v /home/a-p-maita/homelab-config/data/komga:/data \
   alpine sh -c "chown -R 1000:1000 /data"
 ```
+
 After restart, Komga starts cleanly. Still needs first-run admin account creation at `http://100.106.40.5:20077`.
+
+### N27 — Navidrome web UI shows no cover art despite Feishin showing it
+
+**Symptom**: Feishin client shows album cover art; Navidrome web UI showed grey placeholders.
+
+**Investigation**: Lidarr's Kodi/Emby metadata plugin (N21) writes `folder.jpg` + `discart.jpg` to album dirs (not `cover.jpg`). Navidrome scanned and found `imageCount=2` for both album folders. The Subsonic `getCoverArt` API returns correct images (99677 bytes for Crazy, 366300 bytes for Le Tigre at full size; 22KB thumbnails at 300px). DB confirms `image_files: ["folder.jpg","discart.jpg"]` stored in the `folder` table for both albums.
+
+**Root cause**: The Navidrome native `/api/album` returns `coverArtId: null` because the audio files have no embedded cover art (`has_cover_art: 0`). The cover art is folder-level only. Feishin likely uses external metadata sources (MusicBrainz/LastFM/Spotify) for artwork independently, which is why it showed art even before scans.
+
+**Fix**: No server-side changes needed — the API is correct. Browser cache issue. After Lidarr writes `folder.jpg`, Navidrome picks it up on next scan (every 1h or via `startScan` API). If the UI still shows no art: **hard-refresh the browser (Ctrl+Shift+R)** on the Navidrome page. The cover art thumbnails at 300px ARE being served correctly by the API.
+
+**Optional improvement**: Add `ND_LASTFM_APIKEY` to Navidrome env for high-quality external album art in detail views. The `externalInfoUpdatedAt: null` on albums means no external metadata has been fetched yet; Navidrome fetches this automatically when you view an album's detail page.
+
+```bash
+# Trigger a full rescan after adding cover art files:
+curl -s 'http://localhost:20070/rest/startScan?u=a_p_maita&p=PASS&v=1.16.1&c=check&f=json&fullScan=true'
+# Check scan status:
+curl -s 'http://localhost:20070/rest/getScanStatus?u=a_p_maita&p=PASS&v=1.16.1&c=check&f=json'
+```
 
 ---
 
