@@ -109,51 +109,51 @@ fi
 # ── Force-update qBittorrent categories (always sync from template) ───────────
 QBT_CAT_DIR="./data/qbittorrent/config/qBittorrent"
 mkdir -p "$QBT_CAT_DIR"
-cp config-templates/qbittorrent/categories.json "${QBT_CAT_DIR}/categories.json"
+cp config/qbittorrent/categories.json "${QBT_CAT_DIR}/categories.json"
 echo "Updated qBittorrent categories.json from template."
 
 # ── Seed configs from templates if not yet present ───────────────────────────
 if [ ! -f "$QBT_CONF" ]; then
   mkdir -p "$(dirname "$QBT_CONF")"
-  cp config-templates/qbittorrent/qBittorrent.conf "$QBT_CONF"
+  cp config/qbittorrent/qBittorrent.conf "$QBT_CONF"
   echo "Seeded qBittorrent.conf from config-templates."
 fi
 if [ ! -f ./data/homepage/config/services.yaml ]; then
-  cp config-templates/homepage/services.yaml ./data/homepage/config/services.yaml
+  cp config/homepage/services.yaml ./data/homepage/config/services.yaml
   echo "Seeded Homepage services.yaml from config-templates."
 fi
 if [ ! -f ./data/homepage/config/settings.yaml ]; then
-  cp config-templates/homepage/settings.yaml ./data/homepage/config/settings.yaml
+  cp config/homepage/settings.yaml ./data/homepage/config/settings.yaml
   echo "Seeded Homepage settings.yaml from config-templates."
 fi
 if [ ! -f ./data/homepage/config/docker.yaml ]; then
-  cp config-templates/homepage/docker.yaml ./data/homepage/config/docker.yaml
+  cp config/homepage/docker.yaml ./data/homepage/config/docker.yaml
   echo "Seeded Homepage docker.yaml from config-templates."
 fi
 if [ ! -f ./data/homepage/config/widgets.yaml ]; then
-  cp config-templates/homepage/widgets.yaml ./data/homepage/config/widgets.yaml
+  cp config/homepage/widgets.yaml ./data/homepage/config/widgets.yaml
   echo "Seeded Homepage widgets.yaml from config-templates."
 fi
 if [ ! -f ./data/homepage/config/bookmarks.yaml ]; then
-  cp config-templates/homepage/bookmarks.yaml ./data/homepage/config/bookmarks.yaml
+  cp config/homepage/bookmarks.yaml ./data/homepage/config/bookmarks.yaml
   echo "Seeded Homepage bookmarks.yaml from config-templates."
 fi
 if [ ! -f ./data/stirling-pdf/configs/settings.yml ]; then
-  cp config-templates/stirling-pdf/settings.yml ./data/stirling-pdf/configs/settings.yml
+  cp config/stirling-pdf/settings.yml ./data/stirling-pdf/configs/settings.yml
   echo "Seeded Stirling PDF settings.yml from config-templates."
 fi
 if [ ! -f ./data/crosswatch/config.json ]; then
-  cp config-templates/crosswatch/config.json ./data/crosswatch/config.json
+  cp config/crosswatch/config.json ./data/crosswatch/config.json
   echo "Seeded CrossWatch config.json from config-templates."
 fi
 if [ ! -f ./data/recyclarr/config/recyclarr.yml ]; then
-  cp config-templates/recyclarr/recyclarr.yml ./data/recyclarr/config/recyclarr.yml
+  cp config/recyclarr/recyclarr.yml ./data/recyclarr/config/recyclarr.yml
   echo "Seeded Recyclarr recyclarr.yml from config-templates."
 fi
 if [ ! -f ./data/recyclarr/config/configs/hd-bluray-web.yml ]; then
   mkdir -p ./data/recyclarr/config/configs
-  cp config-templates/recyclarr/configs/hd-bluray-web.yml ./data/recyclarr/config/configs/hd-bluray-web.yml
-  cp config-templates/recyclarr/configs/web-1080p.yml ./data/recyclarr/config/configs/web-1080p.yml
+  cp config/recyclarr/configs/hd-bluray-web.yml ./data/recyclarr/config/configs/hd-bluray-web.yml
+  cp config/recyclarr/configs/web-1080p.yml ./data/recyclarr/config/configs/web-1080p.yml
   echo "Seeded Recyclarr profile configs from config-templates."
 fi
 
@@ -169,44 +169,34 @@ fi
 
 # ── Arr stack: compose files depend on USE_VPN flag ──────────────────────────
 if [ "${USE_VPN}" = "true" ]; then
-  ARR_COMPOSE="-f dockerfiles/arr/compose.yaml -f dockerfiles/arr/compose.vpn.yaml"
+  ARR_COMPOSE="-f stacks/arr/compose.yaml -f stacks/arr/compose.vpn.yaml"
   echo "VPN mode enabled — arr stack will use gluetun."
 else
-  ARR_COMPOSE="-f dockerfiles/arr/compose.yaml"
+  ARR_COMPOSE="-f stacks/arr/compose.yaml"
   echo "VPN mode disabled — arr stack running without VPN."
 fi
 
-echo "Bringing up core..."
-docker compose $ENV_FILE_ARG -f dockerfiles/core/compose.yaml up -d
+failures=()
 
-echo "Bringing up arr..."
-docker compose $ENV_FILE_ARG $ARR_COMPOSE up -d
+up_stack() {
+  local name="$1"; shift
+  echo "Bringing up ${name}..."
+  if ! docker compose $ENV_FILE_ARG "$@" up -d; then
+    failures+=("$name")
+    echo "WARNING: ${name} failed" >&2
+  fi
+}
 
-echo "Bringing up media..."
-docker compose $ENV_FILE_ARG -f dockerfiles/media/compose.yaml up -d
+up_stack "infrastructure" -f stacks/infrastructure/compose.yaml
+up_stack "arr"             $ARR_COMPOSE
+up_stack "media"           -f stacks/media/compose.yaml
+up_stack "cloud"           -f stacks/cloud/compose.yaml -f stacks/cloud/compose.override.yaml
+up_stack "services-db"     -f stacks/services/compose.db.yaml
+up_stack "services"        -f stacks/services/compose.yaml
+up_stack "home"            -f stacks/home/compose.yaml
 
-echo "Bringing up productivity..."
-docker compose $ENV_FILE_ARG -f dockerfiles/productivity/compose.yaml up -d
-
-echo "Bringing up immich..."
-docker compose $ENV_FILE_ARG -f dockerfiles/immich/compose.yaml -f dockerfiles/immich/compose.override.yaml up -d
-
-echo "Bringing up monitoring..."
-docker compose $ENV_FILE_ARG -f dockerfiles/monitoring/compose.yaml up -d
-
-echo "Bringing up documents..."
-docker compose $ENV_FILE_ARG -f dockerfiles/documents/compose.yaml up -d
-
-echo "Bringing up tools..."
-docker compose $ENV_FILE_ARG -f dockerfiles/tools/compose.yaml up -d
-
-echo "Bringing up personal..."
-docker compose $ENV_FILE_ARG -f dockerfiles/personal/compose.yaml up -d
-
-echo "Bringing up entertainment..."
-docker compose $ENV_FILE_ARG -f dockerfiles/entertainment/compose.yaml up -d
-
-echo "Bringing up home..."
-docker compose $ENV_FILE_ARG -f dockerfiles/home/compose.yaml up -d
-
+if [ ${#failures[@]} -gt 0 ]; then
+  echo "FAILED stacks: ${failures[*]}"
+  exit 1
+fi
 echo "All stacks are up"

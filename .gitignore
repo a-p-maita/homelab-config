@@ -6,3 +6,4 @@ data/
 *.log
 # Ignore cloudflared credentials if generated locally
 core/cloudflared/
+backups/

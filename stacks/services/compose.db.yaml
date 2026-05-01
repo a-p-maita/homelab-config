@@ -1,0 +1,86 @@
+name: services
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Services stack — databases only (compose.db.yaml)
+#
+# Start this BEFORE compose.yaml:
+#   docker compose --env-file ../../.env -f compose.db.yaml up -d
+#
+# Purpose: separating DBs allows `docker compose -f compose.yaml down` to
+# stop all service containers without touching databases (see F6 in homelab-plan.md).
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+ # ── Paperless Redis ──────────────────────────────────────────────────────────
+ paperless-redis:
+  image: redis:7-alpine
+  container_name: paperless-redis
+  restart: unless-stopped
+  volumes:
+   - ../../data/paperless/redis:/data
+  networks:
+   - services_internal
+  healthcheck:
+   test: ["CMD", "redis-cli", "ping"]
+   interval: 30s
+   timeout: 5s
+   retries: 3
+  deploy:
+   resources:
+    limits:
+     cpus: "0.25"
+     memory: 128M
+
+ # ── Paperless PostgreSQL ─────────────────────────────────────────────────────
+ paperless-postgres:
+  image: postgres:16-alpine
+  container_name: paperless-postgres
+  restart: unless-stopped
+  environment:
+   - POSTGRES_USER=${PAPERLESS_DB_USER}
+   - POSTGRES_PASSWORD=${PAPERLESS_DB_PASS}
+   - POSTGRES_DB=paperless
+  volumes:
+   - ../../data/paperless/db:/var/lib/postgresql/data
+  networks:
+   - services_internal
+  healthcheck:
+   test: ["CMD-SHELL", "pg_isready -U ${PAPERLESS_DB_USER} -d paperless"]
+   interval: 30s
+   timeout: 10s
+   retries: 5
+   start_period: 30s
+  deploy:
+   resources:
+    limits:
+     cpus: "0.5"
+     memory: 256M
+
+ # ── Joplin PostgreSQL ────────────────────────────────────────────────────────
+ joplin-postgres:
+  image: postgres:16-alpine
+  container_name: joplin-postgres
+  restart: unless-stopped
+  environment:
+   - POSTGRES_USER=${JOPLIN_DB_USER}
+   - POSTGRES_PASSWORD=${JOPLIN_DB_PASS}
+   - POSTGRES_DB=joplin
+  volumes:
+   - ../../data/joplin/db:/var/lib/postgresql/data
+  networks:
+   - services_internal
+  healthcheck:
+   test: ["CMD-SHELL", "pg_isready -U ${JOPLIN_DB_USER} -d joplin"]
+   interval: 30s
+   timeout: 10s
+   retries: 5
+   start_period: 30s
+  deploy:
+   resources:
+    limits:
+     cpus: "0.5"
+     memory: 256M
+
+networks:
+ services_internal:
+  internal: true

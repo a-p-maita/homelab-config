@@ -15,42 +15,30 @@ USE_VPN=$(grep -E '^USE_VPN=' .env 2>/dev/null | head -1 | cut -d= -f2-)
 
 # Arr stack compose files depend on USE_VPN flag
 if [ "${USE_VPN}" = "true" ]; then
-  ARR_COMPOSE="-f dockerfiles/arr/compose.yaml -f dockerfiles/arr/compose.vpn.yaml"
+  ARR_COMPOSE="-f stacks/arr/compose.yaml -f stacks/arr/compose.vpn.yaml"
 else
-  ARR_COMPOSE="-f dockerfiles/arr/compose.yaml"
+  ARR_COMPOSE="-f stacks/arr/compose.yaml"
 fi
 
 echo "Bringing down home..."
-docker compose $ENV_FILE_ARG -f dockerfiles/home/compose.yaml down --remove-orphans
+docker compose $ENV_FILE_ARG -f stacks/home/compose.yaml down --remove-orphans
 
-echo "Bringing down entertainment..."
-docker compose $ENV_FILE_ARG -f dockerfiles/entertainment/compose.yaml down --remove-orphans
+echo "Bringing down services..."
+docker compose $ENV_FILE_ARG -f stacks/services/compose.yaml down --remove-orphans
 
-echo "Bringing down personal..."
-docker compose $ENV_FILE_ARG -f dockerfiles/personal/compose.yaml down --remove-orphans
+echo "Bringing down services-db..."
+docker compose $ENV_FILE_ARG -f stacks/services/compose.db.yaml down --remove-orphans
 
-echo "Bringing down tools..."
-docker compose $ENV_FILE_ARG -f dockerfiles/tools/compose.yaml down --remove-orphans
-
-echo "Bringing down documents..."
-docker compose $ENV_FILE_ARG -f dockerfiles/documents/compose.yaml down  --remove-orphans
-
-echo "Bringing down monitoring..."
-docker compose $ENV_FILE_ARG -f dockerfiles/monitoring/compose.yaml down --remove-orphans
-
-echo "Bringing down immich..."
-docker compose $ENV_FILE_ARG -f dockerfiles/immich/compose.yaml -f dockerfiles/immich/compose.override.yaml down --remove-orphans
-
-echo "Bringing down productivity..."
-docker compose $ENV_FILE_ARG -f dockerfiles/productivity/compose.yaml down --remove-orphans
+echo "Bringing down cloud..."
+docker compose $ENV_FILE_ARG -f stacks/cloud/compose.yaml -f stacks/cloud/compose.override.yaml down --remove-orphans
 
 echo "Bringing down media..."
-docker compose $ENV_FILE_ARG -f dockerfiles/media/compose.yaml down --remove-orphans
+docker compose $ENV_FILE_ARG -f stacks/media/compose.yaml down --remove-orphans
 
 echo "Bringing down arr..."
 docker compose $ENV_FILE_ARG $ARR_COMPOSE down --remove-orphans
 
-echo "Bringing down core..."
-docker compose $ENV_FILE_ARG -f dockerfiles/core/compose.yaml down --remove-orphans
+echo "Bringing down infrastructure..."
+docker compose $ENV_FILE_ARG -f stacks/infrastructure/compose.yaml down --remove-orphans
 
 echo "All stacks are down!"

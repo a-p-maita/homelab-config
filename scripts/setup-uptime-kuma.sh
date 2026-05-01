@@ -37,55 +37,17 @@ import sys, os
 from uptime_kuma_api import UptimeKumaApi, MonitorType
 
 MONITORS = [
-    # ── Internal monitors (container DNS on homelab_net) ─────────────────────
+    # ── Infrastructure ───────────────────────────────────────────────────────
     {
-        "name":     "Audiobookshelf",
+        "name":     "Caddy",
         "type":     MonitorType.HTTP,
-        "url":      "http://audiobookshelf:80",
+        "url":      "http://caddy:80",
         "interval": 60,
     },
     {
-        "name":     "Immich",
+        "name":     "Authelia",
         "type":     MonitorType.HTTP,
-        # /api/server/ping is the stable health endpoint in current Immich
-        "url":      "http://immich-server:2283/api/server/ping",
-        "interval": 60,
-    },
-    {
-        "name":     "Yamtrack",
-        "type":     MonitorType.HTTP,
-        "url":      "http://yamtrack:8000",
-        "interval": 60,
-    },
-    {
-        "name":     "CrossWatch",
-        "type":     MonitorType.HTTP,
-        "url":      "http://crosswatch:8787",
-        "interval": 60,
-    },
-    {
-        "name":     "qBittorrent",
-        "type":     MonitorType.HTTP,
-        "url":      "http://qbittorrent:20050",
-        "interval": 60,
-    },
-    {
-        "name":     "Audiobookbay Downloader",
-        "type":     MonitorType.HTTP,
-        "url":      "http://audiobookbay-downloader:9000",
-        "interval": 60,
-    },
-    {
-        # Jackett /health returns 200; root path redirects 301→302 and fails HTTP monitors.
-        "name":     "Jackett",
-        "type":     MonitorType.HTTP,
-        "url":      "http://jackett:9117/health",
-        "interval": 60,
-    },
-    {
-        "name":     "Forgejo",
-        "type":     MonitorType.HTTP,
-        "url":      "http://forgejo:3000",
+        "url":      "http://authelia:9091/api/health",
         "interval": 60,
     },
     {
@@ -94,23 +56,18 @@ MONITORS = [
         "url":      "http://homepage:3000",
         "interval": 60,
     },
-    # ── Music stack ──────────────────────────────────────────────────────────
+    # ── Arr stack ────────────────────────────────────────────────────────────
     {
-        "name":     "Navidrome",
+        "name":     "qBittorrent",
         "type":     MonitorType.HTTP,
-        "url":      "http://navidrome:4533/ping",
+        "url":      "http://qbittorrent:20050",
         "interval": 60,
     },
     {
-        "name":     "Feishin",
+        # Jackett /health returns 200; root path redirects and fails HTTP monitors.
+        "name":     "Jackett",
         "type":     MonitorType.HTTP,
-        "url":      "http://feishin:9180",
-        "interval": 60,
-    },
-    {
-        "name":     "Lidarr",
-        "type":     MonitorType.HTTP,
-        "url":      "http://lidarr:8686/ping",
+        "url":      "http://jackett:9117/health",
         "interval": 60,
     },
     {
@@ -132,9 +89,27 @@ MONITORS = [
         "interval": 60,
     },
     {
-        "name":     "LazyLibrarian",
+        "name":     "Lidarr",
         "type":     MonitorType.HTTP,
-        "url":      "http://lazylibrarian:5299",
+        "url":      "http://lidarr:8686/ping",
+        "interval": 60,
+    },
+    {
+        "name":     "Bazarr",
+        "type":     MonitorType.HTTP,
+        "url":      "http://bazarr:6767",
+        "interval": 60,
+    },
+    {
+        "name":     "Autobrr",
+        "type":     MonitorType.HTTP,
+        "url":      "http://autobrr:7474",
+        "interval": 60,
+    },
+    {
+        "name":     "Seerr",
+        "type":     MonitorType.HTTP,
+        "url":      "http://seerr:5055/api/v1/settings/public",
         "interval": 60,
     },
     {
@@ -145,10 +120,104 @@ MONITORS = [
         "interval": 120,
     },
     {
+        "name":     "Cleanuparr",
+        "type":     MonitorType.HTTP,
+        "url":      "http://cleanuparr:11011",
+        "interval": 120,
+    },
+    {
+        "name":     "Profilarr",
+        "type":     MonitorType.HTTP,
+        "url":      "http://profilarr:6868",
+        "interval": 120,
+    },
+    {
+        "name":     "Maintainerr",
+        "type":     MonitorType.HTTP,
+        "url":      "http://maintainerr:6246",
+        "interval": 120,
+    },
+    {
+        "name":     "Audiobookbay Downloader",
+        "type":     MonitorType.HTTP,
+        "url":      "http://audiobookbay-downloader:9000",
+        "interval": 60,
+    },
+    {
         "name":     "Octo-Fiesta",
         "type":     MonitorType.HTTP,
         # Root path returns {"ok":true} with 200 — confirmed health endpoint
         "url":      "http://octo-fiesta:8080/",
+        "interval": 60,
+    },
+    # ── Media stack ──────────────────────────────────────────────────────────
+    {
+        "name":     "Jellyfin",
+        "type":     MonitorType.HTTP,
+        "url":      "http://jellyfin:8096/health",
+        "interval": 60,
+    },
+    {
+        "name":     "Immich",
+        "type":     MonitorType.HTTP,
+        # /api/server/ping is the stable health endpoint in current Immich
+        "url":      "http://immich-server:2283/api/server/ping",
+        "interval": 60,
+    },
+    # ── Music stack ──────────────────────────────────────────────────────────
+    {
+        "name":     "Navidrome",
+        "type":     MonitorType.HTTP,
+        "url":      "http://navidrome:4533/ping",
+        "interval": 60,
+    },
+    {
+        "name":     "Feishin",
+        "type":     MonitorType.HTTP,
+        "url":      "http://feishin:9180",
+        "interval": 60,
+    },
+    {
+        "name":     "Listenarr",
+        "type":     MonitorType.HTTP,
+        "url":      "http://listenarr:4545",
+        "interval": 120,
+    },
+    # ── Cloud/personal stack ─────────────────────────────────────────────────
+    {
+        "name":     "Audiobookshelf",
+        "type":     MonitorType.HTTP,
+        "url":      "http://audiobookshelf:80",
+        "interval": 60,
+    },
+    {
+        "name":     "Yamtrack",
+        "type":     MonitorType.HTTP,
+        "url":      "http://yamtrack:8000",
+        "interval": 60,
+    },
+    {
+        "name":     "CrossWatch",
+        "type":     MonitorType.HTTP,
+        "url":      "http://crosswatch:8787",
+        "interval": 60,
+    },
+    {
+        "name":     "Forgejo",
+        "type":     MonitorType.HTTP,
+        "url":      "http://forgejo:3000",
+        "interval": 60,
+    },
+    {
+        "name":     "Komga",
+        "type":     MonitorType.HTTP,
+        "url":      "http://komga:25600",
+        "interval": 60,
+    },
+    {
+        "name":     "Calibre-Web",
+        "type":     MonitorType.HTTP,
+        "url":      "http://calibre-web:8083",
         "interval": 60,
     },
     # ── Documents stack ──────────────────────────────────────────────────────
@@ -214,84 +283,50 @@ MONITORS = [
         "url":      "http://mealie:9000/api/app/about",
         "interval": 60,
     },
-    # ── Entertainment stack ──────────────────────────────────────────────────
     {
-        "name":     "Jellyfin",
+        "name":     "Wizarr",
         "type":     MonitorType.HTTP,
-        "url":      "http://jellyfin:8096/health",
+        "url":      "http://wizarr:5690",
         "interval": 60,
-    },    {
-        "name":     "Seerr",
+    },
+    {
+        "name":     "Youtarr",
         "type":     MonitorType.HTTP,
-        "url":      "http://seerr:5055/api/v1/settings/public",
+        "url":      "http://youtarr:3011",
         "interval": 60,
-    },    # ── Home stack ───────────────────────────────────────────────────────────
+    },
+    # ── Home stack ───────────────────────────────────────────────────────────
     {
         "name":     "Home Assistant",
         "type":     MonitorType.HTTP,
         "url":      "http://home-assistant:8123",
         "interval": 60,
     },
-    # ── External monitors (Cloudflare tunnel domains) ─────────────────────────
+    # ── Monitoring stack ─────────────────────────────────────────────────────
     {
-        "name":     "Audiobookshelf (external)",
+        "name":     "Grafana",
         "type":     MonitorType.HTTP,
-        "url":      "https://audiobookshelf.andreasmaita.com",
-        "interval": 120,
+        "url":      "http://grafana:3000",
+        "interval": 60,
     },
     {
-        "name":     "Navidrome (external)",
+        "name":     "Prometheus",
         "type":     MonitorType.HTTP,
-        "url":      "https://navidrome.andreasmaita.com",
-        "interval": 120,
+        "url":      "http://prometheus:9090/-/healthy",
+        "interval": 60,
     },
     {
-        "name":     "Feishin (external)",
+        "name":     "Scrutiny",
         "type":     MonitorType.HTTP,
-        "url":      "https://feishin.andreasmaita.com",
-        "interval": 120,
+        "url":      "http://scrutiny:8080/api/health",
+        "interval": 300,
     },
+    # ── External monitors (Cloudflare tunnel — actual Caddyfile domains) ──────
+    # These verify the full chain: internet → Cloudflare → cloudflared → Caddy → service
     {
-        "name":     "Immich (external)",
+        "name":     "Authelia (external)",
         "type":     MonitorType.HTTP,
-        "url":      "https://immich.andreasmaita.com",
-        "interval": 120,
-    },
-    {
-        "name":     "Yamtrack (external)",
-        "type":     MonitorType.HTTP,
-        "url":      "https://yamtrack.andreasmaita.com",
-        "interval": 120,
-    },
-    {
-        "name":     "CrossWatch (external)",
-        "type":     MonitorType.HTTP,
-        "url":      "https://crosswatch.andreasmaita.com",
-        "interval": 120,
-    },
-    {
-        "name":     "Forgejo (external)",
-        "type":     MonitorType.HTTP,
-        "url":      "https://forgejo.andreasmaita.com",
-        "interval": 120,
-    },
-    {
-        "name":     "Homepage (external)",
-        "type":     MonitorType.HTTP,
-        "url":      "https://homepage.andreasmaita.com",
-        "interval": 120,
-    },
-    # ── New service external monitors (add Cloudflare tunnels for these) ──────
-    {
-        "name":     "Paperless-NGX (external)",
-        "type":     MonitorType.HTTP,
-        "url":      "https://paperless.andreasmaita.com",
-        "interval": 120,
-    },
-    {
-        "name":     "Vaultwarden (external)",
-        "type":     MonitorType.HTTP,
-        "url":      "https://vault.andreasmaita.com",
+        "url":      "https://auth.andreasmaita.com",
         "interval": 120,
     },
     {
@@ -301,15 +336,51 @@ MONITORS = [
         "interval": 120,
     },
     {
-        "name":     "Joplin (external)",
+        "name":     "Seerr (external)",
         "type":     MonitorType.HTTP,
-        "url":      "https://joplin.andreasmaita.com",
+        "url":      "https://seerr.andreasmaita.com",
         "interval": 120,
     },
     {
-        "name":     "Mealie (external)",
+        "name":     "Audiobookshelf (external)",
         "type":     MonitorType.HTTP,
-        "url":      "https://mealie.andreasmaita.com",
+        "url":      "https://abs.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Navidrome (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://music.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Immich (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://immich.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Vaultwarden (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://vault.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Forgejo (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://git.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Wizarr (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://join.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Homepage (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://home.andreasmaita.com",
         "interval": 120,
     },
 ]
@@ -320,12 +391,15 @@ def monitor_key(m):
         return {"type": m["type"], "hostname": m.get("hostname"), "port": m.get("port")}
     return {"type": m["type"], "url": m.get("url")}
 
-# Monitors to delete if they still exist (services that have been removed)
+# Monitors to delete if they still exist (services that have been removed or renamed)
 DELETE_MONITORS = [
     "spotDL", "SpotDL", "Ryot", "Ryot (external)",
     "Soulseek (slskd)", "Paperless-GPT", "Code Server", "LibreOffice",
     "MeshCentral", "LubeLogger", "Monica", "World Monitor", "RomM",
-    "Readarr",
+    "Readarr", "LazyLibrarian",
+    # External monitors with old/wrong URLs (replaced by correct-URL versions above)
+    "Feishin (external)", "Yamtrack (external)", "CrossWatch (external)",
+    "Paperless-NGX (external)", "Joplin (external)", "Mealie (external)",
 ]
 
 api = UptimeKumaApi("http://uptime-kuma:3001")

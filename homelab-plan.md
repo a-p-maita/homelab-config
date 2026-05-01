@@ -617,11 +617,13 @@ fi
 #!/usr/bin/env bash
 set -euo pipefail
 mkdir -p backups
-docker exec immich-postgres   pg_dumpall -U postgres  > backups/immich-$(date -I).sql
-docker exec paperless-postgres pg_dumpall -U paperless > backups/paperless-$(date -I).sql
-docker exec joplin-postgres    pg_dumpall -U joplin    > backups/joplin-$(date -I).sql
+docker exec immich-postgres    pg_dumpall -U postgres   > backups/immich-$(date -I).sql
+docker exec paperless-postgres pg_dumpall -U a-p-maita  > backups/paperless-$(date -I).sql
+docker exec joplin-postgres    pg_dumpall -U a-p-maita  > backups/joplin-$(date -I).sql
 echo "[backup] DB dumps complete"
 ```
+
+> **Errata (N8):** The original snippet had wrong users (`paperless`, `joplin`). The actual POSTGRES_USER for both is `a-p-maita` (set via `PAPERLESS_DB_USER` / `JOPLIN_DB_USER` in `.env`). Corrected above.
 
 ---
 
@@ -755,31 +757,41 @@ users:
 
 All routes point to Caddy. Caddy routes to correct backend + applies `forward_auth`.
 
-| Subdomain | Domain           | Type  | URL       |
-| --------- | ---------------- | ----- | --------- |
-| jellyfin  | andreasmaita.com | HTTPS | caddy:443 |
-| immich    | andreasmaita.com | HTTPS | caddy:443 |
-| vault     | andreasmaita.com | HTTPS | caddy:443 |
-| music     | andreasmaita.com | HTTPS | caddy:443 |
-| abs       | andreasmaita.com | HTTPS | caddy:443 |
-| git       | andreasmaita.com | HTTPS | caddy:443 |
-| seerr     | andreasmaita.com | HTTPS | caddy:443 |
-| join      | andreasmaita.com | HTTPS | caddy:443 |
-| auth      | andreasmaita.com | HTTPS | caddy:443 |
+**Note:** Service URL type is HTTP (not HTTPS). Cloudflare terminates TLS at the edge; cloudflared → Caddy is plain HTTP on the internal Docker network.
 
-**Caddy `forward_auth` pattern (for tunnel-protected services):**
+| Subdomain | Domain           | Type | URL          | Backend service    | Auth policy     |
+| --------- | ---------------- | ---- | ------------ | ------------------ | --------------- |
+| jellyfin  | andreasmaita.com | HTTP | http://caddy | jellyfin:8096      | one_factor      |
+| immich    | andreasmaita.com | HTTP | http://caddy | immich-server:2283 | two_factor      |
+| vault     | andreasmaita.com | HTTP | http://caddy | vaultwarden:80     | two_factor      |
+| music     | andreasmaita.com | HTTP | http://caddy | navidrome:4533     | two_factor      |
+| abs       | andreasmaita.com | HTTP | http://caddy | audiobookshelf:80  | two_factor      |
+| git       | andreasmaita.com | HTTP | http://caddy | forgejo:3000       | two_factor      |
+| seerr     | andreasmaita.com | HTTP | http://caddy | seerr:5055         | one_factor      |
+| join      | andreasmaita.com | HTTP | http://caddy | wizarr:5690        | two_factor      |
+| auth      | andreasmaita.com | HTTP | http://caddy | authelia:9091      | bypass (portal) |
+| home      | andreasmaita.com | HTTP | http://caddy | homepage:3000      | two_factor      |
+
+Auth policies are enforced by Authelia via `forward_auth` in Caddy. ✅ Active as of Phase 13.
+
+**Caddy `forward_auth` pattern (Authelia v4.38+ API — use this, NOT the deprecated `/api/verify`):**
 
 ```caddyfile
-radarr.andreasmaita.com {
+(authelia_auth) {
     forward_auth authelia:9091 {
-        uri /api/verify?rd=https://auth.andreasmaita.com
+        uri /api/authz/forward-auth
         copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
     }
-    reverse_proxy radarr:7878
+}
+
+jellyfin.andreasmaita.com {
+    import cloudflare_tls
+    import authelia_auth   # one_factor enforced by Authelia access_control rule
+    reverse_proxy jellyfin:8096
 }
 ```
 
-Note: radarr is NOT in the tunnel table above — this is just the pattern. Only services in the table above are publicly exposed.
+Note: the auth _policy_ (one_factor vs two_factor) is configured in Authelia's `access_control` rules, not in the Caddyfile. Caddyfile only decides WHETHER to call Authelia at all.
 
 ---
 
@@ -826,24 +838,117 @@ ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/scheduler}="none"
 
 > Complete and verify each phase before starting the next. Stop at phase boundaries if context is running low — each phase is fully self-contained.
 
-| Order | Task                                                                                                        | Risk   |
-| ----- | ----------------------------------------------------------------------------------------------------------- | ------ |
-| 1     | **Quick wins:** TZ → `.env`, `BAZARR_PORT` → `.env`, stop `docker-model-runner`, pin `IMMICH_VERSION`       | None   |
-| 2     | **Backup:** run `backup-dbs.sh`, set up Restic + `backup.sh`, git push                                      | None   |
-| 3     | **Add to existing arr stack:** Unpackerr, Cleanuparr, autobrr, Listenarr, Wizarr                            | None   |
-| 4     | **Add to existing arr stack:** Profilarr (remove Recyclarr after QP verification)                           | Low    |
-| 5     | **Add Youtarr** to arr stack; configure @fireship channel in WebUI                                          | None   |
-| 6     | **Book management:** remove LazyLibrarian; add Komga + Calibre-Web + BookBounty                             | Low    |
-| 7     | **Add Maintainerr** to media stack                                                                          | None   |
-| 8     | **Phase 6 — file structure:** `dockerfiles/` → `stacks/`, `config-templates/` → `config/`                   | Low    |
-| 9     | **Phase 1 — stack consolidation:** 11 → 6 stacks; write Phase 2 network config simultaneously (see note)    | Medium |
-| 10    | **Phase 2 — networking:** network segmentation + Caddy container (LAN subdomains optional)                  | Medium |
-| 11    | **Phase 5 — monitoring:** Prometheus + Grafana + Scrutiny + node-exporter; import dashboards 1860 + 893     | None   |
-| 12    | **Phase 7/12 — access layer:** Caddyfile routes for tunnelled services; configure Cloudflare tunnel → Caddy | Low    |
-| 13    | **Phase 11 — Authelia:** compose up, enroll TOTP, add `forward_auth` to Caddyfile for tunnelled services    | Low    |
-| 14    | **Phase 8 — resource tuning:** enable VA-API, set swappiness, NVMe scheduler                                | None   |
+| Order | Task                                                                                                        | Status        | Risk   |
+| ----- | ----------------------------------------------------------------------------------------------------------- | ------------- | ------ |
+| 1     | **Quick wins:** TZ → `.env`, `BAZARR_PORT` → `.env`, stop `docker-model-runner`, pin `IMMICH_VERSION`       | ✅ Done       | None   |
+| 2     | **Backup:** run `backup-dbs.sh`, set up Restic + `backup.sh`, git push                                      | ✅ Done       | None   |
+| 3     | **Add to existing arr stack:** Unpackerr, Cleanuparr, autobrr, Listenarr, Wizarr                            | ✅ Done       | None   |
+| 4     | **Add to existing arr stack:** Profilarr (remove Recyclarr after QP verification)                           | ✅ Done       | Low    |
+| 5     | **Add Youtarr** to arr stack; configure @fireship channel in WebUI                                          | ✅ Done       | None   |
+| 6     | **Book management:** remove LazyLibrarian; add Komga + Calibre-Web + BookBounty                             | ✅ Done       | Low    |
+| 7     | **Add Maintainerr** to media stack                                                                          | ✅ Done       | None   |
+| 8     | **Phase 6 — file structure:** `dockerfiles/` → `stacks/`, `config-templates/` → `config/`                   | ✅ Done       | Low    |
+| 9     | **Phase 1+2 — stack consolidation + network segmentation:** 11 → 6 stacks + arr_internal/services_internal  | ✅ Done       | Medium |
+| 10    | **Phase 5 — monitoring:** Prometheus + Grafana + Scrutiny + node-exporter live in infrastructure stack      | ✅ Done       | None   |
+| 11    | **Cloudflare tunnel routes** configured (all 9 hostnames → caddy:443); Caddy + Authelia still commented out | ✅ Tunnels up | Low    |
+| 12    | **Phase 7/12 — Caddyfile:** write routes for tunnelled services; bring up Caddy container                   | ✅ Done       | Low    |
+| 13    | **Phase 11 — Authelia:** compose up, enroll TOTP, add `forward_auth` to Caddyfile for tunnelled services    | ✅ Done       | Low    |
+| 14    | **Phase 8 — resource tuning:** enable VA-API, set swappiness, NVMe scheduler                                | ✅ Done       | None   |
 
 **Critical note on steps 9+10:** Write the Phase 2 final network config into the arr stack compose file during Phase 1. Introducing networks to an existing stack later requires recreating all containers (second downtime window).
+
+---
+
+## Implementation Errata — Discovered Issues & Fixes
+
+These are corrections to plan content and real problems found during implementation.
+
+### Image name corrections
+
+| Service    | Plan had (wrong)                    | Correct image                      |
+| ---------- | ----------------------------------- | ---------------------------------- |
+| profilarr  | `ghcr.io/dictionarry-hub/profilarr` | `santiagosayshey/profilarr:latest` |
+| youtarr    | `ghcr.io/dialmasterorg/youtarr`     | `dialmaster/youtarr:latest`        |
+| bookbounty | `ghcr.io/thewicklowwolf/bookbounty` | `thewicklowwolf/bookbounty:latest` |
+
+### Port corrections
+
+| Variable       | Plan value | Actual value | Reason                                                |
+| -------------- | ---------- | ------------ | ----------------------------------------------------- |
+| `YOUTARR_PORT` | 20076      | **20080**    | Conflict with octo-fiesta on 20076. Changed in `.env` |
+
+### N1 — BAZARR_PORT syntax corruption
+
+`.env` had `BAZARR_PORT=20061# ── Homepage widget API keys` (comment merged onto value line). Fixed: value separated from comment.
+
+### N2 — PROWLARR_API_KEY orphaned lines
+
+Two orphaned comment lines without a key were left in `.env` after editing. Removed.
+
+### N3 — Immich ML was still running
+
+`immich-machine-learning` container was running despite the plan saying to disable it. Stopped + `profiles: [disabled]` applied in `stacks/cloud/compose.override.yaml`.
+
+### N4 — Watchtower was in default (all containers) mode
+
+Watchtower was not using `--label-enable`. Switched to opt-in: `command: --label-enable --cleanup --schedule "0 0 3 * * *"`. Every intended container now has `com.centurylinklabs.watchtower.enable=true`.
+
+### N5 — docker-model-runner removed
+
+Was running as a Docker Desktop AI sidecar. Stopped and removed.
+
+### N6 — octo-fiesta / youtarr port conflict on 20076
+
+Both services tried to bind port 20076. `YOUTARR_PORT` moved to 20080 in `.env`. Update `.env.example` to reflect 20080.
+
+### N7 — SCRUTINY_PORT syntax corruption
+
+`.env` had `SCRUTINY_PORT=8081# ── Homepage widget API keys`. Fixed to `SCRUTINY_PORT=8081`.
+
+### N8 — backup-dbs.sh wrong postgres users
+
+The backup script used `paperless` and `joplin` as pg users. Actual `POSTGRES_USER` for both is `a-p-maita` (from `PAPERLESS_DB_USER`/`JOPLIN_DB_USER` in `.env`). Corrected in script and in this plan.
+
+### N9 — youtarr "invalid IP" on port binding
+
+After port change to 20080, youtarr container needed full recreate (`down` + `up`), not just restart.
+
+### N10 — Prometheus / Grafana data dir permissions
+
+On first start, both containers failed: `permission denied` on their data directories.
+
+- **Prometheus** needs UID 65534 (nobody): `sudo chown -R 65534:65534 data/prometheus`
+- **Grafana** needs UID 472: `sudo chown -R 472:472 data/grafana`
+  Must run with `sudo` — regular user cannot chown to system UIDs.
+
+### N11 — youtarr config dir permissions on container recreate
+
+After recreate, youtarr crashed: `EACCES: permission denied, open '/app/config/config.json'`. The `data/youtarr/` tree was owned by root.
+Fix: `sudo chown -R 1000:1000 data/youtarr/`
+
+### N12 — services/compose.yaml cannot be validated alone
+
+`docker compose -f stacks/services/compose.yaml config` fails because `joplin` has `depends_on: joplin-postgres` which is defined in `compose.db.yaml`. Always validate and run both files together:
+
+```bash
+docker compose --env-file .env -f stacks/services/compose.db.yaml -f stacks/services/compose.yaml up -d
+```
+
+### N14 — NVMe udev rule wrong KERNEL pattern
+
+The plan had `KERNEL=="nvme[0-9]*"` which matches the NVMe controller (`nvme0`), not the block namespace device (`nvme0n1`) where `queue/scheduler` lives. udevadm trigger silently did nothing.
+
+Fix: `KERNEL=="nvme[0-9]n[0-9]*"` — matches `nvme0n1`. Correct rule in `/etc/udev/rules.d/60-scheduler.rules`:
+
+```
+ACTION=="add|change", KERNEL=="nvme[0-9]n[0-9]*", ATTR{queue/scheduler}="none"
+```
+
+Verify after `sudo udevadm trigger`: `cat /sys/block/nvme0n1/queue/scheduler` should show `[none]`.
+
+### N13 — bookbounty + profilarr show unhealthy
+
+Both containers show `(unhealthy)` in `docker ps`. This is a healthcheck configuration issue in those images (they respond but the check fails). Both containers function normally. Not a blocker.
 
 ---
 
