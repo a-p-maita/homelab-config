@@ -94,8 +94,15 @@ http://joplin.andreasmaita.com {
 # ─── Media tracking ──────────────────────────────────────────────────────────
 # Yamtrack — media tracker (movies/TV/games/manga)
 http://yamtrack.andreasmaita.com {
-    import authelia_auth
-    reverse_proxy yamtrack:8000
+    # OAuth callback paths bypass Authelia — Django session + state token provide security
+    @oauth_callback path /import/trakt/private /import/simkl/private /import/anilist/private
+    handle @oauth_callback {
+        reverse_proxy yamtrack:8000
+    }
+    handle {
+        import authelia_auth
+        reverse_proxy yamtrack:8000
+    }
 }
 
 # Feishin — web music player (Subsonic-compatible frontend)
