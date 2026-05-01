@@ -3,72 +3,48 @@
 # https://gethomepage.dev/configs/services/
 
 # Services with a public Cloudflare tunnel — accessible from any network
+# Tunnel subdomains are defined in the Caddyfile (not always the service name)
 - External:
-   - Audiobookshelf:
-      href: https://audiobookshelf.andreasmaita.com
-      description: Audiobook & podcast library
-      icon: audiobookshelf.png
-      siteMonitor: https://audiobookshelf.andreasmaita.com
-   - Navidrome:
-      href: https://navidrome.andreasmaita.com
-      description: Music streaming server
-      icon: navidrome.png
-      siteMonitor: https://navidrome.andreasmaita.com
-   - Feishin:
-      href: https://feishin.andreasmaita.com
-      description: Music web player
-      icon: feishin.png
-      siteMonitor: https://feishin.andreasmaita.com
-   - Immich:
-      href: https://immich.andreasmaita.com
-      description: Photo & video backup
-      icon: immich.png
-      siteMonitor: https://immich.andreasmaita.com
-   - Yamtrack:
-      href: https://yamtrack.andreasmaita.com
-      description: Media tracker (TV, movies, games, books)
-      icon: mdi-television-play
-      siteMonitor: https://yamtrack.andreasmaita.com
-   - CrossWatch:
-      href: https://crosswatch.andreasmaita.com
-      description: Sync Trakt, AniList, Jellyfin, Plex, Simkl
-      icon: mdi-sync
-      siteMonitor: https://crosswatch.andreasmaita.com
-   - Forgejo:
-      href: https://forgejo.andreasmaita.com
-      description: Git hosting
-      icon: forgejo.png
-      siteMonitor: https://forgejo.andreasmaita.com
-   - Octo-Fiesta:
-      href: https://octo-fiesta.andreasmaita.com
-      description: Subsonic proxy with hi-res streaming
-      icon: mdi-music-circle
-      siteMonitor: https://octo-fiesta.andreasmaita.com
-   - Paperless-NGX:
-      href: https://paperless.andreasmaita.com
-      description: Document management
-      icon: paperless-ngx.png
-      siteMonitor: https://paperless.andreasmaita.com
-   - Vaultwarden:
-      href: https://vault.andreasmaita.com
-      description: Password manager (Bitwarden-compatible)
-      icon: vaultwarden.png
-      siteMonitor: https://vault.andreasmaita.com
    - Jellyfin:
       href: https://jellyfin.andreasmaita.com
       description: Media server (video, music, TV)
       icon: jellyfin.png
       siteMonitor: https://jellyfin.andreasmaita.com
-   - Joplin:
-      href: https://joplin.andreasmaita.com
-      description: Note-taking server
-      icon: joplin.png
-      siteMonitor: https://joplin.andreasmaita.com
-   - Mealie:
-      href: https://mealie.andreasmaita.com
-      description: Recipe manager & meal planner
-      icon: mealie.png
-      siteMonitor: https://mealie.andreasmaita.com
+   - Immich:
+      href: https://immich.andreasmaita.com
+      description: Photo & video backup
+      icon: immich.png
+      siteMonitor: https://immich.andreasmaita.com
+   - Audiobookshelf:
+      href: https://abs.andreasmaita.com
+      description: Audiobook & podcast library
+      icon: audiobookshelf.png
+      siteMonitor: https://abs.andreasmaita.com
+   - Navidrome:
+      href: https://music.andreasmaita.com
+      description: Music streaming server
+      icon: navidrome.png
+      siteMonitor: https://music.andreasmaita.com
+   - Vaultwarden:
+      href: https://vault.andreasmaita.com
+      description: Password manager (Bitwarden-compatible)
+      icon: vaultwarden.png
+      siteMonitor: https://vault.andreasmaita.com
+   - Forgejo:
+      href: https://git.andreasmaita.com
+      description: Git hosting
+      icon: forgejo.png
+      siteMonitor: https://git.andreasmaita.com
+   - Overseerr:
+      href: https://seerr.andreasmaita.com
+      description: Media request & discovery
+      icon: overseerr.png
+      siteMonitor: https://seerr.andreasmaita.com
+   - Wizarr:
+      href: https://join.andreasmaita.com
+      description: Invite new users to Jellyfin
+      icon: mdi-account-plus
+      siteMonitor: https://join.andreasmaita.com
    - Homepage:
       href: https://homepage.andreasmaita.com
       description: This dashboard

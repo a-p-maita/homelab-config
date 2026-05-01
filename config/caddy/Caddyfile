@@ -69,19 +69,22 @@ http://vault.andreasmaita.com {
     reverse_proxy vaultwarden:80
 }
 
+# No forward_auth — Forgejo has its own authentication.
+# Git HTTP (push/pull/clone) uses HTTP Basic Auth with tokens, which is
+# incompatible with Authelia's cookie-based sessions.
 http://git.andreasmaita.com {
-    import authelia_auth
     reverse_proxy forgejo:3000
 }
 
+# No forward_auth — Wizarr serves public invite links to users who don't
+# have Authelia accounts yet; Wizarr manages its own auth for the admin UI.
 http://join.andreasmaita.com {
-    import authelia_auth
     reverse_proxy wizarr:5690
 }
 
 # ─── Monitoring ──────────────────────────────────────────────────────────────
 # Accept both home.andreasmaita.com and homepage.andreasmaita.com (tunnel may use either)
-http://home.andreasmaita.com, http://homepage.andreasmaita.com, https://homepage.andreasmaita.com {
+http://home.andreasmaita.com, http://homepage.andreasmaita.com {
     import authelia_auth
     reverse_proxy homepage:3000
 }
