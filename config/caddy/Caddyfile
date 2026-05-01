@@ -10,8 +10,9 @@
 # Authelia forward_auth:
 #   auth.andreasmaita.com  → no forward_auth (it IS the auth portal)
 #   seerr                  → forward_auth (one_factor per Authelia access_control rules)
-#   abs, music, immich, vault, yamtrack → forward_auth (two_factor, default policy)
-#   jellyfin, git, join, joplin, feishin, octo-fiesta, actual-budget → no forward_auth (own auth)
+#   abs, music, immich, vault, yamtrack, homepage → forward_auth (two_factor, default policy)
+#   jellyfin, git, join, joplin, feishin, octo-fiesta, actual-budget,
+#   paperless, mealie      → no forward_auth (own auth or API client compatibility)
 
 {
     # No TLS managed by Caddy — cloudflared handles it at the edge.
@@ -119,6 +120,20 @@ http://actual-budget.andreasmaita.com {
         Cross-Origin-Embedder-Policy "require-corp"
     }
     reverse_proxy actual-budget:5006
+}
+
+# ─── Documents ──────────────────────────────────────────────────────────────
+# No forward_auth — Paperless-NGX API tokens are used by mobile apps and
+# integrations; Authelia cookie sessions would break external API clients.
+http://paperless.andreasmaita.com {
+    reverse_proxy paperless-ngx:8000
+}
+
+# ─── Personal ────────────────────────────────────────────────────────────────
+# No forward_auth — Mealie has its own auth; recipe sharing/invite links
+# need to work without Authelia sessions.
+http://mealie.andreasmaita.com {
+    reverse_proxy mealie:9000
 }
 
 # ─── Monitoring ──────────────────────────────────────────────────────────────

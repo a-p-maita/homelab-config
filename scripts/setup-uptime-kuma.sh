@@ -144,6 +144,12 @@ MONITORS = [
         "interval": 60,
     },
     {
+        "name":     "BookBounty",
+        "type":     MonitorType.HTTP,
+        "url":      "http://bookbounty:5000",
+        "interval": 60,
+    },
+    {
         "name":     "Octo-Fiesta",
         "type":     MonitorType.HTTP,
         # Root path returns {"ok":true} with 200 — confirmed health endpoint
@@ -380,7 +386,49 @@ MONITORS = [
     {
         "name":     "Homepage (external)",
         "type":     MonitorType.HTTP,
-        "url":      "https://home.andreasmaita.com",
+        "url":      "https://homepage.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Yamtrack (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://yamtrack.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Feishin (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://feishin.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Octo-Fiesta (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://octo-fiesta.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Actual Budget (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://actual-budget.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Joplin (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://joplin.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Paperless (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://paperless.andreasmaita.com",
+        "interval": 120,
+    },
+    {
+        "name":     "Mealie (external)",
+        "type":     MonitorType.HTTP,
+        "url":      "https://mealie.andreasmaita.com",
         "interval": 120,
     },
 ]
@@ -397,7 +445,7 @@ DELETE_MONITORS = [
     "Soulseek (slskd)", "Paperless-GPT", "Code Server", "LibreOffice",
     "MeshCentral", "LubeLogger", "Monica", "World Monitor", "RomM",
     "Readarr", "LazyLibrarian",
-    # External monitors with old/wrong URLs (replaced by correct-URL versions above)
+    # External monitors with old/wrong URLs — deleted first, then re-created with correct URLs above
     "Feishin (external)", "Yamtrack (external)", "CrossWatch (external)",
     "Paperless-NGX (external)", "Joplin (external)", "Mealie (external)",
 ]

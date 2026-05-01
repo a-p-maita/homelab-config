@@ -1121,15 +1121,18 @@ curl -s 'http://localhost:20070/rest/getScanStatus?u=a_p_maita&p=PASS&v=1.16.1&c
 ### N28 — Yamtrack OAuth errors for Trakt private profile and AniList
 
 **Symptoms**:
+
 - Trakt private import: `OAuth error The requested redirect uri is malformed or doesn't match client redirect URI` — redirect URI shown as `http://100.106.40.5:20041/import/trakt/private`
 - AniList import: `invalid_client` error — URL shows `client_id=` (empty)
 
 **Root causes**:
+
 1. `TRAKT_API` and `TRAKT_API_SECRET` were not mapped in `stacks/media/compose.yaml` — the `.env` had `YAMTRACK_TRAKT_CLIENT_ID` but it was never passed to the container using Yamtrack's expected env var name (`TRAKT_API`).
 2. `ANILIST_ID` and `ANILIST_SECRET` were completely absent from both compose.yaml and `.env`. The empty `client_id=` in the AniList OAuth URL confirms Yamtrack received a blank value.
 3. For Trakt: the redirect URI used the local Tailscale IP because the OAuth flow was initiated from `http://100.106.40.5:20041`. Yamtrack uses Django's `request.build_absolute_uri()`, which reflects the incoming `Host` header — so **always initiate OAuth from the public URL** (`https://yamtrack.andreasmaita.com`).
 
 **Fix applied** (2025-08):
+
 - Added to `stacks/media/compose.yaml` yamtrack environment:
   ```yaml
   - TRAKT_API=${YAMTRACK_TRAKT_CLIENT_ID:-}
@@ -1141,10 +1144,51 @@ curl -s 'http://localhost:20070/rest/getScanStatus?u=a_p_maita&p=PASS&v=1.16.1&c
 - Restarted yamtrack container
 
 **Manual steps still required**:
+
 1. **Trakt**: Go to <https://trakt.tv/oauth/applications> → edit your app → set Redirect URI to `https://yamtrack.andreasmaita.com/import/trakt/private` → copy the Client Secret into `YAMTRACK_TRAKT_CLIENT_SECRET` in `.env`
 2. **AniList**: Go to <https://anilist.co/settings/developer> → create a new API client → Redirect URI: `https://yamtrack.andreasmaita.com/import/anilist/private` → copy Client ID and Client Secret into `YAMTRACK_ANILIST_CLIENT_ID` and `YAMTRACK_ANILIST_CLIENT_SECRET` in `.env`
 3. After filling `.env`, restart yamtrack: `docker compose --env-file .env -f stacks/media/compose.yaml up -d --no-deps yamtrack`
 4. **Always use `https://yamtrack.andreasmaita.com`** (not the Tailscale IP) when initiating OAuth import flows
+
+---
+
+### N29 — Complete all CF Tunnel public hostnames in Caddyfile; fix Uptime Kuma
+
+**Context**: User provided the full CF Tunnel public hostname list (17 routes, all `http://caddy:80`).
+
+**Issues found**:
+1. `paperless.andreasmaita.com` and `mealie.andreasmaita.com` had CF Tunnel routes but no Caddyfile entries → 502/timeout for anyone hitting those URLs.
+2. The Caddyfile comment listed `home.andreasmaita.com` as the homepage alias, but the actual CF Tunnel uses `homepage.andreasmaita.com`. The combined Caddy block (`http://home.andreasmaita.com, http://homepage.andreasmaita.com`) handles both fine; the tunnel subdomain is `homepage.`.
+3. Uptime Kuma "Homepage (external)" was checking `https://home.andreasmaita.com` — **no CF Tunnel exists for that subdomain**, so the external monitor would always fail. Fixed to `https://homepage.andreasmaita.com`.
+4. External monitors were missing for 7 tunneled services: yamtrack, feishin, octo-fiesta, actual-budget, joplin, paperless, mealie. The DELETE_MONITORS list in setup-uptime-kuma.sh was removing old wrong-URL entries but never adding the correct replacements.
+5. `BookBounty` (ebook/audiobook downloader, port 5000) was not in Uptime Kuma.
+
+**Fixes applied** (2025-08):
+- `config/caddy/Caddyfile`: Added `paperless.andreasmaita.com → paperless-ngx:8000` (Documents section) and `mealie.andreasmaita.com → mealie:9000` (Personal section). Both without Authelia — paperless uses API token auth (Authelia breaks integrations), mealie has its own auth.
+- Updated Caddyfile header comment to include `homepage` in forward_auth list and `paperless, mealie` in no-forward_auth list.
+- `scripts/setup-uptime-kuma.sh`: Fixed Homepage (external) URL, added BookBounty internal monitor, added 7 new external monitors (yamtrack, feishin, octo-fiesta, actual-budget, joplin, paperless, mealie).
+
+**All 17 CF Tunnel public hostnames now have Caddy routes:**
+
+| Tunnel hostname             | Container:port       | Authelia |
+|-----------------------------|----------------------|----------|
+| auth.andreasmaita.com       | authelia:9091        | no       |
+| jellyfin.andreasmaita.com   | jellyfin:8096        | no       |
+| seerr.andreasmaita.com      | seerr:5055           | one_factor |
+| abs.andreasmaita.com        | audiobookshelf:80    | two_factor |
+| music.andreasmaita.com      | navidrome:4533       | two_factor |
+| immich.andreasmaita.com     | immich-server:2283   | two_factor |
+| vault.andreasmaita.com      | vaultwarden:80       | two_factor |
+| git.andreasmaita.com        | forgejo:3000         | no       |
+| join.andreasmaita.com       | wizarr:5690          | no       |
+| joplin.andreasmaita.com     | joplin:22300         | no       |
+| yamtrack.andreasmaita.com   | yamtrack:8000        | two_factor |
+| feishin.andreasmaita.com    | feishin:9180         | no       |
+| octo-fiesta.andreasmaita.com| octo-fiesta:8080     | no       |
+| actual-budget.andreasmaita.com | actual-budget:5006 | no      |
+| homepage.andreasmaita.com   | homepage:3000        | two_factor |
+| paperless.andreasmaita.com  | paperless-ngx:8000   | no       |
+| mealie.andreasmaita.com     | mealie:9000          | no       |
 
 ---
 
