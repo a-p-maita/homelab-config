@@ -1,10 +1,19 @@
 ---
-# For configuration options and examples, please see:
+# For configuration options and examples, see:
 # https://gethomepage.dev/configs/services/
+#
+# Tab layout (defined in settings.yaml):
+#   🌐 External  — Cloudflare Tunnel (accessible from any network)
+#   🎬 Media     — Streaming, downloads, arr automation (Tailscale / LAN)
+#   ☁️ Cloud     — Photos, documents, notes, code (Tailscale / LAN)
+#   🔧 Services  — Finance, productivity, smart home (Tailscale / LAN)
+#   📊 System    — Monitoring and infrastructure (Tailscale / LAN)
 
-# Services with a public Cloudflare tunnel — accessible from any network
-# Tunnel subdomains are defined in the Caddyfile (not always the service name)
-- External:
+# ─────────────────────────────────────────────────────────────────────────────
+# 🌐 EXTERNAL TAB — Cloudflare Tunnel services (https://*.andreasmaita.com)
+# ─────────────────────────────────────────────────────────────────────────────
+
+- "External — Media":
    - Jellyfin:
       href: https://jellyfin.andreasmaita.com
       description: Media server (video, music, TV)

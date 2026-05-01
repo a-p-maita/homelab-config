@@ -1,10 +1,45 @@
 ---
-# For configuration options and examples, please see:
+# For configuration options and examples, see:
 # https://gethomepage.dev/configs/bookmarks/
 
-# - Development:
-#    - Github:
-#       - abbr: GH
-#         href: https://github.com/
+- Homelab:
+   - Homelab Config (GitHub):
+      - abbr: GH
+        href: https://github.com/Andreas-PM/homelab-config
+   - Cloudflare Tunnel Dashboard:
+      - abbr: CF
+        href: https://one.dash.cloudflare.com
+   - Cloudflare DNS:
+      - abbr: DNS
+        href: https://dash.cloudflare.com
+   - Tailscale Admin:
+      - abbr: TS
+        href: https://login.tailscale.com/admin
 
-# Add your own bookmark groups here
+- Media APIs:
+   - TMDB:
+      - abbr: TM
+        href: https://www.themoviedb.org/settings/api
+   - Trakt Apps:
+      - abbr: TR
+        href: https://trakt.tv/oauth/applications
+   - AniList Dev:
+      - abbr: AL
+        href: https://anilist.co/settings/developer
+   - Steam API:
+      - abbr: ST
+        href: https://steamcommunity.com/dev/apikey
+
+- Self-Hosted Docs:
+   - Homepage Docs:
+      - abbr: HP
+        href: https://gethomepage.dev
+   - Authelia Docs:
+      - abbr: AU
+        href: https://www.authelia.com/configuration/prologue/introduction/
+   - Caddy Docs:
+      - abbr: CD
+        href: https://caddyserver.com/docs
+   - Immich Releases:
+      - abbr: IM
+        href: https://github.com/immich-app/immich/releases

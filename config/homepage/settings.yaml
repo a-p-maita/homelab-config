@@ -1,35 +1,94 @@
 ---
 title: Homelab
+description: Andreas Maita — Homelab Dashboard
 theme: dark
 color: slate
 headerStyle: clean
 statusStyle: dot
+base: https://homepage.andreasmaita.com
 
 layout:
- External:
+ # ── 🌐 External tab — Cloudflare Tunnel (accessible anywhere) ─────────────
+ "External — Media":
+  tab: "🌐 External"
   style: row
   columns: 4
- Media:
+
+ "External — Cloud & Code":
+  tab: "🌐 External"
   style: row
-  columns: 5
- Productivity:
+  columns: 4
+
+ "External — Services":
+  tab: "🌐 External"
+  style: row
+  columns: 4
+
+ # ── 🎬 Media tab — Tailscale / LAN ────────────────────────────────────────
+ "Streaming & Tracking":
+  tab: "🎬 Media"
+  style: row
+  columns: 4
+
+ "Books & Reading":
+  tab: "🎬 Media"
   style: row
   columns: 3
- Documents:
-  style: row
-  columns: 4
- Tools:
+
+ "Downloads":
+  tab: "🎬 Media"
   style: row
   columns: 5
- Personal:
+
+ "Arr Suite":
+  tab: "🎬 Media"
+  style: row
+  columns: 5
+
+ # ── ☁️ Cloud tab — Tailscale / LAN ────────────────────────────────────────
+ "Photos":
+  tab: "☁️ Cloud"
+  style: row
+  columns: 2
+
+ "Notes & Documents":
+  tab: "☁️ Cloud"
   style: row
   columns: 4
- Entertainment:
+
+ "Code & Development":
+  tab: "☁️ Cloud"
+  style: row
+  columns: 2
+
+ # ── 🔧 Services tab — Tailscale / LAN ─────────────────────────────────────
+ "Finance & Food":
+  tab: "🔧 Services"
   style: row
   columns: 3
- Home:
+
+ "Productivity Tools":
+  tab: "🔧 Services"
+  style: row
+  columns: 4
+
+ "Security & Access":
+  tab: "🔧 Services"
+  style: row
+  columns: 3
+
+ "Smart Home":
+  tab: "🔧 Services"
   style: row
   columns: 2
- Monitoring:
+
+ # ── 📊 System tab — Infrastructure ────────────────────────────────────────
+ "Monitoring":
+  tab: "📊 System"
   style: row
-  columns: 2
+  columns: 4
+
+ "Infrastructure":
+  tab: "📊 System"
+  style: row
+  columns: 3
