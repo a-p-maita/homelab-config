@@ -950,6 +950,120 @@ Verify after `sudo udevadm trigger`: `cat /sys/block/nvme0n1/queue/scheduler` sh
 
 Both containers show `(unhealthy)` in `docker ps`. This is a healthcheck configuration issue in those images (they respond but the check fails). Both containers function normally. Not a blocker.
 
+### N15 — Yamtrack Redis permission denied (500 errors)
+
+Yamtrack returned HTTP 500. Root cause: Redis could not write RDB snapshots; `/data` dir inside yamtrack-redis was not writable by the Redis process.
+Fix: `chmod 777 data/yamtrack/redis` then restart yamtrack-redis and yamtrack.
+
+### N16 — Youtarr security lockout on first run
+
+Youtarr's setup endpoint only accepts requests from localhost. The web UI shows a lockout screen when accessed remotely before admin account is created.
+Fix (run from host shell, not browser):
+```bash
+curl -s -X POST http://localhost:20080/setup/create-auth \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"a-p-maita","password":"homelab-youtarr-2024!"}'
+```
+This returns a session token confirming setup is complete.
+
+### N17 — Youtarr temp dir root-owned
+
+Youtarr crashed with `EACCES: permission denied, mkdir '/usr/src/app/data/.youtarr_tmp'` because `/data/media/youtube` was root-owned.
+Fix via alpine container (avoids needing sudo for chown):
+```bash
+docker run --rm -v /home/a-p-maita/homelab-config/data/media/youtube:/data \
+  alpine sh -c "chown -R 1000:1000 /data"
+```
+After restart, Youtarr creates `.youtarr_tmp` successfully.
+
+### N18 — Joplin email confirmation stuck (no SMTP)
+
+Email confirmation link was sent to the default `admin@localhost` address; there was no SMTP configured so the email was never delivered, and the account was stuck unconfirmed.
+Fix (DB bypass to confirm email directly):
+```sql
+BEGIN;
+UPDATE users SET email = 'andymaita@protonmail.com', email_confirmed = 1 WHERE id = 'NmXsfFPahNulOsMZ98iYhA';
+DELETE FROM tokens WHERE user_id = 'NmXsfFPahNulOsMZ98iYhA';
+UPDATE emails SET sent_success = 1 WHERE recipient_id = 'NmXsfFPahNulOsMZ98iYhA';
+COMMIT;
+```
+Long-term fix: add SMTP vars to joplin service in `stacks/services/compose.yaml`:
+```
+MAILER_ENABLED=${JOPLIN_MAILER_ENABLED:-0}
+MAILER_HOST=${JOPLIN_MAILER_HOST:-}
+MAILER_PORT=${JOPLIN_MAILER_PORT:-587}
+MAILER_SECURITY=${JOPLIN_MAILER_SECURITY:-starttls}
+MAILER_AUTH_USER=${JOPLIN_MAILER_USER:-}
+MAILER_AUTH_PASSWORD=${JOPLIN_MAILER_PASS:-}
+MAILER_NOREPLY_NAME=Joplin Server
+MAILER_NOREPLY_EMAIL=${JOPLIN_MAILER_FROM:-noreply@andreasmaita.com}
+```
+Set `JOPLIN_MAILER_ENABLED=1` and fill in SMTP details in `.env` to enable.
+
+### N19 — qBittorrent set to remove completed torrents when ratio reached
+
+qBittorrent's `max_ratio_act` was set to `1` (Remove). This silently deletes seeded content.
+Fix via API: `curl -s -b /tmp/qbt.txt -X POST http://localhost:20050/api/v2/app/setPreferences -H "Content-Type: application/x-www-form-urlencoded" --data-urlencode 'json={"max_ratio_act":0}'`
+Value `0` = Pause (not Remove) when seeding ratio reached.
+
+### N20 — Calibre-Web no library / invalid DB path
+
+Calibre-Web showed "Invalid calibre library path" on first run because no `metadata.db` existed.
+Fix:
+1. `docker exec calibre-web calibredb --with-library=/books list` — creates empty `metadata.db`
+2. `docker exec -u root calibre-web chown -R abc:abc /books/` — fix ownership
+3. `python3 -c "import sqlite3; c=sqlite3.connect('data/calibre-web/config/app.db').cursor(); c.execute(\"UPDATE settings SET config_calibre_dir='/books' WHERE id=1\")"` — set path in app.db
+4. `docker restart calibre-web`
+Library is empty; add ebooks via web UI or by dropping files into `data/media/books/`.
+
+### N21 — Navidrome album art missing (no cover.jpg in FLAC dirs)
+
+Music files are FLAC with no embedded art and no `cover.jpg`/`folder.jpg` sidecar files. Navidrome shows grey placeholder art.
+Fix: enable Lidarr's Kodi/Emby metadata plugin (writes `cover.jpg` files to artist/album dirs) and trigger a RefreshArtist command:
+```bash
+# Enable metadata plugin (id=1)
+curl -s "http://localhost:20059/api/v1/metadata/1" -H "X-Api-Key: LIDARR_KEY" | \
+  python3 -c "import sys,json;d=json.load(sys.stdin);d['enable']=True;print(json.dumps(d))" | \
+  curl -s -X PUT "http://localhost:20059/api/v1/metadata/1" -H "X-Api-Key: LIDARR_KEY" -H "Content-Type: application/json" -d @-
+# Trigger refresh
+curl -s -X POST "http://localhost:20059/api/v1/command" -H "X-Api-Key: LIDARR_KEY" -H "Content-Type: application/json" -d '{"name":"RefreshArtist"}'
+```
+After refresh completes, Navidrome will pick up `cover.jpg` files on next library scan.
+
+### N22 — Maintainerr data dir root-owned (loading loop)
+
+Maintainerr showed a loading spinner indefinitely. Root cause: `data/maintainerr/` was owned by root; the app (UID 1000) could not create its SQLite file.
+Fix via alpine container:
+```bash
+docker run --rm -v /home/a-p-maita/homelab-config/data/maintainerr:/data \
+  alpine sh -c "chown -R 1000:1000 /data"
+```
+After restart, Maintainerr starts and creates `maintainerr.sqlite`. Still needs Jellyfin connection configured in UI at `http://100.106.40.5:6246`.
+
+### N23 — Actual Budget SharedArrayBuffer error
+
+Actual Budget showed "SharedArrayBuffer not available" because those browser APIs require either `localhost` or an HTTPS origin with `COOP`/`COEP` headers.
+Fix: Add headers to Caddyfile for `actual-budget.andreasmaita.com` and create a CF tunnel public hostname for it:
+```caddyfile
+http://actual-budget.andreasmaita.com {
+    header {
+        Cross-Origin-Opener-Policy "same-origin"
+        Cross-Origin-Embedder-Policy "require-corp"
+    }
+    reverse_proxy actual-budget:5006
+}
+```
+CF tunnel public hostname: `actual-budget.andreasmaita.com` → `http://caddy:80`
+
+### N24 — Missing Cloudflare tunnel routes for new services
+
+After adding yamtrack, feishin, octo-fiesta, and actual-budget to Caddyfile, their CF tunnel public hostnames did not exist.
+**Manual action required in CF dashboard**: add public hostnames for:
+- `yamtrack.andreasmaita.com` → `http://caddy:80`
+- `feishin.andreasmaita.com` → `http://caddy:80`
+- `octo-fiesta.andreasmaita.com` → `http://caddy:80`
+- `actual-budget.andreasmaita.com` → `http://caddy:80`
+
 ---
 
 ## Services Removed / Not Added

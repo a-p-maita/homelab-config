@@ -10,8 +10,8 @@
 # Authelia forward_auth:
 #   auth.andreasmaita.com  → no forward_auth (it IS the auth portal)
 #   seerr                  → forward_auth (one_factor per Authelia access_control rules)
-#   abs, music, immich, vault → forward_auth (two_factor, default policy)
-#   jellyfin, git, join, joplin → no forward_auth (each manages its own auth)
+#   abs, music, immich, vault, yamtrack → forward_auth (two_factor, default policy)
+#   jellyfin, git, join, joplin, feishin, octo-fiesta, actual-budget → no forward_auth (own auth)
 
 {
     # No TLS managed by Caddy — cloudflared handles it at the edge.
@@ -88,6 +88,37 @@ http://join.andreasmaita.com {
 # Cookie-based Authelia sessions would break Joplin desktop/mobile client connections.
 http://joplin.andreasmaita.com {
     reverse_proxy joplin:22300
+}
+
+# ─── Media tracking ──────────────────────────────────────────────────────────
+# Yamtrack — media tracker (movies/TV/games/manga)
+http://yamtrack.andreasmaita.com {
+    import authelia_auth
+    reverse_proxy yamtrack:8000
+}
+
+# Feishin — web music player (Subsonic-compatible frontend)
+# No forward_auth — SERVER_LOCK=true in compose; auth handled by the backend (octo-fiesta)
+http://feishin.andreasmaita.com {
+    reverse_proxy feishin:9180
+}
+
+# Octo-Fiesta — Subsonic API proxy / hi-res music provider
+# No forward_auth — Feishin authenticates to this service directly using Subsonic credentials
+http://octo-fiesta.andreasmaita.com {
+    reverse_proxy octo-fiesta:8080
+}
+
+# ─── Finance ─────────────────────────────────────────────────────────────────
+# Actual Budget — local-first budget app
+# Requires COOP + COEP headers for SharedArrayBuffer (WASM) to work in browser.
+# No forward_auth — Actual Budget manages its own password auth.
+http://actual-budget.andreasmaita.com {
+    header {
+        Cross-Origin-Opener-Policy "same-origin"
+        Cross-Origin-Embedder-Policy "require-corp"
+    }
+    reverse_proxy actual-budget:5006
 }
 
 # ─── Monitoring ──────────────────────────────────────────────────────────────
