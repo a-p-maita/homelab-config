@@ -287,7 +287,7 @@
       server: my-docker
       container: actual-budget
    - Joplin Server:
-      href: http://100.106.40.5:20317
+      href: https://joplin.andreasmaita.com
       description: Note-taking sync server
       icon: joplin.png
       server: my-docker

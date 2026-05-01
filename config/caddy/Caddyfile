@@ -9,8 +9,9 @@
 #
 # Authelia forward_auth:
 #   auth.andreasmaita.com  → no forward_auth (it IS the auth portal)
-#   jellyfin, seerr        → forward_auth (one_factor per Authelia access_control rules)
-#   abs, music, immich, vault, git, join → forward_auth (two_factor, default policy)
+#   seerr                  → forward_auth (one_factor per Authelia access_control rules)
+#   abs, music, immich, vault → forward_auth (two_factor, default policy)
+#   jellyfin, git, join, joplin → no forward_auth (each manages its own auth)
 
 {
     # No TLS managed by Caddy — cloudflared handles it at the edge.
@@ -37,8 +38,9 @@ http://auth.andreasmaita.com {
 }
 
 # ─── Media ───────────────────────────────────────────────────────────────────
+# No forward_auth — Jellyfin has its own multi-user auth system.
+# Authelia only has one account (andreas); other Jellyfin users would be locked out.
 http://jellyfin.andreasmaita.com {
-    import authelia_auth
     reverse_proxy jellyfin:8096
 }
 
@@ -80,6 +82,12 @@ http://git.andreasmaita.com {
 # have Authelia accounts yet; Wizarr manages its own auth for the admin UI.
 http://join.andreasmaita.com {
     reverse_proxy wizarr:5690
+}
+
+# No forward_auth — Joplin uses token-based API auth for client sync.
+# Cookie-based Authelia sessions would break Joplin desktop/mobile client connections.
+http://joplin.andreasmaita.com {
+    reverse_proxy joplin:22300
 }
 
 # ─── Monitoring ──────────────────────────────────────────────────────────────
