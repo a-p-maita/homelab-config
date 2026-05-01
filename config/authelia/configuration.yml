@@ -26,7 +26,12 @@ access_control:
         - "^/identity/.*$"
       policy: bypass
     - domain:
+        - "git.andreasmaita.com"
+        - "join.andreasmaita.com"
         - "jellyfin.andreasmaita.com"
+        - "joplin.andreasmaita.com"
+      policy: bypass
+    - domain:
         - "seerr.andreasmaita.com"
       policy: one_factor
 
