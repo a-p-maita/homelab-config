@@ -1,0 +1,27 @@
+Date: 2026-05-01 03:25:19.992811409 +0100 BST m=+2112.680762413
+Recipient: {Andreas admin@andreasmaita.com}
+Subject: Second Factor Method Added
+Second Factor Method Added
+
+Hi Andreas,
+
+This notification has been sent to you in order to notify you that a Second Factor Method was added to your account.
+
+----------------------------------------
+
+Event Details:
+
+Action: Second Factor Method Added
+
+
+
+Category: One-Time Password
+
+
+
+----------------------------------------
+
+This notification was intended for Andreas. This event notification was generated due to an action from 37.60.89.163. If you do not believe that your actions could have triggered this event or if you are concerned about your account's safety, please change your password and reach out to an administrator.
+
+Powered by Authelia https://www.authelia.com
+
