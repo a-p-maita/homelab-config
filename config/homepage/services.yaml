@@ -113,12 +113,6 @@
        url: http://sonarr:8989
        key: "{{HOMEPAGE_VAR_SONARR_API_KEY}}"
        enableQueue: true
-   - LazyLibrarian:
-      href: http://100.106.40.5:20058
-      description: Book/ebook/magazine manager
-      icon: mdi-book-open-page-variant
-      server: my-docker
-      container: lazylibrarian
    - Byparr:
       href: http://100.106.40.5:20060
       description: Cloudflare anti-bot bypass (FlareSolverr successor)
@@ -167,6 +161,62 @@
       icon: mdi-sync
       server: my-docker
       container: crosswatch
+   - Autobrr:
+      href: http://100.106.40.5:20074
+      description: Automated torrent/Usenet release manager
+      icon: autobrr.png
+      server: my-docker
+      container: autobrr
+      widget:
+       type: autobrr
+       url: http://autobrr:7474
+       key: "{{HOMEPAGE_VAR_AUTOBRR_API_KEY}}"
+   - Bazarr:
+      href: http://100.106.40.5:20061
+      description: Subtitle manager for Radarr & Sonarr
+      icon: bazarr.png
+      server: my-docker
+      container: bazarr
+      widget:
+       type: bazarr
+       url: http://bazarr:6767
+       key: "{{HOMEPAGE_VAR_BAZARR_API_KEY}}"
+   - BookBounty:
+      href: http://100.106.40.5:20079
+      description: Ebook & audiobook downloader
+      icon: mdi-book-download
+      server: my-docker
+      container: bookbounty
+   - Calibre-Web:
+      href: http://100.106.40.5:20078
+      description: Ebook library manager & reader
+      icon: calibre-web.png
+      server: my-docker
+      container: calibre-web
+   - Komga:
+      href: http://100.106.40.5:20077
+      description: Comics & manga server
+      icon: komga.png
+      server: my-docker
+      container: komga
+   - Profilarr:
+      href: http://100.106.40.5:20075
+      description: Quality profile manager for *arr apps
+      icon: mdi-tune-variant
+      server: my-docker
+      container: profilarr
+   - Listenarr:
+      href: http://100.106.40.5:20073
+      description: Auto-download music added to Jellyfin
+      icon: mdi-headphones
+      server: my-docker
+      container: listenarr
+   - Youtarr:
+      href: http://100.106.40.5:20080
+      description: YouTube video downloader
+      icon: mdi-youtube
+      server: my-docker
+      container: youtarr
 
 # Productivity & photos
 - Productivity:
@@ -260,6 +310,24 @@
       icon: jellyfin.png
       server: my-docker
       container: jellyfin
+   - Overseerr:
+      href: http://100.106.40.5:20331
+      description: Media request & discovery
+      icon: overseerr.png
+      server: my-docker
+      container: seerr
+   - Wizarr:
+      href: http://100.106.40.5:20071
+      description: Invite new users to Jellyfin
+      icon: mdi-account-plus
+      server: my-docker
+      container: wizarr
+   - Maintainerr:
+      href: http://100.106.40.5:6246
+      description: Auto-remove media from Jellyfin by rules
+      icon: maintainerr.png
+      server: my-docker
+      container: maintainerr
 
 # Smart Home
 - Home:
@@ -278,3 +346,27 @@
       icon: uptime-kuma.png
       server: my-docker
       container: uptime-kuma
+   - Grafana:
+      href: http://100.106.40.5:3001
+      description: Metrics dashboards
+      icon: grafana.png
+      server: my-docker
+      container: grafana
+   - Prometheus:
+      href: http://100.106.40.5:9090
+      description: Metrics collection & alerting
+      icon: prometheus.png
+      server: my-docker
+      container: prometheus
+   - Scrutiny:
+      href: http://100.106.40.5:8081
+      description: NVMe SMART health monitoring
+      icon: scrutiny.png
+      server: my-docker
+      container: scrutiny
+   - Cloudflared:
+      href: http://100.106.40.5:20280
+      description: Cloudflare tunnel connector
+      icon: cloudflare.png
+      server: my-docker
+      container: cloudflared
