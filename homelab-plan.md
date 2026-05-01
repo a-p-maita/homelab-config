@@ -1157,6 +1157,7 @@ curl -s 'http://localhost:20070/rest/getScanStatus?u=a_p_maita&p=PASS&v=1.16.1&c
 **Context**: User provided the full CF Tunnel public hostname list (17 routes, all `http://caddy:80`).
 
 **Issues found**:
+
 1. `paperless.andreasmaita.com` and `mealie.andreasmaita.com` had CF Tunnel routes but no Caddyfile entries → 502/timeout for anyone hitting those URLs.
 2. The Caddyfile comment listed `home.andreasmaita.com` as the homepage alias, but the actual CF Tunnel uses `homepage.andreasmaita.com`. The combined Caddy block (`http://home.andreasmaita.com, http://homepage.andreasmaita.com`) handles both fine; the tunnel subdomain is `homepage.`.
 3. Uptime Kuma "Homepage (external)" was checking `https://home.andreasmaita.com` — **no CF Tunnel exists for that subdomain**, so the external monitor would always fail. Fixed to `https://homepage.andreasmaita.com`.
@@ -1164,31 +1165,32 @@ curl -s 'http://localhost:20070/rest/getScanStatus?u=a_p_maita&p=PASS&v=1.16.1&c
 5. `BookBounty` (ebook/audiobook downloader, port 5000) was not in Uptime Kuma.
 
 **Fixes applied** (2025-08):
+
 - `config/caddy/Caddyfile`: Added `paperless.andreasmaita.com → paperless-ngx:8000` (Documents section) and `mealie.andreasmaita.com → mealie:9000` (Personal section). Both without Authelia — paperless uses API token auth (Authelia breaks integrations), mealie has its own auth.
 - Updated Caddyfile header comment to include `homepage` in forward_auth list and `paperless, mealie` in no-forward_auth list.
 - `scripts/setup-uptime-kuma.sh`: Fixed Homepage (external) URL, added BookBounty internal monitor, added 7 new external monitors (yamtrack, feishin, octo-fiesta, actual-budget, joplin, paperless, mealie).
 
 **All 17 CF Tunnel public hostnames now have Caddy routes:**
 
-| Tunnel hostname             | Container:port       | Authelia |
-|-----------------------------|----------------------|----------|
-| auth.andreasmaita.com       | authelia:9091        | no       |
-| jellyfin.andreasmaita.com   | jellyfin:8096        | no       |
-| seerr.andreasmaita.com      | seerr:5055           | one_factor |
-| abs.andreasmaita.com        | audiobookshelf:80    | two_factor |
-| music.andreasmaita.com      | navidrome:4533       | two_factor |
-| immich.andreasmaita.com     | immich-server:2283   | two_factor |
-| vault.andreasmaita.com      | vaultwarden:80       | two_factor |
-| git.andreasmaita.com        | forgejo:3000         | no       |
-| join.andreasmaita.com       | wizarr:5690          | no       |
-| joplin.andreasmaita.com     | joplin:22300         | no       |
-| yamtrack.andreasmaita.com   | yamtrack:8000        | two_factor |
-| feishin.andreasmaita.com    | feishin:9180         | no       |
-| octo-fiesta.andreasmaita.com| octo-fiesta:8080     | no       |
-| actual-budget.andreasmaita.com | actual-budget:5006 | no      |
-| homepage.andreasmaita.com   | homepage:3000        | two_factor |
-| paperless.andreasmaita.com  | paperless-ngx:8000   | no       |
-| mealie.andreasmaita.com     | mealie:9000          | no       |
+| Tunnel hostname                | Container:port     | Authelia   |
+| ------------------------------ | ------------------ | ---------- |
+| auth.andreasmaita.com          | authelia:9091      | no         |
+| jellyfin.andreasmaita.com      | jellyfin:8096      | no         |
+| seerr.andreasmaita.com         | seerr:5055         | one_factor |
+| abs.andreasmaita.com           | audiobookshelf:80  | two_factor |
+| music.andreasmaita.com         | navidrome:4533     | two_factor |
+| immich.andreasmaita.com        | immich-server:2283 | two_factor |
+| vault.andreasmaita.com         | vaultwarden:80     | two_factor |
+| git.andreasmaita.com           | forgejo:3000       | no         |
+| join.andreasmaita.com          | wizarr:5690        | no         |
+| joplin.andreasmaita.com        | joplin:22300       | no         |
+| yamtrack.andreasmaita.com      | yamtrack:8000      | two_factor |
+| feishin.andreasmaita.com       | feishin:9180       | no         |
+| octo-fiesta.andreasmaita.com   | octo-fiesta:8080   | no         |
+| actual-budget.andreasmaita.com | actual-budget:5006 | no         |
+| homepage.andreasmaita.com      | homepage:3000      | two_factor |
+| paperless.andreasmaita.com     | paperless-ngx:8000 | no         |
+| mealie.andreasmaita.com        | mealie:9000        | no         |
 
 ---
 

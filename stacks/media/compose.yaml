@@ -75,6 +75,7 @@ services:
    # Set YAMTRACK_REGISTRATION=False in .env after creating your admin account,
    # then restart: docker compose -f dockerfiles/media/compose.yaml restart yamtrack
    - REGISTRATION=${YAMTRACK_REGISTRATION:-True}
+   - STEAM_API_KEY=${STEAM_API_KEY:-}
   volumes:
    - ../../data/yamtrack:/yamtrack/db
   ports:
