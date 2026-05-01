@@ -1118,6 +1118,36 @@ curl -s 'http://localhost:20070/rest/getScanStatus?u=a_p_maita&p=PASS&v=1.16.1&c
 
 ---
 
+### N28 — Yamtrack OAuth errors for Trakt private profile and AniList
+
+**Symptoms**:
+- Trakt private import: `OAuth error The requested redirect uri is malformed or doesn't match client redirect URI` — redirect URI shown as `http://100.106.40.5:20041/import/trakt/private`
+- AniList import: `invalid_client` error — URL shows `client_id=` (empty)
+
+**Root causes**:
+1. `TRAKT_API` and `TRAKT_API_SECRET` were not mapped in `stacks/media/compose.yaml` — the `.env` had `YAMTRACK_TRAKT_CLIENT_ID` but it was never passed to the container using Yamtrack's expected env var name (`TRAKT_API`).
+2. `ANILIST_ID` and `ANILIST_SECRET` were completely absent from both compose.yaml and `.env`. The empty `client_id=` in the AniList OAuth URL confirms Yamtrack received a blank value.
+3. For Trakt: the redirect URI used the local Tailscale IP because the OAuth flow was initiated from `http://100.106.40.5:20041`. Yamtrack uses Django's `request.build_absolute_uri()`, which reflects the incoming `Host` header — so **always initiate OAuth from the public URL** (`https://yamtrack.andreasmaita.com`).
+
+**Fix applied** (2025-08):
+- Added to `stacks/media/compose.yaml` yamtrack environment:
+  ```yaml
+  - TRAKT_API=${YAMTRACK_TRAKT_CLIENT_ID:-}
+  - TRAKT_API_SECRET=${YAMTRACK_TRAKT_CLIENT_SECRET:-}
+  - ANILIST_ID=${YAMTRACK_ANILIST_CLIENT_ID:-}
+  - ANILIST_SECRET=${YAMTRACK_ANILIST_CLIENT_SECRET:-}
+  ```
+- Added `YAMTRACK_TRAKT_CLIENT_SECRET`, `YAMTRACK_ANILIST_CLIENT_ID`, `YAMTRACK_ANILIST_CLIENT_SECRET` to `.env` (values need to be filled in manually — see below)
+- Restarted yamtrack container
+
+**Manual steps still required**:
+1. **Trakt**: Go to <https://trakt.tv/oauth/applications> → edit your app → set Redirect URI to `https://yamtrack.andreasmaita.com/import/trakt/private` → copy the Client Secret into `YAMTRACK_TRAKT_CLIENT_SECRET` in `.env`
+2. **AniList**: Go to <https://anilist.co/settings/developer> → create a new API client → Redirect URI: `https://yamtrack.andreasmaita.com/import/anilist/private` → copy Client ID and Client Secret into `YAMTRACK_ANILIST_CLIENT_ID` and `YAMTRACK_ANILIST_CLIENT_SECRET` in `.env`
+3. After filling `.env`, restart yamtrack: `docker compose --env-file .env -f stacks/media/compose.yaml up -d --no-deps yamtrack`
+4. **Always use `https://yamtrack.andreasmaita.com`** (not the Tailscale IP) when initiating OAuth import flows
+
+---
+
 ## Services Removed / Not Added
 
 | Service             | Reason                                                                           |

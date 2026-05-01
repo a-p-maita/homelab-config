@@ -7,3 +7,27 @@ data/
 # Ignore cloudflared credentials if generated locally
 core/cloudflared/
 backups/
+
+# Caddy runtime config (auto-generated, root-owned — causes Permission denied in git)
+config/caddy/caddy/
+
+# TLS certificates and private keys (sensitive — never commit)
+*.pem
+*.crt
+*.key
+
+# Authelia auto-generated runtime files
+config/authelia/db.sqlite3
+config/authelia/notification.txt
+
+# Java heap dumps (Stirling-PDF OOM artifacts)
+*.hprof
+
+# Editor artifacts
+*.swp
+*~
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo

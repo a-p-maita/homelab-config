@@ -64,6 +64,14 @@ services:
    - IGDB_SECRET=${IGDB_CLIENT_SECRET}
    # TMDB_API: optional v3 API key — a default is built-in if left blank
    - TMDB_API=${YAMTRACK_TMDB_API:-}
+   # Trakt OAuth — register app at https://trakt.tv/oauth/applications
+   # Redirect URI to register: https://yamtrack.andreasmaita.com/import/trakt/private
+   - TRAKT_API=${YAMTRACK_TRAKT_CLIENT_ID:-}
+   - TRAKT_API_SECRET=${YAMTRACK_TRAKT_CLIENT_SECRET:-}
+   # AniList OAuth — register app at https://anilist.co/settings/developer
+   # Redirect URI to register: https://yamtrack.andreasmaita.com/import/anilist/private
+   - ANILIST_ID=${YAMTRACK_ANILIST_CLIENT_ID:-}
+   - ANILIST_SECRET=${YAMTRACK_ANILIST_CLIENT_SECRET:-}
    # Set YAMTRACK_REGISTRATION=False in .env after creating your admin account,
    # then restart: docker compose -f dockerfiles/media/compose.yaml restart yamtrack
    - REGISTRATION=${YAMTRACK_REGISTRATION:-True}
