@@ -1,6 +1,6 @@
 ---
 title: Homelab
-description: Andreas Maita — Homelab Dashboard
+description: Andreas Maita - Homelab Dashboard
 theme: dark
 color: slate
 headerStyle: clean
@@ -8,87 +8,87 @@ statusStyle: dot
 base: https://homepage.andreasmaita.com
 
 layout:
- # ── 🌐 External tab — Cloudflare Tunnel (accessible anywhere) ─────────────
- "External — Media":
-  tab: "🌐 External"
+ # -- External tab - Cloudflare Tunnel (accessible anywhere) ----------------
+ "External - Media":
+  tab: "External"
   style: row
   columns: 4
 
- "External — Cloud & Code":
-  tab: "🌐 External"
+ "External - Cloud & Code":
+  tab: "External"
   style: row
   columns: 4
 
- "External — Services":
-  tab: "🌐 External"
+ "External - Services":
+  tab: "External"
   style: row
   columns: 4
 
- # ── 🎬 Media tab — Tailscale / LAN ────────────────────────────────────────
+ # -- Media tab - Tailscale / LAN -------------------------------------------
  "Streaming & Tracking":
-  tab: "🎬 Media"
+  tab: "Media"
   style: row
   columns: 4
 
  "Books & Reading":
-  tab: "🎬 Media"
+  tab: "Media"
   style: row
   columns: 3
 
  "Downloads":
-  tab: "🎬 Media"
+  tab: "Media"
   style: row
   columns: 5
 
  "Arr Suite":
-  tab: "🎬 Media"
+  tab: "Media"
   style: row
   columns: 5
 
- # ── ☁️ Cloud tab — Tailscale / LAN ────────────────────────────────────────
+ # -- Cloud tab - Tailscale / LAN -------------------------------------------
  "Photos":
-  tab: "☁️ Cloud"
+  tab: "Cloud"
   style: row
   columns: 2
 
  "Notes & Documents":
-  tab: "☁️ Cloud"
+  tab: "Cloud"
   style: row
   columns: 4
 
  "Code & Development":
-  tab: "☁️ Cloud"
+  tab: "Cloud"
   style: row
   columns: 2
 
- # ── 🔧 Services tab — Tailscale / LAN ─────────────────────────────────────
+ # -- Services tab - Tailscale / LAN ----------------------------------------
  "Finance & Food":
-  tab: "🔧 Services"
+  tab: "Services"
   style: row
   columns: 3
 
  "Productivity Tools":
-  tab: "🔧 Services"
+  tab: "Services"
   style: row
   columns: 4
 
  "Security & Access":
-  tab: "🔧 Services"
+  tab: "Services"
   style: row
   columns: 3
 
  "Smart Home":
-  tab: "🔧 Services"
+  tab: "Services"
   style: row
   columns: 2
 
- # ── 📊 System tab — Infrastructure ────────────────────────────────────────
+ # -- System tab - Infrastructure -------------------------------------------
  "Monitoring":
-  tab: "📊 System"
+  tab: "System"
   style: row
   columns: 4
 
  "Infrastructure":
-  tab: "📊 System"
+  tab: "System"
   style: row
   columns: 3
