@@ -1064,6 +1064,21 @@ After adding yamtrack, feishin, octo-fiesta, and actual-budget to Caddyfile, the
 - `octo-fiesta.andreasmaita.com` → `http://caddy:80`
 - `actual-budget.andreasmaita.com` → `http://caddy:80`
 
+### N25 — Stirling-PDF OOM Metaspace crash (512M limit too low)
+
+Stirling-PDF ran into 1000+ restart loops with `java.lang.OutOfMemoryError: Metaspace`. The 512M memory limit was insufficient for Spring Boot 4 + LibreOffice + Tesseract + H2 database to fit in Metaspace.
+Fix: Increase memory limit to 1536M in `stacks/services/compose.yaml`. Also delete accumulated `.hprof` heap dumps from `data/stirling-pdf/configs/heap_dumps/` (they fill up and block new dumps, causing silent crashes).
+
+### N26 — Komga config dir root-owned (SQLite can't open)
+
+Komga crashed with `[SQLITE_CANTOPEN] Unable to open the database file` and `Failed to create parent directories for [/config/logs/komga.log]`. Root cause: `data/komga/config/` was owned by root; the app (UID 1000) couldn't write.
+Fix via alpine container:
+```bash
+docker run --rm -v /home/a-p-maita/homelab-config/data/komga:/data \
+  alpine sh -c "chown -R 1000:1000 /data"
+```
+After restart, Komga starts cleanly. Still needs first-run admin account creation at `http://100.106.40.5:20077`.
+
 ---
 
 ## Services Removed / Not Added

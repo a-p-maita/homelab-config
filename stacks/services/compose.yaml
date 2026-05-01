@@ -300,7 +300,7 @@ services:
    resources:
     limits:
      cpus: "1.0"
-     memory: 512M
+     memory: 1536M
 
  # ── Kiwix ───────────────────────────────────────────────────────────────────
  # Drop .zim files into data/kiwix/ — they are served automatically.
