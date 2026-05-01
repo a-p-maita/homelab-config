@@ -173,9 +173,8 @@ services:
   restart: unless-stopped
   labels:
    - "com.centurylinklabs.watchtower.enable=true"
-  depends_on:
-   joplin-postgres:
-    condition: service_healthy
+  # depends_on joplin-postgres intentionally omitted: joplin-postgres is defined in
+  # compose.db.yaml which is a separate project. Start compose.db.yaml first.
   ports:
    - "${JOPLIN_PORT}:22300"
   environment:
@@ -216,11 +215,8 @@ services:
   restart: unless-stopped
   labels:
    - "com.centurylinklabs.watchtower.enable=true"
-  depends_on:
-   paperless-postgres:
-    condition: service_healthy
-   paperless-redis:
-    condition: service_healthy
+  # depends_on paperless-postgres and paperless-redis intentionally omitted: both are
+  # defined in compose.db.yaml which is a separate project. Start compose.db.yaml first.
   ports:
    - "${PAPERLESS_PORT}:8000"
   environment:

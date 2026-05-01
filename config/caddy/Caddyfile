@@ -1,0 +1,87 @@
+# Caddy reverse proxy — Cloudflare Tunnel HTTP backend
+#
+# Architecture: Cloudflare (TLS edge) → cloudflared → Caddy (plain HTTP) → services
+# TLS is terminated at Cloudflare's edge. The cloudflared → Caddy hop is HTTP on the
+# internal Docker network (homelab_net), which is not exposed to the internet.
+# This removes the Origin Certificate dependency and SNI matching issues entirely.
+#
+# Cloudflare Tunnel dashboard: set all public hostname service URLs to http://caddy:80
+#
+# Authelia forward_auth:
+#   auth.andreasmaita.com  → no forward_auth (it IS the auth portal)
+#   jellyfin, seerr        → forward_auth (one_factor per Authelia access_control rules)
+#   abs, music, immich, vault, git, join → forward_auth (two_factor, default policy)
+
+{
+    # No TLS managed by Caddy — cloudflared handles it at the edge.
+    auto_https off
+    # Trust X-Forwarded-Proto: https sent by cloudflared (private Docker network IP).
+    # Without this Caddy overwrites it with 'http' (its own connection scheme),
+    # breaking Authelia TOTP generation and forward_auth scheme checks.
+    servers {
+        trusted_proxies static private_ranges
+    }
+}
+
+# Reusable snippet: Authelia forward_auth (Authelia v4.38+ URI)
+(authelia_auth) {
+    forward_auth authelia:9091 {
+        uri /api/authz/forward-auth
+        copy_headers Remote-User Remote-Groups Remote-Name Remote-Email
+    }
+}
+
+# ─── Auth portal ─────────────────────────────────────────────────────────────
+http://auth.andreasmaita.com {
+    reverse_proxy authelia:9091
+}
+
+# ─── Media ───────────────────────────────────────────────────────────────────
+http://jellyfin.andreasmaita.com {
+    import authelia_auth
+    reverse_proxy jellyfin:8096
+}
+
+http://seerr.andreasmaita.com {
+    import authelia_auth
+    reverse_proxy seerr:5055
+}
+
+http://abs.andreasmaita.com {
+    import authelia_auth
+    reverse_proxy audiobookshelf:80
+}
+
+http://music.andreasmaita.com {
+    import authelia_auth
+    reverse_proxy navidrome:4533
+}
+
+# ─── Cloud ───────────────────────────────────────────────────────────────────
+http://immich.andreasmaita.com {
+    import authelia_auth
+    reverse_proxy immich-server:2283
+}
+
+# ─── Services ────────────────────────────────────────────────────────────────
+http://vault.andreasmaita.com {
+    import authelia_auth
+    reverse_proxy vaultwarden:80
+}
+
+http://git.andreasmaita.com {
+    import authelia_auth
+    reverse_proxy forgejo:3000
+}
+
+http://join.andreasmaita.com {
+    import authelia_auth
+    reverse_proxy wizarr:5690
+}
+
+# ─── Monitoring ──────────────────────────────────────────────────────────────
+# Accept both home.andreasmaita.com and homepage.andreasmaita.com (tunnel may use either)
+http://home.andreasmaita.com, http://homepage.andreasmaita.com, https://homepage.andreasmaita.com {
+    import authelia_auth
+    reverse_proxy homepage:3000
+}
