@@ -19,322 +19,322 @@ name: infrastructure
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
- # ── Cloudflared ─────────────────────────────────────────────────────────────
- cloudflared:
-  image: cloudflare/cloudflared:latest
-  container_name: cloudflared
-  restart: unless-stopped
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  # --metrics enables the health/ready endpoint on port 8080
-  command: tunnel --metrics 0.0.0.0:8080 run
-  environment:
-   - TUNNEL_TOKEN=${TUNNEL_TOKEN}
-  ports:
-   - "${CLOUDFLARED_PORT}:8080"
-  networks:
-   - homelab_net
-  healthcheck:
-   # Distroless image: no shell/curl. --version exits 0 if the binary is alive.
-   # Tunnel connectivity is visible in logs; real monitoring via Uptime Kuma.
-   test: ["CMD", "cloudflared", "--version"]
-   interval: 1m
-   timeout: 10s
-   retries: 3
-   start_period: 30s
-  deploy:
-   resources:
-    limits:
-     cpus: "0.25"
-     memory: 128M
-    reservations:
-     cpus: "0.05"
-     memory: 64M
+  # ── Cloudflared ─────────────────────────────────────────────────────────────
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    # --metrics enables the health/ready endpoint on port 8080
+    command: tunnel --metrics 0.0.0.0:8080 run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    ports:
+      - "${CLOUDFLARED_PORT}:8080"
+    networks:
+      - homelab_net
+    healthcheck:
+      # Distroless image: no shell/curl. --version exits 0 if the binary is alive.
+      # Tunnel connectivity is visible in logs; real monitoring via Uptime Kuma.
+      test: ["CMD", "cloudflared", "--version"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+        reservations:
+          cpus: "0.05"
+          memory: 64M
 
- # ── Homepage ─────────────────────────────────────────────────────────────────
- homepage:
-  image: ghcr.io/gethomepage/homepage:latest
-  container_name: homepage
-  ports:
-   - "${HOMEPAGE_PORT}:3000"
-  environment:
-   - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS}
-   # ── Arr widget API keys — set these in .env after first arr stack start ──
-   # Get each key from Settings → General inside the respective service UI.
-   - HOMEPAGE_VAR_RADARR_API_KEY=${RADARR_API_KEY:-}
-   - HOMEPAGE_VAR_SONARR_API_KEY=${SONARR_API_KEY:-}
-   - HOMEPAGE_VAR_LIDARR_API_KEY=${LIDARR_API_KEY:-}
-   - HOMEPAGE_VAR_PROWLARR_API_KEY=${PROWLARR_API_KEY:-}
-   - HOMEPAGE_VAR_BAZARR_API_KEY=${BAZARR_API_KEY:-}
-   - HOMEPAGE_VAR_AUTOBRR_API_KEY=${AUTOBRR_API_KEY:-}
-   - HOMEPAGE_VAR_SEERR_API_KEY=${SEERR_API_KEY:-}
-   - HOMEPAGE_VAR_JELLYFIN_API_KEY=${JELLYFIN_API_KEY:-}
-   # ── qBittorrent widget credentials (same as WebUI login) ─────────────────
-   - HOMEPAGE_VAR_QBT_USER=${QBITTORRENT_WEBUI_USER}
-   - HOMEPAGE_VAR_QBT_PASS=${QBITTORRENT_WEBUI_PASS}
-  volumes:
-   - ../../data/homepage/config:/app/config
-   - /var/run/docker.sock:/var/run/docker.sock:ro
-   - /etc/localtime:/etc/localtime:ro
-  restart: unless-stopped
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  networks:
-   - homelab_net
-  healthcheck:
-   # homepage (node:alpine) has wget (BusyBox) but not curl
-   test: ["CMD-SHELL", "wget -qO- http://localhost:3000 > /dev/null"]
-   interval: 1m
-   timeout: 10s
-   retries: 3
-   start_period: 30s
-  deploy:
-   resources:
-    limits:
-     cpus: "0.25"
-     memory: 256M
-    reservations:
-     cpus: "0.05"
-     memory: 64M
+  # ── Homepage ─────────────────────────────────────────────────────────────────
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    ports:
+      - "${HOMEPAGE_PORT}:3000"
+    environment:
+      - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS}
+      # ── Arr widget API keys — set these in .env after first arr stack start ──
+      # Get each key from Settings → General inside the respective service UI.
+      - HOMEPAGE_VAR_RADARR_API_KEY=${RADARR_API_KEY:-}
+      - HOMEPAGE_VAR_SONARR_API_KEY=${SONARR_API_KEY:-}
+      - HOMEPAGE_VAR_LIDARR_API_KEY=${LIDARR_API_KEY:-}
+      - HOMEPAGE_VAR_PROWLARR_API_KEY=${PROWLARR_API_KEY:-}
+      - HOMEPAGE_VAR_BAZARR_API_KEY=${BAZARR_API_KEY:-}
+      - HOMEPAGE_VAR_AUTOBRR_API_KEY=${AUTOBRR_API_KEY:-}
+      - HOMEPAGE_VAR_SEERR_API_KEY=${SEERR_API_KEY:-}
+      - HOMEPAGE_VAR_JELLYFIN_API_KEY=${JELLYFIN_API_KEY:-}
+      # ── qBittorrent widget credentials (same as WebUI login) ─────────────────
+      - HOMEPAGE_VAR_QBT_USER=${QBITTORRENT_WEBUI_USER}
+      - HOMEPAGE_VAR_QBT_PASS=${QBITTORRENT_WEBUI_PASS}
+    volumes:
+      - ../../data/homepage/config:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    networks:
+      - homelab_net
+    healthcheck:
+      # homepage (node:alpine) has wget (BusyBox) but not curl
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 > /dev/null"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+        reservations:
+          cpus: "0.05"
+          memory: 64M
 
- # ── Uptime Kuma ──────────────────────────────────────────────────────────────
- uptime-kuma:
-  image: louislam/uptime-kuma:1
-  container_name: uptime-kuma
-  ports:
-   - "${UPTIMEKUMA_PORT}:3001"
-  volumes:
-   - ../../data/uptime-kuma:/app/data
-   - /etc/localtime:/etc/localtime:ro
-  restart: unless-stopped
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  networks:
-   - homelab_net
-  healthcheck:
-   test: ["CMD", "curl", "-f", "http://localhost:3001"]
-   interval: 1m
-   timeout: 10s
-   retries: 3
-   start_period: 30s
-  deploy:
-   resources:
-    limits:
-     cpus: "0.25"
-     memory: 256M
-    reservations:
-     cpus: "0.05"
-     memory: 128M
+  # ── Uptime Kuma ──────────────────────────────────────────────────────────────
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    ports:
+      - "${UPTIMEKUMA_PORT}:3001"
+    volumes:
+      - ../../data/uptime-kuma:/app/data
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    networks:
+      - homelab_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+        reservations:
+          cpus: "0.05"
+          memory: 128M
 
- # ── Watchtower ───────────────────────────────────────────────────────────────
- watchtower:
-  image: containrrr/watchtower:latest
-  container_name: watchtower
-  volumes:
-   - /var/run/docker.sock:/var/run/docker.sock:ro
-   - /etc/localtime:/etc/localtime:ro
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  environment:
-   # Run at 3am daily — avoids surprise restarts during use
-   - WATCHTOWER_SCHEDULE=0 0 3 * * *
-   - WATCHTOWER_CLEANUP=true
-   - WATCHTOWER_INCLUDE_STOPPED=false
-   - WATCHTOWER_NO_STARTUP_MESSAGE=false
-   # Opt-in mode: only update containers with com.centurylinklabs.watchtower.enable=true label
-   - WATCHTOWER_LABEL_ENABLE=true
-   - TZ=${TZ}
-   # Compatibility with Docker Engine >= 26 (min API version raised to 1.40)
-   - DOCKER_API_VERSION=1.40
-  restart: unless-stopped
-  networks:
-   - homelab_net
-  deploy:
-   resources:
-    limits:
-     cpus: "0.25"
-     memory: 128M
-    reservations:
-     cpus: "0.05"
-     memory: 32M
+  # ── Watchtower ───────────────────────────────────────────────────────────────
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/localtime:/etc/localtime:ro
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    environment:
+      # Run at 3am daily — avoids surprise restarts during use
+      - WATCHTOWER_SCHEDULE=0 0 3 * * *
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_INCLUDE_STOPPED=false
+      - WATCHTOWER_NO_STARTUP_MESSAGE=false
+      # Opt-in mode: only update containers with com.centurylinklabs.watchtower.enable=true label
+      - WATCHTOWER_LABEL_ENABLE=true
+      - TZ=${TZ}
+      # Compatibility with Docker Engine >= 26 (min API version raised to 1.40)
+      - DOCKER_API_VERSION=1.40
+    restart: unless-stopped
+    networks:
+      - homelab_net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+        reservations:
+          cpus: "0.05"
+          memory: 32M
 
- # ── Prometheus ───────────────────────────────────────────────────────────────
- prometheus:
-  image: prom/prometheus:latest
-  container_name: prometheus
-  restart: unless-stopped
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  volumes:
-   - ../../data/prometheus:/prometheus
-   - ../../config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-  ports:
-   - "${PROMETHEUS_PORT}:9090"
-  networks:
-   - homelab_net
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 512M
-    reservations:
-     cpus: "0.1"
-     memory: 128M
+  # ── Prometheus ───────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    volumes:
+      - ../../data/prometheus:/prometheus
+      - ../../config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "${PROMETHEUS_PORT}:9090"
+    networks:
+      - homelab_net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
 
- # ── Node Exporter ─────────────────────────────────────────────────────────────
- # EXCEPTION: network_mode: host required for full system visibility (see F5 in homelab-plan.md)
- node-exporter:
-  image: prom/node-exporter:latest
-  container_name: node-exporter
-  restart: unless-stopped
-  network_mode: host
-  pid: host
-  volumes:
-   - /proc:/host/proc:ro
-   - /sys:/host/sys:ro
-   - /:/rootfs:ro
-  command:
-   - "--path.procfs=/host/proc"
-   - "--path.sysfs=/host/sys"
-   - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
-  deploy:
-   resources:
-    limits:
-     cpus: "0.25"
-     memory: 128M
-    reservations:
-     cpus: "0.05"
-     memory: 32M
+  # ── Node Exporter ─────────────────────────────────────────────────────────────
+  # EXCEPTION: network_mode: host required for full system visibility (see F5 in homelab-plan.md)
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+        reservations:
+          cpus: "0.05"
+          memory: 32M
 
- # ── Grafana ──────────────────────────────────────────────────────────────────
- # After first start: import dashboards 1860 (Node Exporter Full) + 893 (Docker)
- grafana:
-  image: grafana/grafana:latest
-  container_name: grafana
-  restart: unless-stopped
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  volumes:
-   - ../../data/grafana:/var/lib/grafana
-  environment:
-   - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
-   - GF_USERS_ALLOW_SIGN_UP=false
-   - TZ=${TZ}
-  ports:
-   - "${GRAFANA_PORT}:3000"
-  networks:
-   - homelab_net
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 512M
-    reservations:
-     cpus: "0.1"
-     memory: 128M
+  # ── Grafana ──────────────────────────────────────────────────────────────────
+  # After first start: import dashboards 1860 (Node Exporter Full) + 893 (Docker)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    volumes:
+      - ../../data/grafana:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - TZ=${TZ}
+    ports:
+      - "${GRAFANA_PORT}:3000"
+    networks:
+      - homelab_net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
 
- # ── Scrutiny ─────────────────────────────────────────────────────────────────
- # NVMe health monitoring with SMART data.
- # ⚠️  Adjust /dev/nvme0 if your device path differs.
- scrutiny:
-  image: ghcr.io/analogj/scrutiny:master-omnibus
-  container_name: scrutiny
-  restart: unless-stopped
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  cap_add:
-   - SYS_RAWIO
-   - SYS_ADMIN
-  devices:
-   - /dev/nvme0:/dev/nvme0
-  volumes:
-   - /run/udev:/run/udev:ro
-   - ../../data/scrutiny:/opt/scrutiny/config
-   - ../../data/scrutiny/influxdb:/opt/scrutiny/influxdb
-  ports:
-   - "${SCRUTINY_PORT}:8080"
-  networks:
-   - homelab_net
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 512M
-    reservations:
-     cpus: "0.1"
-     memory: 128M
+  # ── Scrutiny ─────────────────────────────────────────────────────────────────
+  # NVMe health monitoring with SMART data.
+  #   Adjust /dev/nvme0 if your device path differs.
+  scrutiny:
+    image: ghcr.io/analogj/scrutiny:master-omnibus
+    container_name: scrutiny
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    cap_add:
+      - SYS_RAWIO
+      - SYS_ADMIN
+    devices:
+      - /dev/nvme0:/dev/nvme0
+    volumes:
+      - /run/udev:/run/udev:ro
+      - ../../data/scrutiny:/opt/scrutiny/config
+      - ../../data/scrutiny/influxdb:/opt/scrutiny/influxdb
+    ports:
+      - "${SCRUTINY_PORT}:8080"
+    networks:
+      - homelab_net
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.1"
+          memory: 128M
 
- # ── Caddy ─────────────────────────────────────────────────────────────────────
- # HTTP reverse proxy — Cloudflare Tunnel terminates TLS at the edge.
- # cloudflared → http://caddy:80 → services (plain HTTP on internal Docker network).
- # No TLS certs needed here. Built from Dockerfile.caddy (plain caddy:2-alpine).
- # Rebuild manually when upgrading: docker compose build caddy && docker compose up -d caddy
- caddy:
-  build:
-   context: .
-   dockerfile: Dockerfile.caddy
-  container_name: caddy
-  restart: unless-stopped
-  ports:
-   - "80:80"
-  volumes:
-   - ../../config/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-   - ../../config/caddy:/config
-  networks:
-   - homelab_net
-  healthcheck:
-   # Admin API on :2019 responds once Caddy is running and config is loaded
-   test:
-    [
-     "CMD-SHELL",
-     "wget -qO- http://127.0.0.1:2019/config/ > /dev/null || exit 1",
-    ]
-   interval: 1m
-   timeout: 10s
-   retries: 3
-   start_period: 30s
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 256M
-    reservations:
-     cpus: "0.1"
-     memory: 64M
+  # ── Caddy ─────────────────────────────────────────────────────────────────────
+  # HTTP reverse proxy — Cloudflare Tunnel terminates TLS at the edge.
+  # cloudflared → http://caddy:80 → services (plain HTTP on internal Docker network).
+  # No TLS certs needed here. Built from Dockerfile.caddy (plain caddy:2-alpine).
+  # Rebuild manually when upgrading: docker compose build caddy && docker compose up -d caddy
+  caddy:
+    build:
+      context: .
+      dockerfile: Dockerfile.caddy
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ../../config/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../../config/caddy:/config
+    networks:
+      - homelab_net
+    healthcheck:
+      # Admin API on :2019 responds once Caddy is running and config is loaded
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://127.0.0.1:2019/config/ > /dev/null || exit 1",
+        ]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.1"
+          memory: 64M
 
- # ── Authelia ─────────────────────────────────────────────────────────────────
- # ⚠️  STOP: Caddy must be running first. Requires config/authelia/ files.
- # See homelab-plan.md Phase 11 for setup instructions.
- #
- authelia:
-  image: authelia/authelia:latest
-  container_name: authelia
-  restart: unless-stopped
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  environment:
-   - TZ=${TZ}
-   # Secrets injected at runtime — kept out of config/authelia/ (which is git-tracked)
-   - AUTHELIA_SESSION_SECRET=${AUTHELIA_SESSION_SECRET}
-   - AUTHELIA_STORAGE_ENCRYPTION_KEY=${AUTHELIA_STORAGE_KEY}
-   - AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET=${AUTHELIA_SESSION_SECRET}
-  volumes:
-   - ../../config/authelia:/config
-  ports:
-   - "${AUTHELIA_PORT}:9091"
-  networks:
-   - homelab_net
+  # ── Authelia ─────────────────────────────────────────────────────────────────
+  #   STOP: Caddy must be running first. Requires config/authelia/ files.
+  # See homelab-plan.md Phase 11 for setup instructions.
+  #
+  authelia:
+    image: authelia/authelia:latest
+    container_name: authelia
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    environment:
+      - TZ=${TZ}
+      # Secrets injected at runtime — kept out of config/authelia/ (which is git-tracked)
+      - AUTHELIA_SESSION_SECRET=${AUTHELIA_SESSION_SECRET}
+      - AUTHELIA_STORAGE_ENCRYPTION_KEY=${AUTHELIA_STORAGE_KEY}
+      - AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET=${AUTHELIA_SESSION_SECRET}
+    volumes:
+      - ../../config/authelia:/config
+    ports:
+      - "${AUTHELIA_PORT}:9091"
+    networks:
+      - homelab_net
 
- authelia-redis:
-  image: redis:7-alpine
-  container_name: authelia-redis
-  restart: unless-stopped
-  volumes:
-   - ../../data/authelia/redis:/data
-  networks:
-   - homelab_net
- #  # NOTE: do NOT add watchtower label to redis
+  authelia-redis:
+    image: redis:7-alpine
+    container_name: authelia-redis
+    restart: unless-stopped
+    volumes:
+      - ../../data/authelia/redis:/data
+    networks:
+      - homelab_net
+  #  # NOTE: do NOT add watchtower label to redis
 
 networks:
- homelab_net:
-  external: true
+  homelab_net:
+    external: true

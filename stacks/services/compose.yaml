@@ -16,435 +16,443 @@ name: services
 #                   Generate: docker run --rm -it vaultwarden/server \
 #                     /vaultwarden hash --preset owasp
 #   actual-budget → AUTOMATED. No initial auth required.
-#   joplin        → ⚠️  STOP: After first start, visit the UI and change
+#   joplin        →   STOP: After first start, visit the UI and change
 #                   default admin credentials (admin@localhost / admin).
 #   paperless-ngx → AUTOMATED. Superuser created from env vars on first start.
 #   stirling-pdf  → AUTOMATED. Login enabled. Set STIRLING_PDF_PASSWORD in .env.
 #   kiwix         → AUTOMATED. Drop .zim files into data/kiwix/ and restart.
 #   mealie        → AUTOMATED. Default admin: changeme@example.com / MyPassword.
-#   forgejo       → ⚠️  STOP: Visit WebUI on first start to complete setup.
-#   wizarr        → ⚠️  FIRST RUN: Create admin account, then add Jellyfin server.
+#   forgejo       →   STOP: Visit WebUI on first start to complete setup.
+#   wizarr        →   FIRST RUN: Create admin account, then add Jellyfin server.
 #
 # Note: paperless-ngx, joplin connect to services_internal network (defined in
 #       compose.db.yaml) for DB access. Start compose.db.yaml first.
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
- # ── Draw.io ─────────────────────────────────────────────────────────────────
- drawio:
-  image: jgraph/drawio:latest
-  container_name: drawio
-  restart: unless-stopped
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  ports:
-   - "${DRAWIO_PORT}:8080"
-  networks:
-   - homelab_net
-  healthcheck:
-   test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080"]
-   interval: 60s
-   timeout: 10s
-   retries: 3
-  deploy:
-   resources:
-    limits:
-     cpus: "0.25"
-     memory: 256M
+  # ── Draw.io ─────────────────────────────────────────────────────────────────
+  drawio:
+    image: jgraph/drawio:latest
+    container_name: drawio
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    ports:
+      - "${DRAWIO_PORT}:8080"
+    networks:
+      - homelab_net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
 
- # ── Excalidraw ──────────────────────────────────────────────────────────────
- excalidraw:
-  image: excalidraw/excalidraw:latest
-  container_name: excalidraw
-  restart: unless-stopped
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  ports:
-   - "${EXCALIDRAW_PORT}:80"
-  networks:
-   - homelab_net
-  healthcheck:
-   test: ["CMD", "wget", "-q", "--spider", "http://localhost:80"]
-   interval: 60s
-   timeout: 10s
-   retries: 3
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 256M
+  # ── Excalidraw ──────────────────────────────────────────────────────────────
+  excalidraw:
+    image: excalidraw/excalidraw:latest
+    container_name: excalidraw
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    ports:
+      - "${EXCALIDRAW_PORT}:80"
+    networks:
+      - homelab_net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
 
- # ── IT-Tools ────────────────────────────────────────────────────────────────
- it-tools:
-  image: corentinth/it-tools:latest
-  container_name: it-tools
-  restart: unless-stopped
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  ports:
-   - "${IT_TOOLS_PORT}:80"
-  networks:
-   - homelab_net
-  healthcheck:
-   # 'localhost' resolves to ::1 (IPv6) in this Alpine image; use 127.0.0.1
-   test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80"]
-   interval: 60s
-   timeout: 10s
-   retries: 3
-  deploy:
-   resources:
-    limits:
-     cpus: "0.25"
-     memory: 128M
+  # ── IT-Tools ────────────────────────────────────────────────────────────────
+  it-tools:
+    image: corentinth/it-tools:latest
+    container_name: it-tools
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    ports:
+      - "${IT_TOOLS_PORT}:80"
+    networks:
+      - homelab_net
+    healthcheck:
+      # 'localhost' resolves to ::1 (IPv6) in this Alpine image; use 127.0.0.1
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
 
- # ── Vaultwarden ─────────────────────────────────────────────────────────────
- vaultwarden:
-  image: vaultwarden/server:latest
-  container_name: vaultwarden
-  restart: unless-stopped
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  ports:
-   - "${VAULTWARDEN_PORT}:80"
-  environment:
-   # ADMIN_TOKEN must be an Argon2 hash. Generate with:
-   #   docker run --rm -it vaultwarden/server /vaultwarden hash --preset owasp
-   - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
-   # Set VAULTWARDEN_SIGNUPS_ALLOWED=true in .env to temporarily allow registration
-   - SIGNUPS_ALLOWED=${VAULTWARDEN_SIGNUPS_ALLOWED:-false}
-   - WEBSOCKET_ENABLED=true
-   - DOMAIN=${VAULTWARDEN_EXTERNAL_URL}
-   - LOG_LEVEL=warn
-  volumes:
-   - ../../data/vaultwarden:/data
-  networks:
-   - homelab_net
-  healthcheck:
-   test: ["CMD", "curl", "-f", "http://localhost:80/alive"]
-   interval: 30s
-   timeout: 10s
-   retries: 3
-   start_period: 10s
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 256M
+  # ── Vaultwarden ─────────────────────────────────────────────────────────────
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    ports:
+      - "${VAULTWARDEN_PORT}:80"
+    environment:
+      # ADMIN_TOKEN must be an Argon2 hash. Generate with:
+      #   docker run --rm -it vaultwarden/server /vaultwarden hash --preset owasp
+      - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
+      # Set VAULTWARDEN_SIGNUPS_ALLOWED=true in .env to temporarily allow registration
+      - SIGNUPS_ALLOWED=${VAULTWARDEN_SIGNUPS_ALLOWED:-false}
+      - WEBSOCKET_ENABLED=true
+      - DOMAIN=${VAULTWARDEN_EXTERNAL_URL}
+      - LOG_LEVEL=warn
+    volumes:
+      - ../../data/vaultwarden:/data
+    networks:
+      - homelab_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/alive"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
 
- # ── Actual Budget ───────────────────────────────────────────────────────────
- actual-budget:
-  image: actualbudget/actual-server:latest
-  container_name: actual-budget
-  restart: unless-stopped
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  ports:
-   - "${ACTUAL_BUDGET_PORT}:5006"
-  volumes:
-   - ../../data/actual-budget:/data
-  networks:
-   - homelab_net
-  healthcheck:
-   # actual-budget image has node but not wget/curl; use Node.js TCP check
-   test:
-    [
-     "CMD",
-     "node",
-     "-e",
-     "require('net').connect(5006,'localhost',()=>process.exit(0)).on('error',()=>process.exit(1))",
-    ]
-   interval: 60s
-   timeout: 10s
-   retries: 3
-   start_period: 10s
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 256M
+  # ── Actual Budget ───────────────────────────────────────────────────────────
+  actual-budget:
+    image: actualbudget/actual-server:latest
+    container_name: actual-budget
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    ports:
+      - "${ACTUAL_BUDGET_PORT}:5006"
+    volumes:
+      - ../../data/actual-budget:/data
+    networks:
+      - homelab_net
+    healthcheck:
+      # actual-budget image has node but not wget/curl; use Node.js TCP check
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('net').connect(5006,'localhost',()=>process.exit(0)).on('error',()=>process.exit(1))",
+        ]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
 
- # ── Joplin Server ───────────────────────────────────────────────────────────
- # ⚠️  STOP: After first start, log in at http://localhost:${JOPLIN_PORT}
- # with default credentials admin@localhost / admin and change the password
- # immediately. Then configure your Joplin clients to sync to this server.
- joplin:
-  image: joplin/server:latest
-  container_name: joplin
-  restart: unless-stopped
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  # depends_on joplin-postgres intentionally omitted: joplin-postgres is defined in
-  # compose.db.yaml which is a separate project. Start compose.db.yaml first.
-  ports:
-   - "${JOPLIN_PORT}:22300"
-  environment:
-   - APP_BASE_URL=${JOPLIN_EXTERNAL_URL}
-   - APP_PORT=22300
-   - DB_CLIENT=pg
-   - POSTGRES_PASSWORD=${JOPLIN_DB_PASS}
-   - POSTGRES_DATABASE=joplin
-   - POSTGRES_USER=${JOPLIN_DB_USER}
-   - POSTGRES_PORT=5432
-   - POSTGRES_HOST=joplin-postgres
-   - MAILER_ENABLED=${JOPLIN_MAILER_ENABLED:-0}
-   - MAILER_HOST=${JOPLIN_MAILER_HOST:-}
-   - MAILER_PORT=${JOPLIN_MAILER_PORT:-587}
-   - MAILER_SECURITY=${JOPLIN_MAILER_SECURITY:-starttls}
-   - MAILER_AUTH_USER=${JOPLIN_MAILER_USER:-}
-   - MAILER_AUTH_PASSWORD=${JOPLIN_MAILER_PASS:-}
-   - MAILER_NOREPLY_NAME=Joplin Server
-   - MAILER_NOREPLY_EMAIL=${JOPLIN_MAILER_FROM:-noreply@andreasmaita.com}
-  networks:
-   - homelab_net
-   - services_internal
-  healthcheck:
-   # joplin/server image has no curl or wget — use Node.js TCP check
-   test:
-    [
-     "CMD",
-     "node",
-     "-e",
-     "require('net').connect(22300,'localhost',()=>process.exit(0)).on('error',()=>process.exit(1))",
-    ]
-   interval: 30s
-   timeout: 10s
-   retries: 3
-   start_period: 60s
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 256M
+  # ── Joplin Server ───────────────────────────────────────────────────────────
+  #   STOP: After first start, log in at http://localhost:${JOPLIN_PORT}
+  # with default credentials admin@localhost / admin and change the password
+  # immediately. Then configure your Joplin clients to sync to this server.
+  joplin:
+    image: joplin/server:latest
+    container_name: joplin
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    # depends_on joplin-postgres intentionally omitted: joplin-postgres is defined in
+    # compose.db.yaml which is a separate project. Start compose.db.yaml first.
+    ports:
+      - "${JOPLIN_PORT}:22300"
+    environment:
+      - APP_BASE_URL=${JOPLIN_EXTERNAL_URL}
+      - APP_PORT=22300
+      - DB_CLIENT=pg
+      - POSTGRES_PASSWORD=${JOPLIN_DB_PASS}
+      - POSTGRES_DATABASE=joplin
+      - POSTGRES_USER=${JOPLIN_DB_USER}
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=joplin-postgres
+      - MAILER_ENABLED=${JOPLIN_MAILER_ENABLED:-0}
+      - MAILER_HOST=${JOPLIN_MAILER_HOST:-}
+      - MAILER_PORT=${JOPLIN_MAILER_PORT:-587}
+      - MAILER_SECURITY=${JOPLIN_MAILER_SECURITY:-starttls}
+      - MAILER_AUTH_USER=${JOPLIN_MAILER_USER:-}
+      - MAILER_AUTH_PASSWORD=${JOPLIN_MAILER_PASS:-}
+      - MAILER_NOREPLY_NAME=Joplin Server
+      - MAILER_NOREPLY_EMAIL=${JOPLIN_MAILER_FROM:-noreply@andreasmaita.com}
+    networks:
+      - homelab_net
+      - services_internal
+    healthcheck:
+      # joplin/server image has no curl or wget — use Node.js TCP check
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('net').connect(22300,'localhost',()=>process.exit(0)).on('error',()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
 
- # ── Paperless-NGX ───────────────────────────────────────────────────────────
- paperless-ngx:
-  image: ghcr.io/paperless-ngx/paperless-ngx:latest
-  container_name: paperless-ngx
-  restart: unless-stopped
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  # depends_on paperless-postgres and paperless-redis intentionally omitted: both are
-  # defined in compose.db.yaml which is a separate project. Start compose.db.yaml first.
-  ports:
-   - "${PAPERLESS_PORT}:8000"
-  environment:
-   - PAPERLESS_REDIS=redis://paperless-redis:6379
-   - PAPERLESS_DBHOST=paperless-postgres
-   - PAPERLESS_DBUSER=${PAPERLESS_DB_USER}
-   - PAPERLESS_DBPASS=${PAPERLESS_DB_PASS}
-   - PAPERLESS_DBNAME=paperless
-   - PAPERLESS_SECRET_KEY=${PAPERLESS_SECRET_KEY}
-   - PAPERLESS_SUPERUSER_NAME=${PAPERLESS_ADMIN_USER}
-   - PAPERLESS_SUPERUSER_EMAIL=${PAPERLESS_ADMIN_EMAIL}
-   - PAPERLESS_SUPERUSER_PASSWORD=${PAPERLESS_ADMIN_PASS}
-   - PAPERLESS_URL=${PAPERLESS_EXTERNAL_URL}
-   # Explicitly trust the Cloudflare tunnel origin (required for CSRF when behind reverse proxy)
-   - PAPERLESS_CSRF_TRUSTED_ORIGINS=${PAPERLESS_EXTERNAL_URL}
-   - PAPERLESS_OCR_LANGUAGE=eng
-   - PAPERLESS_TIME_ZONE=${TZ}
-   - PAPERLESS_CONSUMER_POLLING=60
-   - USERMAP_UID=${PUID}
-   - USERMAP_GID=${PGID}
-  volumes:
-   - ../../data/paperless/data:/usr/src/paperless/data
-   - ../../data/paperless/media:/usr/src/paperless/media
-   - ../../data/paperless/consume:/usr/src/paperless/consume
-   - ../../data/paperless/export:/usr/src/paperless/export
-  networks:
-   - homelab_net
-   - services_internal
-  healthcheck:
-   test:
-    ["CMD", "curl", "-fs", "-S", "--max-time", "2", "http://localhost:8000"]
-   interval: 30s
-   timeout: 10s
-   retries: 5
-   start_period: 90s
-  deploy:
-   resources:
-    limits:
-     cpus: "2.0"
-     memory: 2G
-    reservations:
-     cpus: "0.5"
-     memory: 512M
+  # ── Paperless-NGX ───────────────────────────────────────────────────────────
+  paperless-ngx:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    container_name: paperless-ngx
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    # depends_on paperless-postgres and paperless-redis intentionally omitted: both are
+    # defined in compose.db.yaml which is a separate project. Start compose.db.yaml first.
+    ports:
+      - "${PAPERLESS_PORT}:8000"
+    environment:
+      - PAPERLESS_REDIS=redis://paperless-redis:6379
+      - PAPERLESS_DBHOST=paperless-postgres
+      - PAPERLESS_DBUSER=${PAPERLESS_DB_USER}
+      - PAPERLESS_DBPASS=${PAPERLESS_DB_PASS}
+      - PAPERLESS_DBNAME=paperless
+      - PAPERLESS_SECRET_KEY=${PAPERLESS_SECRET_KEY}
+      - PAPERLESS_SUPERUSER_NAME=${PAPERLESS_ADMIN_USER}
+      - PAPERLESS_SUPERUSER_EMAIL=${PAPERLESS_ADMIN_EMAIL}
+      - PAPERLESS_SUPERUSER_PASSWORD=${PAPERLESS_ADMIN_PASS}
+      - PAPERLESS_URL=${PAPERLESS_EXTERNAL_URL}
+      # Explicitly trust the Cloudflare tunnel origin (required for CSRF when behind reverse proxy)
+      - PAPERLESS_CSRF_TRUSTED_ORIGINS=${PAPERLESS_EXTERNAL_URL}
+      - PAPERLESS_OCR_LANGUAGE=eng
+      - PAPERLESS_TIME_ZONE=${TZ}
+      - PAPERLESS_CONSUMER_POLLING=60
+      - USERMAP_UID=${PUID}
+      - USERMAP_GID=${PGID}
+    volumes:
+      - ../../data/paperless/data:/usr/src/paperless/data
+      - ../../data/paperless/media:/usr/src/paperless/media
+      - ../../data/paperless/consume:/usr/src/paperless/consume
+      - ../../data/paperless/export:/usr/src/paperless/export
+    networks:
+      - homelab_net
+      - services_internal
+    healthcheck:
+      test:
+        ["CMD", "curl", "-fs", "-S", "--max-time", "2", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
 
- # ── Stirling PDF ─────────────────────────────────────────────────────────────
- stirling-pdf:
-  image: stirlingtools/stirling-pdf:latest
-  container_name: stirling-pdf
-  restart: unless-stopped
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  ports:
-   - "${STIRLING_PDF_PORT}:8080"
-  volumes:
-   - ../../data/stirling-pdf/configs:/configs
-   - ../../data/stirling-pdf/logs:/logs
-  environment:
-   - DOCKER_ENABLE_SECURITY=true
-   - SECURITY_INITIALLOGIN_USERNAME=${STIRLING_PDF_USERNAME:-admin}
-   - SECURITY_INITIALLOGIN_PASSWORD=${STIRLING_PDF_PASSWORD}
-   - INSTALL_BOOK_AND_ADVANCED_HTML_OPS=false
-   - LANGS=en_GB
-  networks:
-   - homelab_net
-  healthcheck:
-   test:
-    ["CMD-SHELL", "curl -f http://localhost:8080/api/v1/info/status || exit 1"]
-   interval: 30s
-   timeout: 10s
-   retries: 3
-   start_period: 180s
-  deploy:
-   resources:
-    limits:
-     cpus: "1.0"
-     memory: 1536M
+  # ── Stirling PDF ─────────────────────────────────────────────────────────────
+  stirling-pdf:
+    image: stirlingtools/stirling-pdf:latest
+    container_name: stirling-pdf
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    ports:
+      - "${STIRLING_PDF_PORT}:8080"
+    volumes:
+      - ../../data/stirling-pdf/configs:/configs
+      - ../../data/stirling-pdf/logs:/logs
+    environment:
+      - DOCKER_ENABLE_SECURITY=true
+      - SECURITY_INITIALLOGIN_USERNAME=${STIRLING_PDF_USERNAME:-admin}
+      - SECURITY_INITIALLOGIN_PASSWORD=${STIRLING_PDF_PASSWORD}
+      - INSTALL_BOOK_AND_ADVANCED_HTML_OPS=false
+      - LANGS=en_GB
+    networks:
+      - homelab_net
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f http://localhost:8080/api/v1/info/status || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 180s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1536M
 
- # ── Kiwix ───────────────────────────────────────────────────────────────────
- # Drop .zim files into data/kiwix/ — they are served automatically.
- # Find ZIM files at: https://library.kiwix.org
- # kiwix-serve exits when there are no ZIM files in /data (expected behaviour).
- kiwix:
-  image: ghcr.io/kiwix/kiwix-serve:latest
-  container_name: kiwix
-  # on-failure:3 — exits when no ZIM files present; restarts are correct once
-  # files are added. Run `docker compose up -d kiwix` after dropping .zim files.
-  restart: on-failure:3
-  ports:
-   - "${KIWIX_PORT}:8080"
-  volumes:
-   - ../../data/kiwix:/data
-  entrypoint: ["/usr/bin/dumb-init", "--"]
-  command:
-   ["/bin/sh", "-c", "exec /usr/local/bin/kiwix-serve --port=8080 /data/*.zim"]
-  networks:
-   - homelab_net
-  healthcheck:
-   test: ["CMD-SHELL", "wget -qO- http://localhost:8080/ > /dev/null || exit 1"]
-   interval: 60s
-   timeout: 10s
-   retries: 3
-   start_period: 15s
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 256M
+  # ── Kiwix ───────────────────────────────────────────────────────────────────
+  # Drop .zim files into data/kiwix/ — they are served automatically.
+  # Find ZIM files at: https://library.kiwix.org
+  # kiwix-serve exits when there are no ZIM files in /data (expected behaviour).
+  kiwix:
+    image: ghcr.io/kiwix/kiwix-serve:latest
+    container_name: kiwix
+    # on-failure:3 — exits when no ZIM files present; restarts are correct once
+    # files are added. Run `docker compose up -d kiwix` after dropping .zim files.
+    restart: on-failure:3
+    ports:
+      - "${KIWIX_PORT}:8080"
+    volumes:
+      - ../../data/kiwix:/data
+    entrypoint: ["/usr/bin/dumb-init", "--"]
+    command:
+      [
+        "/bin/sh",
+        "-c",
+        "exec /usr/local/bin/kiwix-serve --port=8080 /data/*.zim",
+      ]
+    networks:
+      - homelab_net
+    healthcheck:
+      test:
+        ["CMD-SHELL", "wget -qO- http://localhost:8080/ > /dev/null || exit 1"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
 
- # ── Mealie ──────────────────────────────────────────────────────────────────
- # Default admin credentials: changeme@example.com / MyPassword
- # Change these immediately after first login.
- mealie:
-  image: ghcr.io/mealie-recipes/mealie:latest
-  container_name: mealie
-  restart: unless-stopped
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  ports:
-   - "${MEALIE_PORT}:9000"
-  environment:
-   - ALLOW_SIGNUP=false
-   - DEFAULT_GROUP=Home
-   - BASE_URL=${MEALIE_EXTERNAL_URL}
-   - TZ=${TZ}
-   - PUID=${PUID}
-   - PGID=${PGID}
-  volumes:
-   - ../../data/mealie:/app/data
-  networks:
-   - homelab_net
-  healthcheck:
-   test: ["CMD", "curl", "-f", "http://localhost:9000/api/app/about"]
-   interval: 30s
-   timeout: 10s
-   retries: 3
-   start_period: 30s
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 512M
+  # ── Mealie ──────────────────────────────────────────────────────────────────
+  # Default admin credentials: changeme@example.com / MyPassword
+  # Change these immediately after first login.
+  mealie:
+    image: ghcr.io/mealie-recipes/mealie:latest
+    container_name: mealie
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    ports:
+      - "${MEALIE_PORT}:9000"
+    environment:
+      - ALLOW_SIGNUP=false
+      - DEFAULT_GROUP=Home
+      - BASE_URL=${MEALIE_EXTERNAL_URL}
+      - TZ=${TZ}
+      - PUID=${PUID}
+      - PGID=${PGID}
+    volumes:
+      - ../../data/mealie:/app/data
+    networks:
+      - homelab_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/api/app/about"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
 
- # ── Forgejo ─────────────────────────────────────────────────────────────────
- forgejo:
-  image: codeberg.org/forgejo/forgejo:14
-  container_name: forgejo
-  environment:
-   - USER_UID=${PUID}
-   - USER_GID=${PGID}
-   - FORGEJO__database__DB_TYPE=sqlite3
-   - FORGEJO__repository__ENABLE_PUSH_CREATE_USER=true
-   - FORGEJO__service__DISABLE_REGISTRATION=true
-   - FORGEJO__server__ROOT_URL=${FORGEJO__server__ROOT_URL}
-   - FORGEJO__server__HTTP_ADDR=${FORGEJO__server__HTTP_ADDR}
-   - FORGEJO__server__HTTP_PORT=${FORGEJO__server__HTTP_PORT}
-   - FORGEJO__server__SSH_DOMAIN=${FORGEJO__server__SSH_DOMAIN}
-   - FORGEJO__server__OFFLINE_MODE=${FORGEJO__server__OFFLINE_MODE}
-  volumes:
-   - ../../data/forgejo:/data
-   - /etc/timezone:/etc/timezone:ro
-   - /etc/localtime:/etc/localtime:ro
-  ports:
-   - "${FORGEJO_WEB_PORT}:3000"
-   - "${FORGEJO_SSH_PORT}:22"
-  restart: unless-stopped
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  networks:
-   - homelab_net
-  healthcheck:
-   test: ["CMD", "curl", "-f", "http://localhost:3000"]
-   interval: 1m
-   timeout: 10s
-   retries: 3
-   start_period: 60s
-  deploy:
-   resources:
-    limits:
-     cpus: "1.0"
-     memory: 1G
-    reservations:
-     cpus: "0.5"
-     memory: 512M
+  # ── Forgejo ─────────────────────────────────────────────────────────────────
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:14
+    container_name: forgejo
+    environment:
+      - USER_UID=${PUID}
+      - USER_GID=${PGID}
+      - FORGEJO__database__DB_TYPE=sqlite3
+      - FORGEJO__repository__ENABLE_PUSH_CREATE_USER=true
+      - FORGEJO__service__DISABLE_REGISTRATION=true
+      - FORGEJO__server__ROOT_URL=${FORGEJO__server__ROOT_URL}
+      - FORGEJO__server__HTTP_ADDR=${FORGEJO__server__HTTP_ADDR}
+      - FORGEJO__server__HTTP_PORT=${FORGEJO__server__HTTP_PORT}
+      - FORGEJO__server__SSH_DOMAIN=${FORGEJO__server__SSH_DOMAIN}
+      - FORGEJO__server__OFFLINE_MODE=${FORGEJO__server__OFFLINE_MODE}
+    volumes:
+      - ../../data/forgejo:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "${FORGEJO_WEB_PORT}:3000"
+      - "${FORGEJO_SSH_PORT}:22"
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    networks:
+      - homelab_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
 
- # ── Wizarr ───────────────────────────────────────────────────────────────────
- # Jellyfin invitation manager — generates invite links, auto-adds users,
- # shows them an onboarding guide with app download links.
- # ⚠️  FIRST RUN: Create admin account at http://localhost:${WIZARR_PORT},
- #     then add Jellyfin server (http://jellyfin:8096 + admin API key).
- wizarr:
-  image: ghcr.io/wizarrrr/wizarr:latest
-  container_name: wizarr
-  environment:
-   - TZ=${TZ}
-  volumes:
-   - ../../data/wizarr/database:/data/database
-  ports:
-   - "${WIZARR_PORT}:5690"
-  restart: unless-stopped
-  networks:
-   - homelab_net
-  healthcheck:
-   test: ["CMD", "curl", "-f", "http://localhost:5690"]
-   interval: 1m
-   timeout: 10s
-   retries: 3
-   start_period: 30s
-  labels:
-   - "com.centurylinklabs.watchtower.enable=true"
-  deploy:
-   resources:
-    limits:
-     cpus: "0.25"
-     memory: 256M
-    reservations:
-     cpus: "0.05"
-     memory: 64M
+  # ── Wizarr ───────────────────────────────────────────────────────────────────
+  # Jellyfin invitation manager — generates invite links, auto-adds users,
+  # shows them an onboarding guide with app download links.
+  #   FIRST RUN: Create admin account at http://localhost:${WIZARR_PORT},
+  #     then add Jellyfin server (http://jellyfin:8096 + admin API key).
+  wizarr:
+    image: ghcr.io/wizarrrr/wizarr:latest
+    container_name: wizarr
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - ../../data/wizarr/database:/data/database
+    ports:
+      - "${WIZARR_PORT}:5690"
+    restart: unless-stopped
+    networks:
+      - homelab_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5690"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+        reservations:
+          cpus: "0.05"
+          memory: 64M
 
 networks:
- homelab_net:
-  external: true
- services_internal:
-  internal: true
+  homelab_net:
+    external: true
+  services_internal:
+    internal: true

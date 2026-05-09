@@ -1,101 +1,101 @@
 services:
- immich-server:
-  container_name: immich-server
-  # NEVER add watchtower label — update manually by bumping IMMICH_VERSION in .env
-  # then: docker compose pull && docker compose up -d
-  environment:
-   DB_PASSWORD: ${DB_PASSWORD}
-   DB_USERNAME: ${DB_USERNAME}
-   DB_DATABASE_NAME: ${DB_DATABASE_NAME}
-   IMMICH_VERSION: ${IMMICH_VERSION}
-  networks:
-   - homelab_net
-   - immich_internal
-  healthcheck:
-   test: ["CMD", "curl", "-f", "http://localhost:2283/api/server/ping"]
-   interval: 1m
-   timeout: 10s
-   retries: 3
-   start_period: 60s
-  deploy:
-   resources:
-    limits:
-     cpus: "2.0"
-     memory: 2G
-    reservations:
-     cpus: "0.5"
-     memory: 512M
+  immich-server:
+    container_name: immich-server
+    # NEVER add watchtower label — update manually by bumping IMMICH_VERSION in .env
+    # then: docker compose pull && docker compose up -d
+    environment:
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_DATABASE_NAME: ${DB_DATABASE_NAME}
+      IMMICH_VERSION: ${IMMICH_VERSION}
+    networks:
+      - homelab_net
+      - immich_internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:2283/api/server/ping"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
 
- immich-machine-learning:
-  container_name: immich-machine-learning
-  # AMD Vega 7 iGPU has no ROCm support — ML too slow on CPU; disabled
-  profiles: [disabled]
-  environment:
-   IMMICH_VERSION: ${IMMICH_VERSION}
-  networks:
-   - homelab_net
-   - immich_internal
-  healthcheck:
-   # image has no curl; use Python (available at /opt/venv/bin/python3)
-   test:
-    [
-     "CMD",
-     "python3",
-     "-c",
-     "import urllib.request; urllib.request.urlopen('http://localhost:3003/ping')",
-    ]
-   interval: 1m
-   timeout: 10s
-   retries: 3
-   start_period: 60s
-  deploy:
-   resources:
-    limits:
-     cpus: "2.0"
-     memory: 2G
-    reservations:
-     cpus: "0.5"
-     memory: 512M
+  immich-machine-learning:
+    container_name: immich-machine-learning
+    # AMD Vega 7 iGPU has no ROCm support — ML too slow on CPU; disabled
+    profiles: [disabled]
+    environment:
+      IMMICH_VERSION: ${IMMICH_VERSION}
+    networks:
+      - homelab_net
+      - immich_internal
+    healthcheck:
+      # image has no curl; use Python (available at /opt/venv/bin/python3)
+      test:
+        [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:3003/ping')",
+        ]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
 
- redis:
-  container_name: immich-redis
-  networks:
-   - immich_internal
-  healthcheck:
-   test: ["CMD", "redis-cli", "ping"]
-   interval: 30s
-   timeout: 10s
-   retries: 5
-  deploy:
-   resources:
-    limits:
-     cpus: "0.25"
-     memory: 256M
-    reservations:
-     cpus: "0.05"
-     memory: 64M
+  redis:
+    container_name: immich-redis
+    networks:
+      - immich_internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+        reservations:
+          cpus: "0.05"
+          memory: 64M
 
- database:
-  container_name: immich-postgres
-  networks:
-   - immich_internal
-  healthcheck:
-   test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-   interval: 30s
-   timeout: 10s
-   retries: 5
-   start_period: 30s
-  deploy:
-   resources:
-    limits:
-     cpus: "0.5"
-     memory: 1G
-    reservations:
-     cpus: "0.1"
-     memory: 256M
+  database:
+    container_name: immich-postgres
+    networks:
+      - immich_internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 1G
+        reservations:
+          cpus: "0.1"
+          memory: 256M
 
 networks:
- homelab_net:
-  external: true
- immich_internal:
-  internal: true
+  homelab_net:
+    external: true
+  immich_internal:
+    internal: true
