@@ -145,12 +145,12 @@
       icon: mdi-book-download
       server: my-docker
       container: audiobookbay-downloader
-   - BookBounty:
+   - Shelfmark:
       href: http://100.106.40.5:20079
-      description: Ebook & audiobook downloader
-      icon: mdi-book-download
+      description: Book & audiobook search and download
+      icon: mdi-bookshelf
       server: my-docker
-      container: bookbounty
+      container: shelfmark
    - Calibre-Web:
       href: http://100.106.40.5:20078
       description: Ebook library manager & reader

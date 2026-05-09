@@ -295,7 +295,7 @@ services:
      memory: 256M
 
  # ── LazyLibrarian ────────────────────────────────────────────────────────────
- # REMOVED: Replaced by BookBounty (ebook/audiobook downloader, see below) +
+ # REMOVED: Replaced by Shelfmark (ebook/audiobook downloader, see below) +
  #          Komga (reader) + Calibre-Web (library manager) in media stack.
  # Data preserved at ../../data/lazylibrarian/ — delete manually once migrated.
  #
@@ -667,6 +667,8 @@ services:
    # Host path — informational only, tells the app where to report its storage path
    - YOUTUBE_OUTPUT_DIR=${DATA_ROOT}/media/youtube
    - LOG_LEVEL=info
+   - AUTH_PRESET_USERNAME=${YOUTARR_AUTH_PRESET_USERNAME}
+     - AUTH_PRESET_PASSWORD=${YOUTARR_AUTH_PRESET_PASSWORD}
   volumes:
    - ${DATA_ROOT}/media/youtube:/usr/src/app/data
    - ../../data/youtarr/images:/app/server/images
@@ -695,32 +697,57 @@ services:
      cpus: "0.1"
      memory: 128M
 
- # ── BookBounty ───────────────────────────────────────────────────────────────
- # Searches for and downloads ebooks/audiobooks via configured providers.
- # Replacement for LazyLibrarian's download functionality.
- # ⚠️  FIRST RUN: Configure at http://localhost:${BOOKBOUNTY_PORT} — add
- #     download providers (Library Genesis, Z-Library, etc.).
- bookbounty:
-  image: thewicklowwolf/bookbounty:latest
-  container_name: bookbounty
+ # ── Shelfmark ────────────────────────────────────────────────────────────────
+ # Self-hosted book & audiobook search and download tool.
+ # Multi-source: Prowlarr indexers, direct web, IRC, usenet.
+ #
+ # Volume layout (path must match qBittorrent exactly for torrent post-processing):
+ #   /data          → ${DATA_ROOT}          shared with qBittorrent — required for
+ #                                          path-matching after torrent completion
+ #   /books         → media/books           ebook final delivery (INGEST_DIR)
+ #   /audiobooks    → media/audiobooks      audiobook final delivery (ABS watches this)
+ #
+ # qBittorrent categories (pre-seeded):
+ #   shelfmark-books      → /data/torrents/books      (Shelfmark processes → /books)
+ #   shelfmark-audiobooks → /data/torrents/audiobooks  (Shelfmark processes → /audiobooks)
+ #
+ # Integrations:
+ #   Calibre-Web — add library link in Settings → Library Link, and optionally
+ #                 mount Calibre-Web's app.db for shared auth (see volume below).
+ #   Audiobookshelf — final audiobooks land in /audiobooks = media/audiobooks,
+ #                    which ABS watches. No extra config needed.
+ # ⚠️  FIRST RUN: Configure at http://localhost:${SHELFMARK_PORT}:
+ #   1. Settings → Sources → Add Prowlarr (http://prowlarr:9696, API key)
+ #   2. Settings → Sources → Add qBittorrent (http://qbittorrent:20050, credentials)
+ #      Books category:      shelfmark-books
+ #      Audiobook category:  shelfmark-audiobooks
+ #   3. Settings → File Processing → Audiobook output path: /audiobooks
+ #   4. Settings → Library Link → http://100.106.40.5:${CALIBREWEB_PORT}
+ shelfmark:
+  image: ghcr.io/calibrain/shelfmark:latest
+  container_name: shelfmark
+  user: "${PUID}:${PGID}"
   environment:
-   - PUID=${PUID}
-   - PGID=${PGID}
    - TZ=${TZ}
+   - SEARCH_MODE=universal
+   - INGEST_DIR=/books
   volumes:
-   - ../../data/bookbounty/config:/config
-   - ${DATA_ROOT}/media/books:/data/books
-   - /etc/localtime:/etc/localtime:ro
+   - ../../data/shelfmark/config:/config
+   - ${DATA_ROOT}:/data # path-match with qBittorrent download dirs
+   - ${DATA_ROOT}/media/books:/books # ebook final delivery
+   - ${DATA_ROOT}/media/audiobooks:/audiobooks # audiobook final delivery (ABS watches)
+   # Uncomment to reuse Calibre-Web user accounts for Shelfmark login:
+   # - ../../data/calibre-web/config/app.db:/auth/app.db:ro
   ports:
-   - "${BOOKBOUNTY_PORT}:5000"
+   - "${SHELFMARK_PORT}:8084"
   restart: unless-stopped
   networks:
    - homelab_net
    - arr_internal
   healthcheck:
-   test: ["CMD", "curl", "-f", "http://localhost:5000"]
-   interval: 1m
-   timeout: 10s
+   test: ["CMD", "curl", "-sf", "http://localhost:8084/api/health"]
+   interval: 30s
+   timeout: 30s
    retries: 3
    start_period: 30s
   labels:
