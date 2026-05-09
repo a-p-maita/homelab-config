@@ -141,6 +141,8 @@ services:
       - WATCHTOWER_CLEANUP=true
       - WATCHTOWER_INCLUDE_STOPPED=false
       - WATCHTOWER_NO_STARTUP_MESSAGE=false
+      # Monitor-only mode: sends notifications but does not automatically update images
+      - WATCHTOWER_MONITOR_ONLY=true
       # Opt-in mode: only update containers with com.centurylinklabs.watchtower.enable=true label
       - WATCHTOWER_LABEL_ENABLE=true
       - TZ=${TZ}
