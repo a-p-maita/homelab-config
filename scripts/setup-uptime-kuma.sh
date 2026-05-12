@@ -451,6 +451,8 @@ DELETE_MONITORS = [
 ]
 
 api = UptimeKumaApi("http://uptime-kuma:3001")
+api.timeout = 60
+api.wait_events = 1.0
 try:
     api.login(os.environ["UPTIMEKUMA_USER"], os.environ["UPTIMEKUMA_PASS"])
     existing = {m["name"]: m for m in api.get_monitors()}
@@ -491,4 +493,4 @@ docker run --rm \
     -e UPTIMEKUMA_PASS="${UPTIMEKUMA_PASS}" \
     -v /tmp/kuma_setup.py:/kuma_setup.py:ro \
     python:3-alpine \
-    sh -c "pip install uptime-kuma-api -q && python3 /kuma_setup.py"
+    sh -c "pip install --disable-pip-version-check --root-user-action=ignore --no-cache-dir uptime-kuma-api==1.2.1 >/dev/null 2>&1 && python3 /kuma_setup.py"

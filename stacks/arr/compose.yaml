@@ -43,6 +43,7 @@ services:
       - TORRENTING_PORT=${QBITTORRENT_TCP_PORT}
       - WEBUI_ADDRESS=0.0.0.0
       - WEBUI_USERNAME=${QBITTORRENT_WEBUI_USER}
+      - WEBUI_PASSWORD=${QBITTORRENT_WEBUI_PASS}
     volumes:
       - ../../data/qbittorrent/config:/config
       - ${DATA_ROOT}:/data
