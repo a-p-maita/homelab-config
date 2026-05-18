@@ -668,8 +668,7 @@ services:
       # Host path — informational only, tells the app where to report its storage path
       - YOUTUBE_OUTPUT_DIR=${DATA_ROOT}/media/youtube
       - LOG_LEVEL=info
-      - AUTH_PRESET_USERNAME=${YOUTARR_AUTH_PRESET_USERNAME}
-        - AUTH_PRESET_PASSWORD=${YOUTARR_AUTH_PRESET_PASSWORD}
+      - AUTH_PRESET_USERNAME=${YOUTARR_AUTH_PRESET_USERNAME} - AUTH_PRESET_PASSWORD=${YOUTARR_AUTH_PRESET_PASSWORD}
     volumes:
       - ${DATA_ROOT}/media/youtube:/usr/src/app/data
       - ../../data/youtarr/images:/app/server/images
