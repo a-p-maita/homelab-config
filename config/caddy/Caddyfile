@@ -135,6 +135,7 @@ http://actual-budget.andreasmaita.com {
 # No forward_auth - Paperless-NGX API tokens are used by mobile apps and
 # integrations; Authelia cookie sessions would break external API clients.
 http://paperless.andreasmaita.com {
+    import authelia_auth
     reverse_proxy paperless-ngx:8000
 }
 
