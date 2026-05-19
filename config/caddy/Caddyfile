@@ -10,9 +10,9 @@
 # Authelia forward_auth:
 #   auth.andreasmaita.com  - no forward_auth (it IS the auth portal)
 #   seerr                  - forward_auth (one_factor per Authelia access_control rules)
-#   music, immich, vault, yamtrack, homepage - forward_auth (two_factor, default policy)
+#   music, yamtrack, homepage - forward_auth (two_factor, default policy)
 #   abs, jellyfin, git, join, joplin, feishin, octo-fiesta, actual-budget,
-#   paperless, mealie      - no forward_auth (own auth or API client compatibility)
+#   paperless, mealie, immich, vault - no forward_auth (own auth or API client compatibility)
 
 {
     # No TLS managed by Caddy - cloudflared handles it at the edge.
@@ -63,14 +63,22 @@ http://music.andreasmaita.com {
 }
 
 # --- Cloud ------------------------------------------------------------------
+# No forward_auth - Immich mobile and desktop apps authenticate with API tokens.
+# Authelia's cookie-based forward_auth intercepts API calls and returns 401 to
+# native clients. Immich has its own robust auth (email/password + 2FA + session
+# tokens). Use Immich's built-in 2FA (TOTP) instead.
 http://immich.andreasmaita.com {
-    import authelia_auth
     reverse_proxy immich-server:2283
 }
 
 # --- Services ---------------------------------------------------------------
+# No forward_auth - Bitwarden/Vaultwarden clients (mobile app, browser extension,
+# desktop app) authenticate via direct API calls with session tokens, not browser
+# cookies. Authelia's forward_auth intercepts all requests including API traffic
+# and returns 401/302 to native clients, breaking sync entirely.
+# Standard practice: rely on Vaultwarden's own auth + built-in TOTP/WebAuthn 2FA.
+# Set SIGNUPS_ALLOWED=false and enable 2FA in Vaultwarden's admin panel.
 http://vault.andreasmaita.com {
-    import authelia_auth
     reverse_proxy vaultwarden:80
 }
 
