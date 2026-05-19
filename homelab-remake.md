@@ -91,7 +91,7 @@ Only Dockge (stack management) gets raw socket access.
 In the old setup, adding a service required manual changes to:
 
 - `config/homepage/services.yaml` — dashboard entry
-- `scripts/setup-uptime-kuma.sh` — monitoring script
+- `config/uptime-kuma/monitors.json` — monitoring config (re-export on each change)
 - `config/caddy/Caddyfile` — routing entry
 
 Three separate files to keep in sync, all with stale drift risk.
@@ -127,14 +127,16 @@ The `docker.yaml` is already configured with the socket proxy. The `services.yam
 config file becomes optional — only needed for static bookmarks or services without
 containers (external URLs).
 
-### 3.4 Uptime Kuma Monitors (Manual)
+### 3.4 Uptime Kuma Monitors (Backup/Import)
 
-Uptime Kuma monitors are managed manually via the web UI. The
-`scripts/setup-uptime-kuma.sh` script bootstraps the initial monitor set and is
-**retained** in the repository — run it after Phase 2 to pre-populate monitors.
-Add new monitors by hand when deploying new services.
+Uptime Kuma monitors are managed manually via the web UI. After the initial setup is complete:
 
-> **Note:** Use `louislam/uptime-kuma:2` image tag (V2 is required for the API used by the setup script).
+1. Go to **Settings → Backup** in the Uptime Kuma UI
+2. Click **Export** — downloads a JSON file containing all monitors, notifications, and tags
+3. Commit this file to the repo as `config/uptime-kuma/monitors.json`
+4. On any rebuild, **Import** this file via the same Settings → Backup UI to restore all monitors instantly
+
+> **Note:** Use `louislam/uptime-kuma:2` image tag (V2 required). The JSON backup format is V2-only.
 
 ### 3.5 Caddy Docker Proxy Labels
 
@@ -145,8 +147,13 @@ No Caddyfile needed. Labels on each service define routing.
 
 ```yaml
 labels:
-  caddy.auto_https: "off"   # CF handles TLS — Caddy serves plain HTTP only
+  caddy.auto_https: "off"                              # CF handles TLS — Caddy serves plain HTTP only
+  caddy.servers.trusted_proxies: "static private_ranges"  # Trust X-Forwarded-Proto from cloudflared
 ```
+
+> **Why `trusted_proxies` is required:** Cloudflared terminates TLS and forwards plain HTTP to Caddy
+> on the Docker bridge. Without this, Caddy sees all requests as HTTP-only, which causes Authelia to
+> generate HTTP redirect URLs for its login page — breaking the HTTPS TOTP flow.
 
 **Authelia snippet defined on the Authelia container:**
 
@@ -171,13 +178,13 @@ labels:
   caddy.reverse_proxy: "{{upstreams 8096}}"
 ```
 
-**Protected service (2FA) — e.g. Vaultwarden:**
+**Protected service (2FA) — e.g. Homepage:**
 
 ```yaml
 labels:
-  caddy: "vault.andreasmaita.com"
+  caddy: "homepage.andreasmaita.com"
   caddy.1_import: "authelia_auth"
-  caddy.2_reverse_proxy: "{{upstreams 80}}"
+  caddy.2_reverse_proxy: "{{upstreams 3000}}"
 ```
 
 Debug the generated Caddyfile at any time:
@@ -185,6 +192,33 @@ Debug the generated Caddyfile at any time:
 ```bash
 docker exec caddy cat /config/caddy/Caddyfile.autosave
 ```
+
+**Service-specific label gotchas:**
+
+*Actual Budget* requires `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` headers for its WASM features. Express these as labels:
+
+```yaml
+labels:
+  caddy: "budget.andreasmaita.com"
+  caddy.header.Cross-Origin-Opener-Policy: '"same-origin"'
+  caddy.header.Cross-Origin-Embedder-Policy: '"require-corp"'
+  caddy.reverse_proxy: "{{upstreams 5006}}"
+```
+
+*Yamtrack* has OAuth callback paths (`/import/trakt/private`, `/import/simkl/private`, `/import/anilist/private`) that must bypass `authelia_auth`. Caddy Docker Proxy supports named matchers in labels, but the syntax is complex:
+
+```yaml
+labels:
+  caddy: "yamtrack.andreasmaita.com"
+  caddy.@oauth_callback.path: "/import/trakt/private /import/simkl/private /import/anilist/private"
+  caddy.handle_@oauth_callback.reverse_proxy: "{{upstreams 8000}}"
+  caddy.handle.1_import: "authelia_auth"
+  caddy.handle.2_reverse_proxy: "{{upstreams 8000}}"
+```
+
+> If the named-matcher label syntax causes parse errors, fall back to a minimal static snippet
+> in a `Caddyfile.snippet` file volume-mounted into Caddy, and `import` it via a label.
+> The Caddy container supports co-existing labels and an optional volume-mounted config.
 
 ---
 
@@ -222,15 +256,16 @@ docker exec caddy cat /config/caddy/Caddyfile.autosave
 | ---------------------- | --------------------------------------------- | ------------- | --------- | --------- | --------------------------------------------------- |
 | `uptime-kuma`        | `louislam/uptime-kuma:2`                    | 3001          | 20201     | Tailscale | V2 image required                                   |
 | `dockge`             | `louislam/dockge:latest`                    | 5001          | 20202     | Tailscale | Stack manager + container restarts from web UI      |
-| `scrutiny`           | `ghcr.io/analogj/scrutiny:master-web`       | 8080          | 20210     | Tailscale | NVMe S.M.A.R.T monitoring —**do not remove** |
+| `scrutiny`           | `ghcr.io/analogj/scrutiny:master-web`       | 8080          | 20210     | Tailscale | NVMe S.M.A.R.T monitoring — **do not remove**     |
 | `scrutiny-collector` | `ghcr.io/analogj/scrutiny:master-collector` | —            | —        | Internal  | Runs as cron; requires `--device /dev/nvme0`      |
+| `backrest`           | `ghcr.io/garethgeorge/backrest:latest`      | 9898          | 20211     | Tailscale | Web UI for Restic backups; replaces backup.sh cron  |
 
 **Networks:** `homelab_net`
 
 **Key configs:**
 
 - Homepage connects to `docker-socket-proxy:2375` (read-only)
-- Run `scripts/setup-uptime-kuma.sh` after first Uptime Kuma start to bootstrap monitors
+- Uptime Kuma: bootstrap monitors by importing `config/uptime-kuma/monitors.json` via Settings → Backup
 - Scrutiny: single NVMe with no RAID — this is your only early-warning system for drive failure
 - Dockge: **path constraint** — the stacks directory must use the **same path inside and outside the container** (Dockge requirement). Mount the repo's `stacks/` directory using its absolute host path:
 
@@ -242,7 +277,9 @@ docker exec caddy cat /config/caddy/Caddyfile.autosave
   ```
 
   Dockge treats each subdirectory as one stack and can only manage a single `compose.yaml` per stack.
-  **Multi-file stacks** (`compose.db.yaml`, `compose.vpn.yaml`, `compose.override.yaml`) are not editable via the Dockge UI — use CLI / scripts for those.
+  **Multi-file stacks** (`compose.db.yaml`, `compose.vpn.yaml`, `compose.override.yaml`) are not editable via the Dockge UI — use CLI / Taskfile tasks for those.
+
+- **Backrest:** Web UI for Restic (port 9898 → 20211). Configure backup repos (Backblaze B2) and schedule nightly snapshots from the UI. Pre/post hooks in Backrest run `backup-dbs.sh` to dump Postgres before each snapshot. First run: create account at `http://tailscale-ip:20211`, then add repo using `RESTIC_S3_KEY_ID/SECRET` and `RESTIC_BACKUP_PASSWORD` from `.env`. Replaces the manual Restic cron job.
 
 ---
 
@@ -276,16 +313,16 @@ docker exec caddy cat /config/caddy/Caddyfile.autosave
 
 **Files:** `compose.yaml`
 
-| Service         | Image                                   | Internal Port | Host Port | Access          | Notes                                  |
-| --------------- | --------------------------------------- | ------------- | --------- | --------------- | -------------------------------------- |
-| `radarr`      | `lscr.io/linuxserver/radarr:latest`         | 7878          | 20056     | Tailscale       | Movies                                              |
-| `sonarr`      | `lscr.io/linuxserver/sonarr:latest`         | 8989          | 20057     | Tailscale       | TV + anime                                          |
-| `lidarr`      | `lscr.io/linuxserver/lidarr:latest`         | 8686          | 20058     | Tailscale       | Music                                               |
-| `bazarr`      | `lscr.io/linuxserver/bazarr:latest`         | 6767          | 20059     | Tailscale       | Subtitles for Radarr/Sonarr                         |
-| `shelfmark`   | `ghcr.io/calibrain/shelfmark:latest`        | 8084          | 20079     | Tailscale       | Manual book + audiobook search; Prowlarr + IRC + direct sources |
-| `recyclarr`   | `ghcr.io/recyclarr/recyclarr:latest`        | —            | —        | None (cron job) | Quality profile sync from TRaSH Guides              |
-| `maintainerr` | `ghcr.io/jorenn92/maintainerr:latest`       | 6246          | 20400     | Tailscale       | Library cleanup (replaces Cleanuparr)               |
-| `unpackerr`   | `golift/unpackerr:latest`                   | —            | —        | None            | Archive extraction — no web UI                     |
+| Service         | Image                                   | Internal Port | Host Port | Access          | Notes                                                           |
+| --------------- | --------------------------------------- | ------------- | --------- | --------------- | --------------------------------------------------------------- |
+| `radarr`      | `lscr.io/linuxserver/radarr:latest`   | 7878          | 20056     | Tailscale       | Movies                                                          |
+| `sonarr`      | `lscr.io/linuxserver/sonarr:latest`   | 8989          | 20057     | Tailscale       | TV + anime                                                      |
+| `lidarr`      | `lscr.io/linuxserver/lidarr:latest`   | 8686          | 20058     | Tailscale       | Music                                                           |
+| `bazarr`      | `lscr.io/linuxserver/bazarr:latest`   | 6767          | 20059     | Tailscale       | Subtitles for Radarr/Sonarr                                     |
+| `shelfmark`   | `ghcr.io/calibrain/shelfmark:latest`  | 8084          | 20079     | Tailscale       | Manual book + audiobook search; Prowlarr + IRC + direct sources |
+| `recyclarr`   | `ghcr.io/recyclarr/recyclarr:latest`  | —            | —        | None (cron job) | Quality profile sync from TRaSH Guides                          |
+| `maintainerr` | `ghcr.io/jorenn92/maintainerr:latest` | 6246          | 20400     | Tailscale       | Library cleanup (replaces Cleanuparr)                           |
+| `unpackerr`   | `golift/unpackerr:latest`             | —            | —        | None            | Archive extraction — no web UI                                 |
 
 **Networks:** `homelab_net`
 
@@ -306,8 +343,8 @@ docker exec caddy cat /config/caddy/Caddyfile.autosave
 
 ```yaml
 volumes:
-  - ${CONFIG_ROOT}/shelfmark:/config
-  - ${DATA_ROOT}/data/torrents/books:/books  # direct downloads land here
+  - ../../data/shelfmark:/config          # relative to stacks/arr/compose.yaml
+  - ${DATA_ROOT}/torrents/books:/books    # direct downloads land here
 ```
 
 **Lidarr note:** Lidarr is functional when configured with the right indexers in Prowlarr.
@@ -324,7 +361,7 @@ via Prowlarr. The main issue is public torrent indexer quality for music, not Li
 | ------------------ | ------------------------------------------ | ------------- | --------- | ------------------ | --------------------------------------------------------------------------- |
 | `jellyfin`       | `jellyfin/jellyfin:latest`               | 8096          | 20330     | Domain + Tailscale | Enable VA-API (`/dev/dri`) for hardware transcoding                       |
 | `navidrome`      | `deluan/navidrome:latest`                | 4533          | 20070     | Tailscale          | Music; subsonic-compatible. Apps: Finamp (iOS/Android), Symfonium (Android) |
-| `audiobookshelf` | `ghcr.io/advplyr/audiobookshelf:latest`  | 80            | 20020     | Domain + Tailscale | Audiobooks + podcasts                                                       |
+| `audiobookshelf` | `ghcr.io/advplyr/audiobookshelf:latest`  | 80            | 20020     | Domain + Tailscale | Audiobooks, podcasts, music, books (multiple library types supported)       |
 | `calibre-web`    | `lscr.io/linuxserver/calibre-web:latest` | 8083          | 20078     | Tailscale          | Ebook library + reader (OPDS)                                               |
 | `komga`          | `gotson/komga:latest`                    | 8080          | 20077     | Tailscale          | Comics + manga (OPDS)                                                       |
 | `seerr`          | `fallenbagel/jellyseerr:latest`          | 5055          | 20331     | Domain + Tailscale | Media request system → Radarr/Sonarr                                       |
@@ -347,7 +384,24 @@ devices:
 
 Then enable AMD VA-API transcoding in Jellyfin → Dashboard → Playback → Hardware Acceleration.
 
----
+**Shared media directory mounts:** All media services in this stack mount subdirectories of `${DATA_ROOT}/media/`.
+Multiple services intentionally share the same directories — the data is read-only for most consumers
+(arr apps have write access for hardlinking; media servers are read-only).
+
+| `${DATA_ROOT}/media/` subdirectory | Services that mount it                                      | Access |
+| ---------------------------------- | ----------------------------------------------------------- | ------ |
+| `movies/`                          | Jellyfin (Movies library), Radarr (root folder)             | Read / Write |
+| `tv/`                              | Jellyfin (TV Shows library), Sonarr (root folder)           | Read / Write |
+| `music/`                           | Jellyfin (Music library), Navidrome (library dir), Lidarr (root folder), ABS (Music library — optional) | Read / Write (Lidarr), Read |
+| `audiobooks/`                      | ABS (Audiobooks library), Jellyfin (Audiobooks library — optional) | Read |
+| `podcasts/`                        | ABS (Podcasts library)                                      | Read |
+| `books/`                           | Calibre-Web (library — must contain `metadata.db`), ABS (Books/E-books library — optional), Komga (if mixed) | Read |
+| `comics/`                          | Komga (Comics library)                                      | Read |
+| `manga/`                           | Komga (Manga library)                                       | Read |
+
+> **Note:** All these services mount `${DATA_ROOT}:/data` so the subdirectory paths above are all reachable as
+> `/data/media/<dir>` inside each container. Configure each service's library path to that internal path.
+> ABS in particular supports multiple simultaneous library types — add all that apply during ABS setup.
 
 ### Stack 6 — Cloud (`stacks/cloud/`)
 
@@ -366,32 +420,58 @@ Then enable AMD VA-API transcoding in Jellyfin → Dashboard → Playback → Ha
 
 #### Applications (`compose.yaml` + `compose.override.yaml`)
 
-| Service                     | Image                                                  | Internal Port | Host Port     | Access                | Notes                                                      |
-| --------------------------- | ------------------------------------------------------ | ------------- | ------------- | --------------------- | ---------------------------------------------------------- |
-| `immich-server`           | `ghcr.io/immich-app/immich-server:${IMMICH_VERSION}` | 2283          | 20450         | Domain + Tailscale    | **Never use Watchtower** — update manually via docs |
-| `immich-machine-learning` | (same)                                                 | —            | —            | Internal              | **Disabled** — AMD Vega 7 has no ROCm; CPU too slow |
-| `forgejo`                 | `codeberg.org/forgejo/forgejo:latest`                | 3000 / 22     | 20110 / 20111 | Domain + Tailscale    | Git server; SSH on 20111                                   |
-| `paperless-ngx`           | `ghcr.io/paperless-ngx/paperless-ngx:latest`         | 8000          | 20301         | Domain +**2FA** | Documents; most sensitive data                             |
-| `vaultwarden`             | `vaultwarden/server:latest`                          | 80            | 20315         | Domain                | Self-hosted Bitwarden — own auth + built-in 2FA (see note below) |
-| `nextcloud`               | `nextcloud:stable-apache`                            | 80            | 20450         | Domain + Tailscale    | Cloud storage + Nextcloud Office (WASM)                    |
+| Service                     | Image                                                  | Internal Port | Host Port     | Access             | Notes                                                             |
+| --------------------------- | ------------------------------------------------------ | ------------- | ------------- | ------------------ | ----------------------------------------------------------------- |
+| `immich-server`           | `ghcr.io/immich-app/immich-server:${IMMICH_VERSION}` | 2283          | **2283**      | Domain + Tailscale | **Never use Watchtower** — update manually via docs        |
+| `immich-machine-learning` | (same)                                                 | —            | —            | Internal           | **Disabled** — AMD Vega 7 has no ROCm; CPU too slow        |
+| `forgejo`                 | `codeberg.org/forgejo/forgejo:latest`                | 3000 / 22     | 20110 / 20111 | Domain + Tailscale | Git server; SSH on 20111                                          |
+| `vaultwarden`             | `vaultwarden/server:latest`                          | 80            | 20315         | Domain             | Self-hosted Bitwarden — own auth + built-in 2FA (see note below) |
+| `nextcloud`               | `nextcloud:stable-apache`                            | 80            | 20460         | Domain + Tailscale | Cloud storage + Nextcloud Office (WASM)                           |
 
-**Networks:** `homelab_net`, `cloud_internal` (DBs isolated)
+**Networks:** `homelab_net`, `immich_internal` + `cloud_internal` (each DB tier isolated in separate internal networks)
+
+**Immich port:** The upstream Immich `compose.yaml` hardcodes `2283:2283`. This host port is kept as-is —
+**do not override it to a non-standard port**. Immich mobile and desktop clients hard-code port 2283
+when connecting via Tailscale IP (`100.106.40.5:2283`). Changing the host port breaks all existing app
+connections and requires every client to be reconfigured. The `compose.override.yaml` does not override
+ports; only the environment and network sections are customised there.
 
 **Immich upload size limit:** CF Tunnel does not support chunked upload reassembly (>~100MB uploads
-silently fail). **Workaround:** use Tailscale (port 20450) for bulk photo imports from desktop/mobile.
+silently fail). **Workaround:** use Tailscale (`100.106.40.5:2283`) for bulk photo imports from desktop/mobile.
 CF domain access is fine for browsing and small uploads. This is an accepted tradeoff — tracked
 upstream but classified as out-of-scope by the Immich team.
 
-**Nextcloud proxy config:** Add to `config/www/html/config/config.php` (or via entrypoint env):
+**Nextcloud proxy config:** Set these in `.env` before first start — the `nextcloud:stable-apache`
+entrypoint reads them and writes them into `config.php` automatically:
 
-```php
-'overwriteprotocol' => 'https',
-'overwritehost' => 'nextcloud.andreasmaita.com',
-'trusted_proxies' => ['caddy'],
+```bash
+OVERWRITEPROTOCOL=https
+OVERWRITEHOST=nextcloud.andreasmaita.com
+OVERWRITECLIURL=https://nextcloud.andreasmaita.com
+NEXTCLOUD_TRUSTED_DOMAINS=nextcloud.andreasmaita.com 100.106.40.5
 ```
+
+> These must be set **before the first container start**. If Nextcloud has already initialised
+> without them, run `docker exec nextcloud php occ config:system:set <key> --value=<val>` for
+> each setting, or delete `./data/nextcloud/` and start fresh.
 
 Nextcloud handles large file uploads correctly through CF Tunnel (client-side TUS chunking protocol —
 unlike Immich which requires server-side reassembly).
+
+**Forgejo env vars:** Configure via double-underscore env vars that map to `app.ini` sections
+(`FORGEJO__section__key`). Required before first start:
+
+- `FORGEJO__server__ROOT_URL=https://git.andreasmaita.com/` (controls clone URLs and redirect URLs)
+- `FORGEJO__server__SSH_DOMAIN=git.andreasmaita.com`
+- `FORGEJO__server__DOMAIN=git.andreasmaita.com`
+
+**Vaultwarden admin token:** `ADMIN_TOKEN` must be an **Argon2 hash** of your chosen password, not the plain password itself. Generate:
+
+```bash
+docker run --rm -it vaultwarden/server /vaultwarden hash --preset owasp
+```
+
+Leave `ADMIN_TOKEN` blank to disable the admin panel entirely (safe for personal use).
 
 **Vaultwarden + Immich — no Authelia forward_auth:** Both services rely on their own authentication systems. Bitwarden app and browser extension clients use direct API calls with session tokens; Authelia's cookie-based forward_auth intercepts these API calls and returns HTTP 302/401, breaking vault sync entirely. Immich mobile and desktop clients behave the same way. This is the same reason ABS, Forgejo, and Joplin are excluded from forward_auth.
 
@@ -426,24 +506,25 @@ and remove the ports mapping. HA will bind to host port 8123 directly.
 
 #### Databases (`compose.db.yaml`)
 
-| Service                | Image                  | Purpose                 |
-| ---------------------- | ---------------------- | ----------------------- |
-| `paperless-postgres` | `postgres:16-alpine` | Paperless-ngx           |
-| `paperless-redis`    | `redis:7-alpine`     | Paperless task queue    |
-| `joplin-postgres`    | `postgres:16-alpine` | Joplin note sync server |
+| Service                | Image                  | Purpose                                    |
+| ---------------------- | ---------------------- | ------------------------------------------ |
+| `paperless-postgres` | `postgres:16-alpine` | Paperless-ngx (same `services_internal`) |
+| `paperless-redis`    | `redis:7-alpine`     | Paperless task queue                       |
+| `joplin-postgres`    | `postgres:16-alpine` | Joplin note sync server                    |
 
 #### Applications (`compose.yaml`)
 
-| Service           | Image                                    | Internal Port | Host Port | Access                | Notes                                          |
-| ----------------- | ---------------------------------------- | ------------- | --------- | --------------------- | ---------------------------------------------- |
-| `actual-budget` | `actualbudget/actual-server:latest`    | 5006          | 20350     | Domain + Tailscale    | Finance; no external auth needed (own auth)    |
-| `mealie`        | `ghcr.io/mealie-recipes/mealie:latest` | 9000          | 20360     | Domain + Tailscale    | Recipe manager                                 |
-| `joplin`        | `joplin/server:latest`                 | 22300         | 20370     | Domain + Tailscale    | Note sync server; clients connect to domain    |
-| `stirling-pdf`  | `frooodle/s-pdf:latest`                | 8080          | 20380     | Domain +**2FA** | PDF tools; login enabled; disable signups      |
-| `monica`        | `monica:latest`                        | 80            | 20390     | Tailscale             | Personal CRM; SQLite backend                   |
-| `drawio`        | `jgraph/drawio:latest`                 | 8080          | 20401     | Tailscale             | Diagrams; no auth — local/Tailscale only      |
-| `excalidraw`    | `excalidraw/excalidraw:latest`         | 80            | 20402     | Tailscale             | Whiteboard; no auth — local/Tailscale only    |
-| `it-tools`      | `corentinth/it-tools:latest`           | 80            | 20403     | Tailscale             | Dev utilities; no auth — local/Tailscale only |
+| Service           | Image                                          | Internal Port | Host Port | Access                | Notes                                                             |
+| ----------------- | ---------------------------------------------- | ------------- | --------- | --------------------- | ----------------------------------------------------------------- |
+| `paperless-ngx` | `ghcr.io/paperless-ngx/paperless-ngx:latest` | 8000          | 20301     | Domain +**2FA** | Documents; uses `services_internal` for DB + Redis              |
+| `actual-budget` | `actualbudget/actual-server:latest`          | 5006          | 20350     | Domain + Tailscale    | Finance; own auth                                                 |
+| `mealie`        | `ghcr.io/mealie-recipes/mealie:latest`       | 9000          | 20360     | Domain + Tailscale    | Recipe manager                                                    |
+| `joplin`        | `joplin/server:latest`                       | 22300         | 20370     | Domain + Tailscale    | Note sync server; clients connect to domain                       |
+| `stirling-pdf`  | `frooodle/s-pdf:latest`                      | 8080          | 20380     | Domain +**2FA** | PDF tools; login enabled via `config/stirling-pdf/settings.yml` |
+| `monica`        | `monica:latest`                              | 80            | 20390     | Tailscale             | Personal CRM; SQLite; requires `APP_KEY` (see env vars)         |
+| `drawio`        | `jgraph/drawio:latest`                       | 8080          | 20401     | Tailscale             | Diagrams; no auth — local/Tailscale only                         |
+| `excalidraw`    | `excalidraw/excalidraw:latest`               | 80            | 20402     | Tailscale             | Whiteboard; no auth — local/Tailscale only                       |
+| `it-tools`      | `corentinth/it-tools:latest`                 | 80            | 20403     | Tailscale             | Dev utilities; no auth — local/Tailscale only                    |
 
 **Networks:** `homelab_net`, `services_internal` (DBs isolated)
 
@@ -453,49 +534,50 @@ and remove the ports mapping. HA will bind to host port 8123 directly.
 
 All ports in the `20000–20499` range. No overlap with standard Linux services.
 
-| Port  | Service                    | Stack          | Tailscale | Domain                               |
-| ----- | -------------------------- | -------------- | --------- | ------------------------------------ |
-| 20020 | Audiobookshelf             | media          | ✓        | `abs.andreasmaita.com`             |
-| 20041 | Yamtrack                   | media          | ✓        | `yamtrack.andreasmaita.com`        |
-| 20042 | Crosswatch                 | media          | ✓        | —                                   |
-| 20050 | qBittorrent WebUI          | downloads      | ✓        | —                                   |
-| 20051 | qBittorrent TCP            | downloads      | ✓        | —                                   |
-| 20052 | qBittorrent UDP            | downloads      | ✓        | —                                   |
-| 20055 | Prowlarr                   | downloads      | ✓        | —                                   |
-| 20056 | Radarr                     | arr            | ✓        | —                                   |
-| 20057 | Sonarr                     | arr            | ✓        | —                                   |
-| 20058 | Lidarr                     | arr            | ✓        | —                                   |
-| 20059 | Bazarr                     | arr            | ✓        | —                                   |
-| 20070 | Navidrome                  | media          | ✓        | —                                   |
-| 20074 | Autobrr                    | downloads      | ✓        | —                                   |
-| 20077 | Komga                      | media          | ✓        | —                                   |
-| 20078 | Calibre-Web                | media          | ✓        | —                                   |
-| 20079 | Shelfmark                  | arr            | ✓        | —                                   |
+| Port  | Service                  | Stack          | Tailscale | Domain                               |
+| ----- | ------------------------ | -------------- | --------- | ------------------------------------ |
+| 20020 | Audiobookshelf           | media          | ✓        | `abs.andreasmaita.com`             |
+| 20041 | Yamtrack                 | media          | ✓        | `yamtrack.andreasmaita.com`        |
+| 20042 | Crosswatch               | media          | ✓        | —                                   |
+| 20050 | qBittorrent WebUI        | downloads      | ✓        | —                                   |
+| 20051 | qBittorrent TCP          | downloads      | ✓        | —                                   |
+| 20052 | qBittorrent UDP          | downloads      | ✓        | —                                   |
+| 20055 | Prowlarr                 | downloads      | ✓        | —                                   |
+| 20056 | Radarr                   | arr            | ✓        | —                                   |
+| 20057 | Sonarr                   | arr            | ✓        | —                                   |
+| 20058 | Lidarr                   | arr            | ✓        | —                                   |
+| 20059 | Bazarr                   | arr            | ✓        | —                                   |
+| 20070 | Navidrome                | media          | ✓        | —                                   |
+| 20074 | Autobrr                  | downloads      | ✓        | —                                   |
+| 20077 | Komga                    | media          | ✓        | —                                   |
+| 20078 | Calibre-Web              | media          | ✓        | —                                   |
+| 20079 | Shelfmark                | arr            | ✓        | —                                   |
 | 20080 | Calibre*(optional)*      | media          | ✓        | —                                   |
-| 20110 | Forgejo HTTP               | cloud          | ✓        | `git.andreasmaita.com`             |
-| 20111 | Forgejo SSH                | cloud          | ✓        | —                                   |
-| 20200 | Homepage                   | infrastructure | ✓        | `homepage.andreasmaita.com` + 2FA  |
-| 20201 | Uptime Kuma                | monitoring     | ✓        | —                                   |
-| 20202 | Dockge                     | monitoring     | ✓        | —                                   |
-| 20210 | Scrutiny                   | monitoring     | ✓        | —                                   |
-| 20280 | Cloudflared metrics        | infrastructure | —        | —                                   |
+| 20110 | Forgejo HTTP             | cloud          | ✓        | `git.andreasmaita.com`             |
+| 20111 | Forgejo SSH              | cloud          | ✓        | —                                   |
+| 20200 | Homepage                 | infrastructure | ✓        | `homepage.andreasmaita.com` + 2FA  |
+| 20201 | Uptime Kuma              | monitoring     | ✓        | —                                   |
+| 20202 | Dockge                   | monitoring     | ✓        | —                                   |
+| 20210 | Scrutiny                 | monitoring     | ✓        | —                                   |
+| 20211 | Backrest                 | monitoring     | ✓        | —                                   |
+| 20280 | Cloudflared metrics      | infrastructure | —        | —                                   |
 | 20300 | SABnzbd*(commented out)* | downloads      | ✓        | —                                   |
-| 20301 | Paperless-ngx              | services       | ✓        | `paperless.andreasmaita.com` + 2FA |
-| 20315 | Vaultwarden                | cloud          | ✓        | `vault.andreasmaita.com`           |
-| 20330 | Jellyfin                   | media          | ✓        | `jellyfin.andreasmaita.com`        |
-| 20331 | Seerr (Jellyseerr)         | media          | ✓        | `seerr.andreasmaita.com`           |
-| 20340 | Home Assistant             | home           | ✓        | —                                   |
-| 20350 | Actual Budget              | services       | ✓        | `budget.andreasmaita.com`          |
-| 20360 | Mealie                     | services       | ✓        | `mealie.andreasmaita.com`          |
-| 20370 | Joplin                     | services       | ✓        | `joplin.andreasmaita.com`          |
-| 20380 | Stirling PDF               | services       | ✓        | `pdf.andreasmaita.com` + 2FA       |
-| 20390 | Monica                     | services       | ✓        | —                                   |
-| 20400 | Maintainerr                | arr            | ✓        | —                                   |
-| 20401 | DrawIO                     | services       | ✓        | —                                   |
-| 20402 | Excalidraw                 | services       | ✓        | —                                   |
-| 20403 | IT-Tools                   | services       | ✓        | —                                   |
-| 20450 | Immich                     | cloud          | ✓        | `immich.andreasmaita.com`          |
-| 20460 | Nextcloud                  | cloud          | ✓        | `nextcloud.andreasmaita.com`       |
+| 20301 | Paperless-ngx            | services       | ✓        | `paperless.andreasmaita.com` + 2FA |
+| 20315 | Vaultwarden              | cloud          | ✓        | `vault.andreasmaita.com`           |
+| 20330 | Jellyfin                 | media          | ✓        | `jellyfin.andreasmaita.com`        |
+| 20331 | Seerr (Jellyseerr)       | media          | ✓        | `seerr.andreasmaita.com`           |
+| 20340 | Home Assistant           | home           | ✓        | —                                   |
+| 20350 | Actual Budget            | services       | ✓        | `budget.andreasmaita.com`          |
+| 20360 | Mealie                   | services       | ✓        | `mealie.andreasmaita.com`          |
+| 20370 | Joplin                   | services       | ✓        | `joplin.andreasmaita.com`          |
+| 20380 | Stirling PDF             | services       | ✓        | `pdf.andreasmaita.com` + 2FA       |
+| 20390 | Monica                   | services       | ✓        | —                                   |
+| 20400 | Maintainerr              | arr            | ✓        | —                                   |
+| 20401 | DrawIO                   | services       | ✓        | —                                   |
+| 20402 | Excalidraw               | services       | ✓        | —                                   |
+| 20403 | IT-Tools                 | services       | ✓        | —                                   |
+| 2283  | Immich                   | cloud          | ✓        | `immich.andreasmaita.com`          |
+| 20460 | Nextcloud                | cloud          | ✓        | `nextcloud.andreasmaita.com`       |
 
 ---
 
@@ -508,6 +590,7 @@ ${DATA_ROOT}/               (set in .env, default: ~/homelab-data)
 │   ├── tv/                 ← Sonarr root folder
 │   ├── music/              ← Lidarr root folder + Navidrome library
 │   ├── audiobooks/         ← Audiobookshelf library
+│   ├── podcasts/           ← Audiobookshelf library
 │   ├── books/              ← Calibre-Web library (must contain metadata.db)
 │   ├── comics/             ← Komga library
 │   └── manga/              ← Komga library
@@ -551,20 +634,20 @@ ${DATA_ROOT}/               (set in .env, default: ~/homelab-data)
 
 ### Auth Tiers
 
-| Route                          | Protection                                    |
-| ------------------------------ | --------------------------------------------- |
-| `auth.andreasmaita.com`      | None (it IS the auth portal)                  |
-| `vault.andreasmaita.com`     | Authelia 2FA + Vaultwarden own login          |
-| `paperless.andreasmaita.com` | Authelia 2FA + Paperless own login            |
-| `pdf.andreasmaita.com`       | Authelia 2FA + Stirling PDF own login         |
-| `immich.andreasmaita.com`    | Immich own login (Authelia breaks mobile app) |
-| `jellyfin.andreasmaita.com`  | Jellyfin own login                            |
-| `git.andreasmaita.com`       | Forgejo own login                             |
-| `abs.andreasmaita.com`       | ABS own login                                 |
-| `seerr.andreasmaita.com`     | Authelia one_factor                           |
-| `yamtrack.andreasmaita.com`  | Authelia 2FA                                  |
-| `homepage.andreasmaita.com`  | Authelia 2FA                                  |
-| All other domains              | Authelia 2FA (default_policy: two_factor)     |
+| Route                          | Protection                                                                       |
+| ------------------------------ | -------------------------------------------------------------------------------- |
+| `auth.andreasmaita.com`      | None (it IS the auth portal)                                                     |
+| `vault.andreasmaita.com`     | Vaultwarden own login + built-in 2FA (TOTP/WebAuthn — no Authelia forward_auth) |
+| `paperless.andreasmaita.com` | Authelia 2FA + Paperless own login                                               |
+| `pdf.andreasmaita.com`       | Authelia 2FA + Stirling PDF own login                                            |
+| `immich.andreasmaita.com`    | Immich own login (Authelia breaks mobile app)                                    |
+| `jellyfin.andreasmaita.com`  | Jellyfin own login                                                               |
+| `git.andreasmaita.com`       | Forgejo own login                                                                |
+| `abs.andreasmaita.com`       | ABS own login                                                                    |
+| `seerr.andreasmaita.com`     | Authelia one_factor                                                              |
+| `yamtrack.andreasmaita.com`  | Authelia 2FA                                                                     |
+| `homepage.andreasmaita.com`  | Authelia 2FA                                                                     |
+| All other domains              | Authelia 2FA (default_policy: two_factor)                                        |
 
 ### Authelia Fallback & Recovery
 
@@ -602,39 +685,39 @@ in `.env.example` with instructions.
 
 ### Removed (and why)
 
-| Service                           | Reason                                                                              |
-| --------------------------------- | ----------------------------------------------------------------------------------- |
-| `jackett`                       | Prowlarr contains every indexer Jackett has; running both is redundant overhead     |
-| `lazylibrarian`                 | Removed; Prowlarr's search tab + ABS built-in Online Sources cover manual discovery |
-| `readarr`                       | User prefers manual search + Calibre-Web (reading) over automated Readarr           |
-| `bookbounty`                    | Manual book requests handled via Prowlarr search tab directly                       |
-| `audiobookbay-downloader`       | Audiobookshelf built-in Online Sources search replaces this custom script           |
-| `profilarr`                     | Overlaps with Recyclarr; Recyclarr is more established (TRaSH Guides integration)   |
-| `cleanuparr`                    | Maintainerr is more feature-complete for the same purpose                           |
-| `crosswatch` *(reconsidered)* | Kept — provides cross-service watch sync Yamtrack doesn't do                       |
-| `prometheus`                    | Heavyweight for single-server; removed with Grafana and node-exporter               |
-| `grafana`                       | Removed with Prometheus stack                                                       |
-| `node-exporter`                 | Removed with Prometheus stack                                                       |
-| `feishin`                       | Removed per user request — Navidrome's own web UI is sufficient                    |
-| `octo-fiesta`                   | Tested and not working well; removed                                                |
-| `romm`                          | Removed — not in use                                                               |
-| `wizarr`                        | Removed — no need for user invitation system (solo homelab)                        |
-| `kiwix`                         | Removed — not in active use                                                        |
-| `libreoffice`                   | Removed — replaced by Nextcloud Office (built-in WASM)                             |
-| `youtarr`                       | Removed — not in use                                                               |
-| `listenarr`                     | Removed — not in use                                                               |
-| `monica`                        | Kept*(was on removal list; user confirmed keep)*                                  |
+| Service                           | Reason                                                                                         |
+| --------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `jackett`                       | Prowlarr contains every indexer Jackett has; running both is redundant overhead                |
+| `lazylibrarian`                 | Replaced by Shelfmark — unified search UI with Prowlarr, IRC, Usenet, and direct HTTP sources |
+| `readarr`                       | User prefers manual search + Calibre-Web (reading) over automated Readarr                      |
+| `bookbounty`                    | Replaced by Shelfmark — same search-on-demand workflow with a better UI and more source types |
+| `audiobookbay-downloader`       | Audiobookshelf built-in Online Sources search replaces this custom script                      |
+| `profilarr`                     | Overlaps with Recyclarr; Recyclarr is more established (TRaSH Guides integration)              |
+| `cleanuparr`                    | Maintainerr is more feature-complete for the same purpose                                      |
+| `crosswatch` *(reconsidered)* | Kept — provides cross-service watch sync Yamtrack doesn't do                                  |
+| `prometheus`                    | Heavyweight for single-server; removed with Grafana and node-exporter                          |
+| `grafana`                       | Removed with Prometheus stack                                                                  |
+| `node-exporter`                 | Removed with Prometheus stack                                                                  |
+| `feishin`                       | Removed per user request — Navidrome's own web UI is sufficient                               |
+| `octo-fiesta`                   | Tested and not working well; removed                                                           |
+| `romm`                          | Removed — not in use                                                                          |
+| `wizarr`                        | Removed — no need for user invitation system (solo homelab)                                   |
+| `kiwix`                         | Removed — not in active use                                                                   |
+| `libreoffice`                   | Removed — replaced by Nextcloud Office (built-in WASM)                                        |
+| `youtarr`                       | Removed — not in use                                                                          |
+| `listenarr`                     | Removed — not in use                                                                          |
+| `monica`                        | Kept*(was on removal list; user confirmed keep)*                                               |
 
 ### Added (and why)
 
-| Service                         | Reason                                                                                    |
-| ------------------------------- | ----------------------------------------------------------------------------------------- |
-| `nextcloud`                   | Google Drive/Docs replacement; cloud file storage + Nextcloud Office for document editing |
-| `dockge`                      | Web-based stack manager — restart containers and update stacks without SSH               |
-| `docker-socket-proxy`         | Security: limits Docker socket access for Homepage (read-only)                            |
-| `sabnzbd` *(commented out)* | Usenet client placeholder — enable when a paid provider is subscribed                    |
-| `shelfmark`                 | Unified manual book + audiobook search UI; replaces Bookbounty + LazyLibrarian; supports Prowlarr, IRC, Usenet, direct HTTP sources |
-| `scrutiny-collector`          | Standalone NVMe health monitoring — retained despite removing Prometheus stack           |
+| Service                         | Reason                                                                                                                              |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `nextcloud`                   | Google Drive/Docs replacement; cloud file storage + Nextcloud Office for document editing                                           |
+| `dockge`                      | Web-based stack manager — restart containers and update stacks without SSH                                                         |
+| `docker-socket-proxy`         | Security: limits Docker socket access for Homepage (read-only)                                                                      |
+| `sabnzbd` *(commented out)* | Usenet client placeholder — enable when a paid provider is subscribed                                                              |
+| `shelfmark`                   | Unified manual book + audiobook search UI; replaces Bookbounty + LazyLibrarian; supports Prowlarr, IRC, Usenet, direct HTTP sources |
+| `scrutiny-collector`          | Standalone NVMe health monitoring — retained despite removing Prometheus stack                                                     |
 
 ### Retained with Notes
 
@@ -722,6 +805,12 @@ For heavy document editing, the desktop LibreOffice with Nextcloud sync is faste
 The current layout (`stacks/`, `config/`, `data/`, `scripts/`, `backups/`) is standard homelab
 best practice. No changes needed.
 
+A `Taskfile.yaml` in the repo root replaces the `scripts/up-all.sh`, `down-all.sh`,
+`compose-pull-all.sh`, and `restart-update-all.sh` files. Install the `task` binary
+(`paru -S go-task-bin` on CachyOS) or run it as a Docker container. Three short scripts
+(`backup-dbs.sh`, `generate-secrets.sh`, `update-qbt-port.sh`) are retained because they
+have no meaningful container substitute.
+
 **Multiple compose files per stack** is the correct Docker approach for separation of concerns:
 
 - `compose.yaml` — core services (always applied)
@@ -732,21 +821,86 @@ best practice. No changes needed.
 Docker Compose v2 auto-merges `compose.override.yaml` when both files share the same directory.
 All other non-standard filenames require explicit `-f` flags, which is what the scripts do.
 
-### Script Analysis & Replacement Candidates
+### Script Analysis & Replacements
 
-| Script                   | Role                                  | Better alternative?                                                    |
-| ------------------------ | ------------------------------------- | ---------------------------------------------------------------------- |
-| `up-all.sh`            | Start all stacks                      | Dockge UI (single-file stacks only); keep script for multi-file stacks |
-| `down-all.sh`          | Stop all stacks                       | Same as above                                                          |
-| `restart-update-all.sh`| Pull images + restart all             | Watchtower (image updates, opt-in via labels); Dockge for manual restarts; **git pull + config sync steps must stay as script** |
-| `compose-pull-all.sh`  | Pull images without restart           | Covered by Watchtower or Dockge; keep for manual use                   |
-| `backup.sh`            | Restic snapshot                       | Restic IS the best practice — the shell wrapper is correct             |
-| `backup-dbs.sh`        | Dump Postgres/SQLite DBs              | Standard pattern; no containerised replacement adds value               |
-| `generate-secrets.sh`  | Generate `.env` secrets               | Fine as-is; self-hosted Infisical is overkill for a single-machine homelab |
-| `setup-uptime-kuma.sh` | Bootstrap Uptime Kuma monitors via API | No better alternative for this automation approach                     |
+The custom `scripts/` bash files are replaced with standard tooling where possible.
+Only scripts with no viable container/binary substitute are retained.
 
-**Conclusion:** Watchtower + Dockge replace the automated image-update and per-stack-restart
-use cases. All multi-file-stack orchestration and one-time bootstrap scripts remain necessary.
+#### Taskfile — replaces orchestration scripts
+
+**[Taskfile](https://taskfile.dev)** (`ghcr.io/go-task/task:latest` or install binary) replaces
+`up-all.sh`, `down-all.sh`, `compose-pull-all.sh`, and `restart-update-all.sh`. A `Taskfile.yaml`
+in the repo root defines reproducible, documented tasks that run the same `docker compose` commands
+without bespoke bash logic.
+
+Install on CachyOS: `paru -S go-task-bin` (AUR) or download binary from GitHub releases.
+
+```yaml
+# Taskfile.yaml (repo root — illustrative structure)
+version: "3"
+tasks:
+  up:
+    desc: "Start all stacks"
+    cmds:
+      - docker compose -p infrastructure -f stacks/infrastructure/compose.yaml up -d
+      - docker compose -p monitoring -f stacks/monitoring/compose.yaml up -d
+      # ... remaining stacks in order
+  down:
+    desc: "Stop all stacks"
+    cmds:
+      - docker compose -p services -f stacks/services/compose.yaml -f stacks/services/compose.db.yaml down
+      # ... reverse order
+  pull:
+    desc: "Pull latest images for all stacks"
+    cmds:
+      - for: [infrastructure, monitoring, downloads, arr, media, cloud, home, services]
+        cmd: docker compose -p {{.ITEM}} -f stacks/{{.ITEM}}/compose.yaml pull
+  backup:
+    desc: "Dump databases then trigger Backrest snapshot"
+    cmds:
+      - bash scripts/backup-dbs.sh
+      - docker exec backrest backrest backup --plan homelab
+```
+
+> Dockge handles **per-stack** restarts and single-compose-file stacks via the web UI.
+> Taskfile handles **multi-stack orchestration** and multi-file stacks from the CLI.
+
+#### Backrest — replaces backup.sh + cron
+
+**[Backrest](https://github.com/garethgeorge/backrest)** (`ghcr.io/garethgeorge/backrest:latest`)
+is a web UI and scheduler built on Restic. It runs as a container in the monitoring stack (port 20211)
+and replaces the `scripts/backup.sh` cron job entirely:
+
+- Configure backup plans and schedules from the web UI (no cron needed)
+- Pre-backup hook: calls `scripts/backup-dbs.sh` to dump Postgres before each snapshot
+- Supports Backblaze B2 (and any other Restic backend) — configure with `RESTIC_S3_KEY_ID/SECRET`
+- Browse and restore snapshots from the UI
+- Notifications via Discord/Gotify/Healthchecks
+
+`scripts/backup-dbs.sh` is **retained** — it is called as a Backrest pre-backup hook and is a short,
+reliable script with no container substitute.
+
+#### Uptime Kuma JSON — replaces setup-uptime-kuma.sh
+
+The complex Python bootstrap script (`scripts/setup-uptime-kuma.sh`) is replaced by Uptime Kuma's
+built-in backup/restore:
+
+1. After initial setup, go to **Settings → Backup → Export**
+2. Commit the JSON to `config/uptime-kuma/monitors.json`
+3. On rebuild, **Import** the file to restore all monitors instantly
+
+No script, no API calls, no Python dependencies. `scripts/setup-uptime-kuma.sh` can be deleted.
+
+#### Retained scripts
+
+| Script                   | Reason retained                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------- |
+| `backup-dbs.sh`        | Called as Backrest pre-backup hook; dumps Immich, Paperless, Joplin Postgres          |
+| `generate-secrets.sh`  | One-time `.env` secret generation; no container substitute adds value                |
+| `update-qbt-port.sh`   | Called by Gluetun's `VPN_PORT_FORWARDING_UP_COMMAND`; Gluetun-specific, no substitute |
+
+**Conclusion:** Backrest replaces `backup.sh`. Taskfile replaces the four orchestration scripts.
+Uptime Kuma JSON import replaces `setup-uptime-kuma.sh`. Three short scripts are kept.
 
 ---
 
@@ -760,23 +914,25 @@ Since only **Audiobookshelf** and **Immich** data is worth migrating, do this be
 
 #### Data to migrate
 
-| What | Current path | Why |
-| ---- | ------------ | --- |
-| ABS config + metadata | `data/audiobookshelf/config/` | Users, progress, library metadata |
-| ABS metadata cache | `data/audiobookshelf/metadata/` | Cover art, podcasts cache |
-| Audiobook media files | Wherever ABS currently points (check ABS → Settings → Libraries) | The actual audio files |
-| Immich photos/videos | `data/immich_upload/` | library/, profile/, thumbs/, upload/, encoded-video/ |
-| Immich database | Dump via `backup-dbs.sh` | All album/people/metadata — required for Immich restore |
+| What                  | Current path                                                       | Why                                                      |
+| --------------------- | ------------------------------------------------------------------ | -------------------------------------------------------- |
+| ABS config + metadata | `data/audiobookshelf/config/`                                    | Users, progress, library metadata                        |
+| ABS metadata cache    | `data/audiobookshelf/metadata/`                                  | Cover art, podcasts cache                                |
+| Audiobook media files | Wherever ABS currently points (check ABS → Settings → Libraries) | The actual audio files                                   |
+| Immich photos/videos  | `data/immich_upload/`                                            | library/, profile/, thumbs/, upload/, encoded-video/     |
+| Immich database       | Dump via `backup-dbs.sh`                                         | All album/people/metadata — required for Immich restore |
 
 #### Migration steps
 
 **Option A — Same machine rebuild (data dirs stay put):**
 
-If `DATA_ROOT` and `CONFIG_ROOT` in `.env` stay the same, the data survives the rebuild automatically. Just ensure the containers are stopped cleanly before `docker compose down` and the volumes point to the same host paths.
+The new Immich compose volume mount uses `${DATA_ROOT}/photos` as the upload path, but the current
+data lives at `data/immich_upload/` (repo-local). You must either move the data to the new path
+**or** point the new compose file at the old path. Moving is cleaner:
 
 ```bash
 # 1. Dump databases BEFORE stopping anything
-./scripts/backup-dbs.sh                     # creates backups/immich-YYYY-MM-DD.sql etc.
+bash scripts/backup-dbs.sh                  # creates backups/immich-YYYY-MM-DD.sql etc.
 
 # 2. Stop only the containers whose data you care about
 docker compose -p media stop audiobookshelf
@@ -785,6 +941,12 @@ docker compose -p cloud stop immich-server immich-machine-learning immich-postgr
 # 3. Verify data dirs are intact before proceeding
 ls -lh data/audiobookshelf/
 ls -lh data/immich_upload/
+
+# 4. Move Immich upload data to the new DATA_ROOT location
+#    (DATA_ROOT must be set in .env first)
+mkdir -p ${DATA_ROOT}/photos
+mv data/immich_upload/* ${DATA_ROOT}/photos/
+# data/immich_upload/ can be removed after verifying the new path
 ```
 
 **Option B — Different machine / path change:**
@@ -797,8 +959,8 @@ docker exec immich-postgres pg_dumpall -U postgres > backups/immich-full-$(date 
 rsync -avP data/audiobookshelf/ NEW_SERVER:/path/to/data/audiobookshelf/
 rsync -avP /path/to/audiobook/media/ NEW_SERVER:/path/to/media/audiobooks/
 
-# 3. rsync Immich upload directory
-rsync -avP data/immich_upload/ NEW_SERVER:/path/to/data/immich_upload/
+# 3. rsync Immich upload directory to new DATA_ROOT path
+rsync -avP data/immich_upload/ NEW_SERVER:${DATA_ROOT}/photos/
 
 # 4. On new server — restore Immich Postgres AFTER immich-postgres container is up
 #    but BEFORE immich-server starts (stop immich-server first)
@@ -818,16 +980,18 @@ docker exec -i immich-postgres psql -U postgres < backups/immich-full-YYYY-MM-DD
 
 #### Pre-rebuild checklist
 
-- [ ] Run `./scripts/backup-dbs.sh` — database dumps to `backups/`
-- [ ] Run `./scripts/backup.sh` — full Restic backup
+- [ ] Run `bash scripts/backup-dbs.sh` — database dumps to `backups/`
+- [ ] Run `bash scripts/backup.sh` (or trigger Backrest manual snapshot if already running) — full Restic backup
 - [ ] Commit current config to git + push to GitHub
 - [ ] Export Bitwarden vault as encrypted JSON (offline backup)
+- [ ] Export Uptime Kuma monitors: Settings → Backup → Export → save as `config/uptime-kuma/monitors.json`
 - [ ] Note all API keys currently in use (Radarr, Sonarr, Prowlarr etc.)
 - [ ] Verify `data/audiobookshelf/` and `data/immich_upload/` are intact
 - [ ] Create `homelab_net` bridge: `docker network create homelab_net`
 
 ### Phase 1 — Infrastructure Core
 
+- [ ] Remove or archive the existing `stacks/infrastructure/Dockerfile.caddy` — caddy-docker-proxy uses its own pre-built image (`lucaslorentz/caddy-docker-proxy:ci-alpine`) and does not require a custom Dockerfile
 - [ ] Deploy `caddy-docker-proxy` (replace `caddy:2-alpine`)
 - [ ] Deploy `cloudflared` with `TUNNEL_TOKEN`
 - [ ] Verify CF Tunnel connects and caddy serves a test page
@@ -839,10 +1003,11 @@ docker exec -i immich-postgres psql -U postgres < backups/immich-full-YYYY-MM-DD
 ### Phase 2 — Monitoring
 
 - [ ] Deploy `uptime-kuma` (V2 image: `louislam/uptime-kuma:2`)
-- [ ] Run `scripts/setup-uptime-kuma.sh` to bootstrap initial monitors
+- [ ] Import `config/uptime-kuma/monitors.json` via Settings → Backup to restore monitors (or build manually if first-ever setup)
 - [ ] Deploy `dockge` — verify stack management works
 - [ ] Deploy `scrutiny` + `scrutiny-collector` — verify NVMe data appears
 - [ ] Deploy `homepage` with Docker socket proxy
+- [ ] Deploy `backrest` — configure B2 repo with `RESTIC_S3_KEY_ID/SECRET`; add pre-backup hook calling `backup-dbs.sh`; schedule nightly backup plan
 
 ### Phase 3 — Downloads
 
@@ -865,39 +1030,44 @@ docker exec -i immich-postgres psql -U postgres < backups/immich-full-YYYY-MM-DD
 
 ### Phase 5 — Media Servers
 
-- [ ] Deploy `jellyfin` — configure VA-API, add media libraries
-- [ ] Deploy `navidrome` — point at music library
-- [ ] Deploy `audiobookshelf` — point at audiobooks + podcasts
-- [ ] Deploy `calibre-web` — point at books library (requires `metadata.db`)
-- [ ] Deploy `komga` — configure comics + manga libraries
+- [ ] Deploy `jellyfin` — configure VA-API, add media libraries (Movies, TV, Music, Audiobooks, Podcasts — all from `/data/media/`)
+- [ ] Deploy `navidrome` — point at `/data/media/music`
+- [ ] Deploy `audiobookshelf` — add libraries: Audiobooks (`/data/media/audiobooks`), Podcasts (`/data/media/podcasts`), Music (optional, `/data/media/music`), Books (optional, `/data/media/books`)
+- [ ] Deploy `calibre-web` — point at `/data/media/books` (requires `metadata.db`)
+- [ ] Deploy `komga` — configure comics (`/data/media/comics`) and manga (`/data/media/manga`) libraries
 - [ ] Deploy `seerr` — connect to Radarr + Sonarr
 - [ ] Deploy `yamtrack` + `yamtrack-redis` — configure Trakt/AniList/Steam OAuth
 - [ ] Deploy `crosswatch` — configure sync sources
 
 ### Phase 6 — Cloud Services
 
-- [ ] Start cloud databases: `compose.db.yaml`
+- [ ] Start cloud databases: `compose.db.yaml` (Immich Postgres + Redis, Nextcloud Postgres + Redis)
 - [ ] Deploy `immich` — configure upload location, verify Tailscale upload works
-- [ ] Deploy `forgejo` — disable registration after creating account
-- [ ] Deploy `vaultwarden` — set `SIGNUPS_ALLOWED=false`, configure 2FA
+- [ ] Deploy `forgejo` — set `FORGEJO__server__ROOT_URL` in `.env` before first start; disable registration after creating account
+- [ ] Deploy `vaultwarden` — `SIGNUPS_ALLOWED=false`, generate and set `ADMIN_TOKEN` hash, configure 2FA
 - [ ] Migrate Bitwarden vault to Vaultwarden (test with one non-critical entry first)
-- [ ] Deploy `nextcloud` + configure proxy trust, install Nextcloud Office app
-- [ ] Deploy `paperless-ngx` — configure consumption directory
+- [ ] Deploy `nextcloud` — verify `OVERWRITEPROTOCOL`, `OVERWRITEHOST`, `NEXTCLOUD_TRUSTED_DOMAINS` in `.env` before first start; then install Nextcloud Office app via the Apps menu
 
 ### Phase 7 — Home & Services
 
 - [ ] Deploy `home-assistant` — complete onboarding wizard
-- [ ] Deploy services databases: `compose.db.yaml`
+- [ ] Start services databases: `compose.db.yaml` (Paperless Postgres + Redis, Joplin Postgres)
+- [ ] Deploy `paperless-ngx` — superuser created from `PAPERLESS_ADMIN_USER/PASSWORD` env vars on first start; configure consumption directory after
 - [ ] Deploy `actual-budget`, `mealie`, `joplin`, `stirling-pdf`
+  - Mealie: `DEFAULT_EMAIL` + `DEFAULT_PASSWORD` set in `.env` before first start
+  - Joplin: `APP_BASE_URL` must match domain before first start
+  - Stirling PDF: credentials set in `config/stirling-pdf/settings.yml` (already tracked)
 - [ ] Deploy `monica`, `drawio`, `excalidraw`, `it-tools`
+  - Monica: `APP_KEY` must be set in `.env` before first start (format: `base64:...`)
 
 ### Phase 8 — Hardening & Final Config
 
 - [ ] Disable signups/registration on all services (see Security Model above)
 - [ ] Verify all Authelia 2FA routes are protected
 - [ ] Verify Homepage shows all services via Docker labels
-- [ ] Verify Uptime Kuma monitors are active; add any missing services manually
-- [ ] Set up Restic backup cron: `0 3 * * * /path/to/scripts/backup.sh`
+- [ ] Verify Uptime Kuma monitors are active; export monitors JSON → commit to `config/uptime-kuma/monitors.json`
+- [ ] Verify Backrest scheduled backup runs and snapshot appears in the UI; test restore of one file
+- [ ] Run `task backup` (or `bash scripts/backup-dbs.sh && docker exec backrest backrest backup --plan homelab`) to verify end-to-end backup works
 - [ ] Push final config to GitHub + Forgejo
 
 ### Phase 9 — SABnzbd (when provider is ready)
@@ -911,51 +1081,187 @@ docker exec -i immich-postgres psql -U postgres < backups/immich-full-YYYY-MM-DD
 
 ## 11. Key Environment Variables
 
-Variables needed in `.env` for the new setup (additions/changes from old setup):
+Complete `.env` reference for the new setup. Copy `.env.example` to `.env` and fill in.
+Run `bash scripts/generate-secrets.sh` after copying to auto-generate all random secrets.
 
 ```bash
-# ─── New services ───────────────────────────────────────────────────
-NEXTCLOUD_PORT=20460
-NEXTCLOUD_DB_PASSWORD=                  # generate: openssl rand -hex 32
-NEXTCLOUD_REDIS_PASSWORD=               # generate: openssl rand -hex 32
+# ─── Core ────────────────────────────────────────────────────────────────────
+TZ=Europe/London
+PUID=1000
+PGID=1000
+
+# ─── Paths ───────────────────────────────────────────────────────────────────
+DATA_ROOT=/home/a-p-maita/homelab-data  # absolute path; NOT inside the repo
+# UPLOAD_LOCATION: Immich-specific var consumed by the upstream compose.yaml
+# Docker Compose resolves $DATA_ROOT at runtime so this reference works:
+UPLOAD_LOCATION=${DATA_ROOT}/photos
+
+# ─── Cloudflare ───────────────────────────────────────────────────────────────
+TUNNEL_TOKEN=                           # dash.cloudflare.com → Zero Trust → Tunnels → your tunnel → Token
+CLOUDFLARED_PORT=20280
+
+# ─── VPN (optional) ───────────────────────────────────────────────────────────
+USE_VPN=false                           # set true to apply compose.vpn.yaml overlay on arr stack
+OPENVPN_USER=                           # ProtonVPN: account.proton.me → VPN → OpenVPN/IKEv2 credentials
+OPENVPN_PASSWORD=                       # separate from your ProtonVPN login — these are VPN account creds
+PROTONVPN_SERVER_COUNTRIES=Netherlands  # P2P-capable country list
+HEALTH_VPN_DURATION_INITIAL=120s
+
+# ─── Authelia (run generate-secrets.sh) ──────────────────────────────────────
+AUTHELIA_JWT_SECRET=                    # openssl rand -hex 64
+AUTHELIA_SESSION_SECRET=               # openssl rand -hex 32
+AUTHELIA_STORAGE_ENCRYPTION_KEY=       # openssl rand -hex 32
+
+# ─── qBittorrent ─────────────────────────────────────────────────────────────
+QBITTORRENT_WEBUI_PORT=20050
+QBITTORRENT_TCP_PORT=20051
+QBITTORRENT_UDP_PORT=20052
+QBITTORRENT_WEBUI_USER=a-p-maita
+QBITTORRENT_WEBUI_PASS=               # strong password; used by arr apps to authenticate
+
+# ─── Immich ───────────────────────────────────────────────────────────────────
+# ⚠ Pin IMMICH_VERSION to the exact release you install.
+# Never bump version during or after a migration without reading the release notes.
+IMMICH_VERSION=release                  # e.g. v1.131.0 — check github.com/immich-app/immich/releases
+DB_PASSWORD=                            # generate-secrets.sh; used directly by upstream compose.yaml
+DB_USERNAME=postgres
+DB_DATABASE_NAME=immich
+
+# ─── Nextcloud ────────────────────────────────────────────────────────────────
+# ⚠ All four vars below MUST be set before the very first container start.
+# Changing them post-init requires running `occ config:system:set` manually.
 NEXTCLOUD_ADMIN_USER=a-p-maita
 NEXTCLOUD_ADMIN_PASSWORD=               # set before first start
+NEXTCLOUD_DB_PASSWORD=                  # generate-secrets.sh
+NEXTCLOUD_REDIS_PASSWORD=               # generate-secrets.sh
+NEXTCLOUD_TRUSTED_DOMAINS=nextcloud.andreasmaita.com 100.106.40.5
+OVERWRITEPROTOCOL=https
+OVERWRITEHOST=nextcloud.andreasmaita.com
+OVERWRITECLIURL=https://nextcloud.andreasmaita.com
 
+# ─── Forgejo ──────────────────────────────────────────────────────────────────
+# Double-underscore vars map to app.ini: FORGEJO__<Section>__<Key>
+FORGEJO__server__ROOT_URL=https://git.andreasmaita.com/
+FORGEJO__server__SSH_DOMAIN=git.andreasmaita.com
+FORGEJO__server__DOMAIN=git.andreasmaita.com
+FORGEJO__server__HTTP_PORT=3000
+FORGEJO__server__OFFLINE_MODE=false
+
+# ─── Vaultwarden ──────────────────────────────────────────────────────────────
+VAULTWARDEN_SIGNUPS_ALLOWED=false
+# Admin token: Argon2 hash of your admin password (NOT the plain password)
+# Generate: docker run --rm -it vaultwarden/server /vaultwarden hash --preset owasp
+# Leave blank to disable the admin panel entirely (safe for solo use)
+VAULTWARDEN_ADMIN_TOKEN=
+
+# ─── Paperless-ngx ────────────────────────────────────────────────────────────
+PAPERLESS_SECRET_KEY=                   # generate-secrets.sh
+PAPERLESS_ADMIN_USER=a-p-maita
+PAPERLESS_ADMIN_MAIL=admin@andreasmaita.com
+PAPERLESS_ADMIN_PASSWORD=               # set before first start; account created on first start
+PAPERLESS_DB_PASSWORD=                  # generate-secrets.sh
+PAPERLESS_URL=https://paperless.andreasmaita.com
+
+# ─── Joplin ───────────────────────────────────────────────────────────────────
+JOPLIN_DB_PASSWORD=                     # generate-secrets.sh
+JOPLIN_BASE_URL=https://joplin.andreasmaita.com  # clients connect to this URL
+
+# ─── Mealie ───────────────────────────────────────────────────────────────────
+MEALIE_DEFAULT_EMAIL=admin@andreasmaita.com
+MEALIE_DEFAULT_PASSWORD=               # set before first start; change after first login
+MEALIE_BASE_URL=https://mealie.andreasmaita.com
+
+# ─── Monica ───────────────────────────────────────────────────────────────────
+# ⚠ Required before first start. Format MUST be base64:<key>
+# Generate: echo "base64:$(openssl rand -base64 32)"
+MONICA_APP_KEY=
+
+# ─── Yamtrack ─────────────────────────────────────────────────────────────────
+YAMTRACK_SECRET=                        # generate-secrets.sh
+YAMTRACK_EXTERNAL_URL=https://yamtrack.andreasmaita.com
+YAMTRACK_REGISTRATION=False
+YAMTRACK_TMDB_API=                      # optional — themoviedb.org/settings/api (v3 key)
+# OAuth apps — register redirect URIs at each provider before using Import:
+YAMTRACK_TRAKT_CLIENT_ID=               # trakt.tv/oauth/applications
+YAMTRACK_TRAKT_CLIENT_SECRET=           # redirect: https://yamtrack.andreasmaita.com/import/trakt/private
+YAMTRACK_ANILIST_CLIENT_ID=             # anilist.co/settings/developer
+YAMTRACK_ANILIST_CLIENT_SECRET=         # redirect: https://yamtrack.andreasmaita.com/import/anilist/private
+YAMTRACK_SIMKL_CLIENT_ID=              # simkl.com/settings/developer
+YAMTRACK_SIMKL_CLIENT_SECRET=          # redirect: https://yamtrack.andreasmaita.com/import/simkl/private
+STEAM_API_KEY=                          # optional — steamcommunity.com/dev/apikey
+
+# ─── Backups ──────────────────────────────────────────────────────────────────
+RESTIC_BACKUP_PASSWORD=                 # generate-secrets.sh; used as Restic repo password in Backrest
+RESTIC_S3_KEY_ID=                       # Backblaze B2 application key ID (configure in Backrest UI → Repository)
+RESTIC_S3_SECRET=                       # Backblaze B2 application key secret
+
+# ─── Uptime Kuma ──────────────────────────────────────────────────────────────
+# Monitors seeded from config/uptime-kuma/monitors.json via Settings → Backup → Import
+UPTIMEKUMA_USER=a-p-maita
+UPTIMEKUMA_PASS=
+
+# ─── API keys (fill in after each service is running) ─────────────────────────
+RADARR_API_KEY=                         # Settings → General
+SONARR_API_KEY=                         # Settings → General
+PROWLARR_API_KEY=                       # Settings → General
+LIDARR_API_KEY=                         # Settings → General
+BAZARR_API_KEY=                         # Settings → General (Homepage widget)
+JELLYFIN_API_KEY=                       # Dashboard → API Keys
+SEERR_API_KEY=                          # Settings → General
+ABS_API_KEY=                            # Settings → Security
+
+# ─── Port allocations ─────────────────────────────────────────────────────────
+# Infrastructure
+HOMEPAGE_PORT=20200
+UPTIME_KUMA_PORT=20201
 DOCKGE_PORT=20202
 SCRUTINY_PORT=20210
+BACKREST_PORT=20211
 
+# Media
+ABS_PORT=20020
+YAMTRACK_PORT=20041
+CROSSWATCH_PORT=20042
+
+# Downloads
+PROWLARR_PORT=20055
+AUTOBRR_PORT=20074
+
+# Arr
+RADARR_PORT=20056
+SONARR_PORT=20057
+LIDARR_PORT=20058
+BAZARR_PORT=20059
 SHELFMARK_PORT=20079
-
 MAINTAINERR_PORT=20400
-DRAWIO_PORT=20401
-EXCALIDRAW_PORT=20402
-IT_TOOLS_PORT=20403
-MONICA_PORT=20390
 
-# ─── Ports renamed/changed ──────────────────────────────────────────
-PROWLARR_PORT=20055                     # was: default 9696
-RADARR_PORT=20056                       # was: default 7878
-SONARR_PORT=20057                       # was: default 8989
-LIDARR_PORT=20058                       # was: default 8686
-BAZARR_PORT=20059                       # was: default 6767
+# Media servers
 JELLYFIN_PORT=20330
 SEERR_PORT=20331
 NAVIDROME_PORT=20070
 CALIBREWEB_PORT=20078
 KOMGA_PORT=20077
+
+# ─── Cloud
 FORGEJO_PORT=20110
 FORGEJO_SSH_PORT=20111
-PAPERLESS_PORT=20301
+IMMICH_PORT=2283
 VAULTWARDEN_PORT=20315
-IMMICH_PORT=20450
-UPTIME_KUMA_PORT=20201
+NEXTCLOUD_PORT=20460
+
+# Services
+PAPERLESS_PORT=20301
 HOME_ASSISTANT_PORT=20340
 ACTUAL_BUDGET_PORT=20350
 MEALIE_PORT=20360
 JOPLIN_PORT=20370
 STIRLING_PDF_PORT=20380
+MONICA_PORT=20390
+DRAWIO_PORT=20401
+EXCALIDRAW_PORT=20402
+IT_TOOLS_PORT=20403
 
-# ─── SABnzbd (placeholder — uncomment when provider ready) ──────────
+# SABnzbd (uncomment when provider ready)
 # SABNZBD_PORT=20300
 # SABNZBD_API_KEY=
 ```

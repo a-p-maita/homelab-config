@@ -1,6 +1,9 @@
 services:
   immich-server:
     container_name: immich-server
+    # Port: keep upstream default 2283:2283 — do NOT override.
+    # Immich mobile clients connect via Tailscale to 100.106.40.5:2283 and cannot be
+    # easily reconfigured. The upstream compose.yaml already publishes 2283:2283.
     # NEVER add watchtower label — update manually by bumping IMMICH_VERSION in .env
     # then: docker compose pull && docker compose up -d
     environment:
