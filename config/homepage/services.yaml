@@ -59,11 +59,6 @@
         description: Jellyfin invitation and invite management
         icon: mdi-account-plus
         siteMonitor: https://join.andreasmaita.com
-    - Octo-Fiesta:
-        href: https://octo-fiesta.andreasmaita.com
-        description: Subsonic API proxy for high-resolution music playback
-        icon: mdi-cloud-music
-        siteMonitor: https://octo-fiesta.andreasmaita.com
 
 - "External - Cloud & Code":
     - Immich:

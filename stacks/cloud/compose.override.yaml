@@ -119,5 +119,9 @@ services:
 networks:
   homelab_net:
     external: true
+  proxy_net:
+    external: true
+  immich_internal:
+    internal: true
   cloud_internal:
     internal: true

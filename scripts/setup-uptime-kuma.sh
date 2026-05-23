@@ -149,13 +149,6 @@ MONITORS = [
         "url":      "http://bookbounty:5000",
         "interval": 60,
     },
-    {
-        "name":     "Octo-Fiesta",
-        "type":     MonitorType.HTTP,
-        # Root path returns {"ok":true} with 200 — confirmed health endpoint
-        "url":      "http://octo-fiesta:8080/",
-        "interval": 60,
-    },
     # ── Media stack ──────────────────────────────────────────────────────────
     {
         "name":     "Jellyfin",
@@ -399,12 +392,6 @@ MONITORS = [
         "name":     "Feishin (external)",
         "type":     MonitorType.HTTP,
         "url":      "https://feishin.andreasmaita.com",
-        "interval": 120,
-    },
-    {
-        "name":     "Octo-Fiesta (external)",
-        "type":     MonitorType.HTTP,
-        "url":      "https://octo-fiesta.andreasmaita.com",
         "interval": 120,
     },
     {
