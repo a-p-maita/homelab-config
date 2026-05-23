@@ -120,8 +120,8 @@ Steps:
 Verification:
 
 - `docker network ls` shows the expected internal networks.
-- `docker exec docker-socket-proxy curl -sf http://docker-socket-proxy:2375/_ping`
-- `docker network inspect socket_internal` contains only socket-aware services.
+- `docker exec caddy sh -lc 'wget -qO- http://docker-socket-proxy:2375/_ping'`
+- `docker network inspect socket_internal` contains only socket-aware services (homepage, watchtower, docker-socket-proxy, caddy).
 
 ---
 
@@ -134,11 +134,13 @@ Steps:
 1. Confirm `caddy` is using `lucaslorentz/caddy-docker-proxy:ci-alpine`.
 2. Remove stale Caddy config files/Dockerfile if they exist only for the old static proxy.
 3. Add labels to all public-facing services.
-4. Ensure services are reachable on both `proxy_net` and their stack-specific internal network.
-5. Configure `homepage` to use `docker-socket-proxy` via `config/homepage/docker.yaml`.
+4. Recreate or restart the updated service containers so Docker applies the new labels.
+5. Ensure services are reachable on both `proxy_net` and their stack-specific internal network.
+6. Configure `homepage` to use `docker-socket-proxy` via `config/homepage/docker.yaml`.
 
 Verification:
 
+- `docker inspect <container> --format '{{json .Config.Labels}}'` shows `caddy` and `homepage.*` labels.
 - `docker exec caddy cat /config/caddy/Caddyfile.autosave`
 - `docker exec caddy sh -lc "grep -E '([a-z0-9.-]+\.)+andreasmaita\.com' /config/caddy/Caddyfile.autosave"`
 - `homepage` web UI discovers container metadata.
@@ -167,6 +169,8 @@ Verification:
 
 - all DB containers are `healthy`
 - no database service has host-facing ports
+- `docker compose --env-file .env -f stacks/cloud/compose.db.yaml config` passes
+- `docker compose --env-file .env -f stacks/services/compose.db.yaml config` passes
 
 ---
 
@@ -249,7 +253,10 @@ Verification:
 - [x] Nextcloud `config.php` syntax fixed.
 - [x] `docker-socket-proxy` isolation validated; `NETWORKS=1` fixed Caddy upstream discovery.
 - [ ] Authelia forward_auth policy verification pending.
-- [ ] Homepage discovery validation pending.
+- [x] Homepage docker socket discovery validated.
+- [x] Label-driven Caddy route discovery validated for services and media containers.
+- [ ] Homepage web UI metadata discovery pending.
+- [x] Cloud and services DB compose configs validated.
 
 ---
 

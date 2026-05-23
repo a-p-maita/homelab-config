@@ -395,6 +395,7 @@ services:
       - ${DATA_ROOT}/media/youtube:/data/youtube:ro
     networks:
       - homelab_net
+      - proxy_net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
       interval: 30s
