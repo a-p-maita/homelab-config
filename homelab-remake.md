@@ -147,6 +147,26 @@ Verification:
 - `docker exec caddy sh -lc "grep -E '([a-z0-9.-]+\.)+andreasmaita\.com' /config/caddy/Caddyfile.autosave"`
 - `curl -I -H 'Host: nextcloud.andreasmaita.com' http://127.0.0.1:80` returns `401 Unauthorized` and `curl -I -H 'Host: immich.andreasmaita.com' http://127.0.0.1:80` returns `200 OK`, proving route and auth behavior.
 - `docker exec homepage sh -c 'wget -qO- http://localhost:3000/api/services | head -n 5'` returns JSON with service groups, proving Homepage discovery is active.
+- Verify Caddy is exposing the Cloudflare tunnel hostnames:
+  - `abs.andreasmaita.com`
+  - `actual-budget.andreasmaita.com`
+  - `auth.andreasmaita.com`
+  - `feishin.andreasmaita.com`
+  - `git.andreasmaita.com`
+  - `home.andreasmaita.com`
+  - `homepage.andreasmaita.com`
+  - `immich.andreasmaita.com`
+  - `jellyfin.andreasmaita.com`
+  - `join.andreasmaita.com`
+  - `joplin.andreasmaita.com`
+  - `mealie.andreasmaita.com`
+  - `music.andreasmaita.com`
+  - `paperless.andreasmaita.com`
+  - `seerr.andreasmaita.com`
+  - `vault.andreasmaita.com`
+  - `yamtrack.andreasmaita.com`
+  - `nextcloud.andreasmaita.com` (planned/public route; verify label is active)
+- If `octo-fiesta.andreasmaita.com` still appears in Caddy or config, remove the stale service entry and any old route references.
 - `AUTHELIA_STORAGE_ENCRYPTION_KEY` env var corrected in `stacks/infrastructure/compose.yaml`.
 - `homepage` web UI metadata discovery remains pending.
 
@@ -270,6 +290,9 @@ Verification:
 - [x] Homepage docker socket discovery validated.
 - [x] Label-driven Caddy route discovery validated for services and media containers.
 - [x] Application stacks and edge route auth boundaries validated.
+- [x] Infrastructure compose config validated.
+- [x] Arr/VPN compose config validated.
+- [x] Media compose config validated.
 - [x] Database-only stacks for cloud and services started and validated.
 - [ ] Homepage web UI metadata discovery pending.
 - [x] Cloud and services DB compose configs validated.
@@ -596,9 +619,11 @@ labels:
 
 ---
 
-### Stack 3 — Downloads / Arr (`stacks/arr/`)
+### Stack 3 — Arr (`stacks/arr/`)
 
 **Files:** `compose.yaml` + `compose.vpn.yaml` (VPN overlay)
+
+#### A. Downloads + VPN
 
 | Service                         | Image                                      | Internal Port | Host Port               | Access    | Notes                                                     |
 | ------------------------------- | ------------------------------------------ | ------------- | ----------------------- | --------- | --------------------------------------------------------- |
@@ -620,9 +645,7 @@ labels:
 - Byparr is NOT routed through VPN — indexer search traffic is fine unrouted
 - SABnzbd does NOT need VPN — usenet uses SSL encryption; DMCA is a torrent concern
 
----
-
-### Stack 4 — Arr (`stacks/arr/`)
+#### B. Arr automation apps
 
 **Files:** `compose.yaml`
 
