@@ -1,4 +1,0 @@
-# Plain Caddy image — no xcaddy build needed.
-# TLS is handled via Cloudflare Origin Certificate (not DNS-01 ACME).
-# The caddy-dns/cloudflare plugin is no longer required.
-FROM caddy:2-alpine

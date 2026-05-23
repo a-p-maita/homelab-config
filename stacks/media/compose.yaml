@@ -49,6 +49,14 @@ services:
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+      - "caddy=yamtrack.andreasmaita.com"
+      - "caddy.1_import=authelia_auth"
+      - "caddy.2_reverse_proxy={{upstreams 8000}}"
+      - "homepage.group=Media"
+      - "homepage.name=Yamtrack"
+      - "homepage.icon=yamtrack.png"
+      - "homepage.href=https://yamtrack.andreasmaita.com"
+      - "homepage.description=Media tracking sync"
     #  First run: visit http://localhost:${YAMTRACK_PORT}/register to create your admin account,
     #    then set REGISTRATION=False below and run: docker compose restart yamtrack
     depends_on:
@@ -82,6 +90,7 @@ services:
       - "${YAMTRACK_PORT}:8000"
     networks:
       - homelab_net
+      - proxy_net
     healthcheck:
       test:
         [
@@ -134,16 +143,25 @@ services:
       # Extend session lifetime so Feishin stays logged in
       - ND_SESSIONTIMEOUT=72h
       - ND_BASEURL=
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "caddy=navidrome.andreasmaita.com"
+      - "caddy.1_import=authelia_auth"
+      - "caddy.2_reverse_proxy={{upstreams 4533}}"
+      - "homepage.group=Media"
+      - "homepage.name=Navidrome"
+      - "homepage.icon=navidrome.png"
+      - "homepage.href=https://navidrome.andreasmaita.com"
+      - "homepage.description=Music server"
     volumes:
       - ../../data/navidrome/data:/data
       - ${DATA_ROOT}/media/music:/music:ro
     ports:
       - "${NAVIDROME_PORT}:4533"
     restart: unless-stopped
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
     networks:
       - homelab_net
+      - proxy_net
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:4533/ping > /dev/null"]
       interval: 10s
@@ -366,8 +384,17 @@ services:
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+      - "caddy=seerr.andreasmaita.com"
+      - "caddy.1_import=authelia_auth"
+      - "caddy.2_reverse_proxy={{upstreams 5055}}"
+      - "homepage.group=Media"
+      - "homepage.name=Seerr"
+      - "homepage.icon=seerr.png"
+      - "homepage.href=https://seerr.andreasmaita.com"
+      - "homepage.description=Media request manager"
     networks:
       - homelab_net
+      - proxy_net
     depends_on:
       jellyfin:
         condition: service_healthy

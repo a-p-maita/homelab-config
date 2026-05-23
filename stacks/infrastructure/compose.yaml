@@ -31,6 +31,7 @@ services:
       - "${CLOUDFLARED_PORT}:8080"
     networks:
       - homelab_net
+      - proxy_net
     healthcheck:
       # Distroless image: no shell/curl. --version exits 0 if the binary is alive.
       # Tunnel connectivity is visible in logs; real monitoring via Uptime Kuma.
@@ -71,13 +72,24 @@ services:
       - HOMEPAGE_VAR_QBT_PASS=${QBITTORRENT_WEBUI_PASS}
     volumes:
       - ../../data/homepage/config:/app/config
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+      # Caddy routing — protected by Authelia 2FA
+      - "caddy=homepage.andreasmaita.com"
+      - "caddy.1_import=authelia_auth"
+      - "caddy.2_reverse_proxy={{upstreams 3000}}"
+      # Homepage self-discovery
+      - "homepage.group=Infrastructure"
+      - "homepage.name=Homepage"
+      - "homepage.icon=homepage.png"
+      - "homepage.href=https://homepage.andreasmaita.com"
+      - "homepage.description=Service dashboard"
     networks:
       - homelab_net
+      - socket_internal
+      - proxy_net
     healthcheck:
       # homepage (node:alpine) has wget (BusyBox) but not curl
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000 > /dev/null"]
@@ -106,6 +118,12 @@ services:
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+      # Homepage discovery (Tailscale-only access)
+      - "homepage.group=Infrastructure"
+      - "homepage.name=Uptime Kuma"
+      - "homepage.icon=uptime-kuma.png"
+      - "homepage.href=http://100.106.40.5:${UPTIMEKUMA_PORT}"
+      - "homepage.description=HTTP/TCP uptime monitoring"
     networks:
       - homelab_net
     healthcheck:
@@ -157,24 +175,29 @@ services:
           cpus: "0.05"
           memory: 32M
 
-  # ── Caddy ─────────────────────────────────────────────────────────────────────
-  # HTTP reverse proxy — Cloudflare Tunnel terminates TLS at the edge.
-  # cloudflared → http://caddy:80 → services (plain HTTP on internal Docker network).
-  # No TLS certs needed here. Built from Dockerfile.caddy (plain caddy:2-alpine).
-  # Rebuild manually when upgrading: docker compose build caddy && docker compose up -d caddy
+  # ── Caddy (caddy-docker-proxy) ────────────────────────────────────────────────
+  # Label-driven HTTP reverse proxy. Reads caddy.* labels from all containers.
+  # cloudflared → http://caddy:80 → services (plain HTTP on proxy_net).
+  # Uses docker-socket-proxy (socket_internal) to enumerate container labels safely.
   caddy:
-    build:
-      context: .
-      dockerfile: Dockerfile.caddy
+    image: lucaslorentz/caddy-docker-proxy:ci-alpine
     container_name: caddy
     restart: unless-stopped
     ports:
       - "80:80"
+    environment:
+      - DOCKER_HOST=tcp://docker-socket-proxy:2375
+    labels:
+      # Global Caddy config — applies to the entire server block
+      caddy.auto_https: "off"
+      caddy.servers.trusted_proxies: "static private_ranges"
     volumes:
-      - ../../config/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ../../config/caddy:/config
+      - ../../data/caddy:/data
     networks:
-      - homelab_net
+      - proxy_net
+      - socket_internal
+    depends_on:
+      - docker-socket-proxy
     healthcheck:
       # Admin API on :2019 responds once Caddy is running and config is loaded
       test:
@@ -205,6 +228,23 @@ services:
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+      # Forward-auth snippet — referenced by caddy.1_import=authelia_auth on protected services
+      - "caddy_0=(authelia_auth)"
+      - "caddy_0.forward_auth=authelia:9091"
+      - "caddy_0.forward_auth.uri=/api/authz/forward-auth"
+      - "caddy_0.forward_auth.copy_headers=Remote-User Remote-Groups Remote-Email Remote-Name"
+      # Authelia own public domain
+      - "caddy_1=auth.andreasmaita.com"
+      - "caddy_1.reverse_proxy={{upstreams 9091}}"
+      # Homepage discovery
+      - "homepage.group=Infrastructure"
+      - "homepage.name=Authelia"
+      - "homepage.icon=authelia.png"
+      - "homepage.href=https://auth.andreasmaita.com"
+      - "homepage.description=2FA authentication portal"
+    depends_on:
+      authelia-redis:
+        condition: service_healthy
     environment:
       - TZ=${TZ}
       # Secrets injected at runtime — kept out of config/authelia/ (which is git-tracked)
@@ -213,10 +253,9 @@ services:
       - AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET=${AUTHELIA_SESSION_SECRET}
     volumes:
       - ../../config/authelia:/config
-    ports:
-      - "${AUTHELIA_PORT}:9091"
     networks:
-      - homelab_net
+      - proxy_net
+      - infrastructure_internal
 
   authelia-redis:
     image: redis:7-alpine
@@ -226,6 +265,12 @@ services:
       - ../../data/authelia/redis:/data
     networks:
       - infrastructure_internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
   #  # NOTE: do NOT add watchtower label to redis
 
   # ── Docker Socket Proxy ───────────────────────────────────────────────────────
@@ -265,6 +310,8 @@ services:
 
 networks:
   homelab_net:
+    external: true
+  proxy_net:
     external: true
   socket_internal:
     external: true
