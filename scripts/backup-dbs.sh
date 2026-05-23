@@ -9,13 +9,13 @@ mkdir -p "$BACKUP_DIR"
 
 echo "[backup] Starting DB dumps to ${BACKUP_DIR} ..."
 
-docker exec immich-postgres    pg_dumpall -U postgres  > "${BACKUP_DIR}/immich-$(date -I).sql"
+docker exec immich-postgres    pg_dumpall -h 127.0.0.1 -U postgres   > "${BACKUP_DIR}/immich-$(date -I).sql"
 echo "[backup] immich done"
 
-docker exec paperless-postgres pg_dumpall -U a-p-maita > "${BACKUP_DIR}/paperless-$(date -I).sql"
+docker exec paperless-postgres pg_dumpall -h 127.0.0.1 -U a-p-maita > "${BACKUP_DIR}/paperless-$(date -I).sql"
 echo "[backup] paperless done"
 
-docker exec joplin-postgres    pg_dumpall -U a-p-maita    > "${BACKUP_DIR}/joplin-$(date -I).sql"
+docker exec joplin-postgres    pg_dumpall -h 127.0.0.1 -U a-p-maita > "${BACKUP_DIR}/joplin-$(date -I).sql"
 echo "[backup] joplin done"
 
 echo "[backup] DB dumps complete → ${BACKUP_DIR}"
