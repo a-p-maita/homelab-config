@@ -55,6 +55,7 @@ services:
       - OVERWRITEHOST=nextcloud.andreasmaita.com
       - OVERWRITECLIURL=https://nextcloud.andreasmaita.com
       - NEXTCLOUD_TRUSTED_DOMAINS=nextcloud.andreasmaita.com 100.106.40.5
+      - TRUSTED_PROXIES=172.25.0.0/16
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
       - "caddy=http://nextcloud.andreasmaita.com"
