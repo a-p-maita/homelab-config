@@ -137,13 +137,17 @@ Steps:
 4. Recreate or restart the updated service containers so Docker applies the new labels.
 5. Ensure services are reachable on both `proxy_net` and their stack-specific internal network.
 6. Configure `homepage` to use `docker-socket-proxy` via `config/homepage/docker.yaml`.
+7. Use Authelia forward_auth with Caddy on `/api/verify`.
 
 Verification:
 
 - `docker inspect <container> --format '{{json .Config.Labels}}'` shows `caddy` and `homepage.*` labels.
 - `docker exec caddy cat /config/caddy/Caddyfile.autosave`
 - `docker exec caddy sh -lc "grep -E '([a-z0-9.-]+\.)+andreasmaita\.com' /config/caddy/Caddyfile.autosave"`
-- `homepage` web UI discovers container metadata.
+- `curl -I -H 'Host: nextcloud.andreasmaita.com' http://127.0.0.1:80` returns `401 Unauthorized` and `curl -I -H 'Host: immich.andreasmaita.com' http://127.0.0.1:80` returns `200 OK`, proving route and auth behavior.
+- `docker exec homepage sh -c 'wget -qO- http://localhost:3000/api/services | head -n 5'` returns JSON with service groups, proving Homepage discovery is active.
+- `AUTHELIA_STORAGE_ENCRYPTION_KEY` env var corrected in `stacks/infrastructure/compose.yaml`.
+- `homepage` web UI metadata discovery remains pending.
 
 ---
 
@@ -252,7 +256,8 @@ Verification:
 
 - [x] Nextcloud `config.php` syntax fixed.
 - [x] `docker-socket-proxy` isolation validated; `NETWORKS=1` fixed Caddy upstream discovery.
-- [ ] Authelia forward_auth policy verification pending.
+- [x] Authelia forward_auth policy verified via `/api/verify`; protected hosts now return `401 Unauthorized`.
+- [x] Authelia env var mismatch fixed: `AUTHELIA_STORAGE_ENCRYPTION_KEY` now passed correctly.
 - [x] Homepage docker socket discovery validated.
 - [x] Label-driven Caddy route discovery validated for services and media containers.
 - [ ] Homepage web UI metadata discovery pending.
@@ -265,7 +270,8 @@ Verification:
 1. Do not remove `homelab_net` until the internal network migration is fully validated.
 2. Infrastructure must start before application stacks.
 3. Fix runtime failures first, then refactor.
-4. Treat `docker-socket-proxy` ingress network query errors as non-fatal in non-Swarm Docker environments.
+4. Use `AUTHELIA_STORAGE_ENCRYPTION_KEY`, not `AUTHELIA_STORAGE_KEY`, when passing the Authelia encryption secret from `.env` into the container.
+5. Treat `docker-socket-proxy` ingress network query errors as non-fatal in non-Swarm Docker environments.
 
 ---
 
