@@ -11,8 +11,18 @@ services:
       DB_USERNAME: ${DB_USERNAME}
       DB_DATABASE_NAME: ${DB_DATABASE_NAME}
       IMMICH_VERSION: ${IMMICH_VERSION}
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "caddy=immich.andreasmaita.com"
+      - "caddy.2_reverse_proxy={{upstreams 2283}}"
+      - "homepage.group=Cloud"
+      - "homepage.name=Immich"
+      - "homepage.icon=immich.png"
+      - "homepage.href=https://immich.andreasmaita.com"
+      - "homepage.description=Photo and video library"
     networks:
       - homelab_net
+      - proxy_net
       - immich_internal
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:2283/api/server/ping"]
@@ -28,6 +38,48 @@ services:
         reservations:
           cpus: "0.5"
           memory: 512M
+
+  nextcloud:
+    container_name: nextcloud
+    image: nextcloud:stable-apache
+    environment:
+      - POSTGRES_HOST=nextcloud-postgres
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=nextcloud
+      - POSTGRES_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+      - REDIS_HOST=nextcloud-redis
+      - REDIS_HOST_PASSWORD=${NEXTCLOUD_REDIS_PASSWORD}
+      - OVERWRITEPROTOCOL=https
+      - OVERWRITEHOST=nextcloud.andreasmaita.com
+      - OVERWRITECLIURL=https://nextcloud.andreasmaita.com
+      - NEXTCLOUD_TRUSTED_DOMAINS=nextcloud.andreasmaita.com 100.106.40.5
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "caddy=nextcloud.andreasmaita.com"
+      - "caddy.2_reverse_proxy={{upstreams 80}}"
+      - "homepage.group=Cloud"
+      - "homepage.name=Nextcloud"
+      - "homepage.icon=nextcloud.png"
+      - "homepage.href=https://nextcloud.andreasmaita.com"
+      - "homepage.description=Cloud storage and collaboration"
+    networks:
+      - homelab_net
+      - proxy_net
+      - cloud_internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/ || exit 1"]
+      interval: 1m
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+        reservations:
+          cpus: "0.25"
+          memory: 256M
 
   immich-machine-learning:
     container_name: immich-machine-learning
@@ -60,45 +112,8 @@ services:
           cpus: "0.5"
           memory: 512M
 
-  redis:
-    container_name: immich-redis
-    networks:
-      - immich_internal
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: 256M
-        reservations:
-          cpus: "0.05"
-          memory: 64M
-
-  database:
-    container_name: immich-postgres
-    networks:
-      - immich_internal
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 1G
-        reservations:
-          cpus: "0.1"
-          memory: 256M
-
 networks:
   homelab_net:
     external: true
-  immich_internal:
+  cloud_internal:
     internal: true

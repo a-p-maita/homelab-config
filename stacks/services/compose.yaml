@@ -498,5 +498,7 @@ services:
 networks:
   homelab_net:
     external: true
+  proxy_net:
+    external: true
   services_internal:
     internal: true
