@@ -140,7 +140,7 @@ Steps:
 Verification:
 
 - `docker exec caddy cat /config/caddy/Caddyfile.autosave`
-- `grep -E 'http://.*\.andreasmaita\.com' /config/caddy/Caddyfile.autosave`
+- `docker exec caddy sh -lc "grep -E '([a-z0-9.-]+\.)+andreasmaita\.com' /config/caddy/Caddyfile.autosave"`
 - `homepage` web UI discovers container metadata.
 
 ---
@@ -247,8 +247,8 @@ Verification:
 ## Live Recovery Status
 
 - [x] Nextcloud `config.php` syntax fixed.
+- [x] `docker-socket-proxy` isolation validated; `NETWORKS=1` fixed Caddy upstream discovery.
 - [ ] Authelia forward_auth policy verification pending.
-- [ ] Caddy label coverage for all public domains pending.
 - [ ] Homepage discovery validation pending.
 
 ---

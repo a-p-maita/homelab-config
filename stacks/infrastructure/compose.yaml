@@ -179,6 +179,7 @@ services:
   # Label-driven HTTP reverse proxy. Reads caddy.* labels from all containers.
   # cloudflared → http://caddy:80 → services (plain HTTP on proxy_net).
   # Uses docker-socket-proxy (socket_internal) to enumerate container labels safely.
+  # In non-Swarm Docker, Caddy may still log non-fatal 403s while checking ingress/swarm resources.
   caddy:
     image: lucaslorentz/caddy-docker-proxy:ci-alpine
     container_name: caddy
