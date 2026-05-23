@@ -424,7 +424,7 @@ services:
     container_name: forgejo
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "caddy=http://git.andreasmaita.com"
+      - "caddy=http://git.andreasmaita.com,forgejo.andreasmaita.com"
       - "caddy.1_import=authelia_auth"
       - "caddy.2_reverse_proxy={{upstreams 3000}}"
       - "homepage.group=Productivity"
