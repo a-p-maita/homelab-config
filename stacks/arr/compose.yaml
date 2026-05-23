@@ -14,7 +14,6 @@ name: arr
 #   sonarr      → depends_on: qbittorrent (healthy)
 #   lidarr      → depends_on: qbittorrent (healthy)
 #   lazylibrarian → depends_on: qbittorrent (healthy)
-#   audiobookbay-downloader → depends_on: qbittorrent (healthy), jackett (healthy)
 #
 # VPN (optional): bring up with compose.vpn.yaml overlay:
 #   USE_VPN=true in .env  → scripts/up-all.sh handles automatically
@@ -23,7 +22,6 @@ name: arr
 # Paths: all *arr apps and qbittorrent mount ${DATA_ROOT}:/data
 #   qBittorrent categories → /data/torrents/{movies,tv,music,books}
 #   *arr root folders      → /data/media/{movies,tv,music,books}
-#   abb-downloader         → qBittorrent category "abb-downloader" → /data/media/audiobooks
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
@@ -72,8 +70,8 @@ services:
           memory: 256M
 
   # ── Jackett ─────────────────────────────────────────────────────────────────
-  # Kept for audiobookbay-downloader which uses Jackett's API format directly.
   # Prowlarr handles indexers for all *arr apps.
+  # Jackett kept for legacy indexer configs; Prowlarr is preferred going forward.
   jackett:
     image: lscr.io/linuxserver/jackett:latest
     container_name: jackett
@@ -333,57 +331,6 @@ services:
   #     cpus: "0.1"
   #     memory: 128M
 
-  # ── Audiobookbay Downloader ──────────────────────────────────────────────────
-  # Downloads audiobooks via Jackett → qBittorrent, category "abb-downloader"
-  # qBittorrent saves abb-downloader category directly to /data/media/audiobooks
-  # (no *arr import step needed — files ARE the final library files)
-  audiobookbay-downloader:
-    image: ghcr.io/moonblade/audiobookbay-downloader:latest
-    ports:
-      - "${ABB_PORT}:9000"
-    container_name: audiobookbay-downloader
-    depends_on:
-      qbittorrent:
-        condition: service_healthy
-      jackett:
-        condition: service_healthy
-    environment:
-      - JACKETT_API_URL=http://jackett:9117/api/v2.0/indexers/audiobookbay/results
-      - JACKETT_API_KEY=${JACKETT_API_KEY}
-      - TORRENT_CLIENT_TYPE=qbittorrent
-      - QBITTORRENT_URL=http://qbittorrent:${QBITTORRENT_WEBUI_PORT}
-      - QBITTORRENT_USERNAME=${QBITTORRENT_WEBUI_USER}
-      - QBITTORRENT_PASSWORD=${QBITTORRENT_WEBUI_PASS}
-      # This category's save path in qBittorrent is /data/media/audiobooks
-      - QBITTORRENT_CATEGORY=abb-downloader
-      - DB_PATH=/app/data
-      - DELETE_AFTER_DAYS=365
-      - STRICTLY_DELETE_AFTER_DAYS=365
-    volumes:
-      - ../../data/audiobookbay-downloader:/app/data
-    restart: unless-stopped
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          'python3 -c "import urllib.request; urllib.request.urlopen(''http://localhost:9000'')"',
-        ]
-      interval: 1m
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    networks:
-      - homelab_net
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: 256M
-        reservations:
-          cpus: "0.05"
-          memory: 128M
   # ── Bazarr ───────────────────────────────────────────────────────────────────
   # Subtitle manager: auto-downloads subtitles for Sonarr/Radarr media.
   # Jellyfin picks up subtitle files automatically (placed alongside media files).

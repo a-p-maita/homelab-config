@@ -163,13 +163,10 @@ services:
     image: ghcr.io/jeffvli/feishin:latest
     container_name: feishin
     environment:
-      # Use Subsonic protocol (not navidrome) so Feishin uses standard Subsonic API
-      # that octo-fiesta proxies — navidrome type uses Navidrome-specific extensions
-      # that bypass octo-fiesta's enhanced endpoints (causing artist/album page failures)
       - SERVER_NAME=Homelab
-      - SERVER_TYPE=subsonic
-      # Must be the public URL — browser connects directly to octo-fiesta from client side
-      - SERVER_URL=${OCTOFIESTA_EXTERNAL_URL}
+      - SERVER_TYPE=navidrome
+      # Public URL — browser connects directly to Navidrome from client side
+      - SERVER_URL=https://navidrome.andreasmaita.com
       - SERVER_LOCK=true
       - ANALYTICS_DISABLED=true
     ports:
@@ -196,56 +193,6 @@ services:
         reservations:
           cpus: "0.05"
           memory: 32M
-
-  octo-fiesta:
-    image: ghcr.io/v1ck3s/octo-fiesta:latest
-    container_name: octo-fiesta
-    restart: unless-stopped
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
-    ports:
-      - "${OCTOFIESTA_PORT}:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:8080
-      # Connect to Navidrome on the internal Docker network
-      - Subsonic__Url=http://navidrome:4533
-      # Downloads land in the shared music library (same dir Navidrome scans)
-      - Library__DownloadPath=/app/downloads
-      # Provider: SquidWTF (no creds), Deezer, Qobuz, or Yandex
-      - Subsonic__MusicService=${OCTOFIESTA_MUSIC_SERVICE:-SquidWTF}
-      # ── Deezer ──
-      - Deezer__Arl=${OCTOFIESTA_DEEZER_ARL:-}
-      - Deezer__ArlFallback=${OCTOFIESTA_DEEZER_ARL_FALLBACK:-}
-      - Deezer__Quality=${OCTOFIESTA_DEEZER_QUALITY:-}
-      # ── Qobuz ──
-      - Qobuz__UserAuthToken=${OCTOFIESTA_QOBUZ_USER_AUTH_TOKEN:-}
-      - Qobuz__UserId=${OCTOFIESTA_QOBUZ_USER_ID:-}
-      - Qobuz__Quality=${OCTOFIESTA_QOBUZ_QUALITY:-}
-      # ── SquidWTF (free, no credentials required) ──
-      - SquidWTF__Source=${OCTOFIESTA_SQUIDWTF_SOURCE:-Qobuz}
-      - SquidWTF__Quality=${OCTOFIESTA_SQUIDWTF_QUALITY:-}
-      # ── Yandex Music ──
-      - Yandex__OAuthToken=${OCTOFIESTA_YANDEX_OAUTH_TOKEN:-}
-      - Yandex__Quality=${OCTOFIESTA_YANDEX_QUALITY:-}
-    volumes:
-      # Read-write so downloads are saved directly into the music library
-      - ${DATA_ROOT}/media/music:/app/downloads
-    depends_on:
-      navidrome:
-        condition: service_healthy
-    networks:
-      - homelab_net
-    # No healthcheck: the .NET 9 runtime image ships without curl/wget.
-    # Uptime Kuma monitors octo-fiesta via its external URL.
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 256M
-        reservations:
-          cpus: "0.05"
-          memory: 64M
 
   crosswatch:
     image: ghcr.io/cenodude/crosswatch:latest
