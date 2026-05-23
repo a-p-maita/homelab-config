@@ -175,6 +175,7 @@ Verification:
 - no database service has host-facing ports
 - `docker compose --env-file .env -f stacks/cloud/compose.db.yaml config` passes
 - `docker compose --env-file .env -f stacks/services/compose.db.yaml config` passes
+- `pg_isready` and `redis-cli ping` verify direct connectivity inside the DB containers
 
 ---
 
@@ -193,6 +194,8 @@ Verification:
 - `nextcloud` loads without reverse proxy warnings
 - `immich` is reachable on the domain and Tailscale IP
 - `Vaultwarden` and `Joplin` are not behind `forward_auth`
+- `vault.andreasmaita.com` returns `200 OK`
+- `jellyfin.andreasmaita.com`, `seerr.andreasmaita.com`, and `joplin.andreasmaita.com` return `401 Unauthorized` as expected
 
 ---
 
@@ -260,6 +263,8 @@ Verification:
 - [x] Authelia env var mismatch fixed: `AUTHELIA_STORAGE_ENCRYPTION_KEY` now passed correctly.
 - [x] Homepage docker socket discovery validated.
 - [x] Label-driven Caddy route discovery validated for services and media containers.
+- [x] Application stacks and edge route auth boundaries validated.
+- [x] Database-only stacks for cloud and services started and validated.
 - [ ] Homepage web UI metadata discovery pending.
 - [x] Cloud and services DB compose configs validated.
 
