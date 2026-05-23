@@ -3,182 +3,239 @@
 > **[META] AGENT INSTRUCTIONS:**
 > This is a strictly ordered, machine-actionable implementation plan.
 >
-> 1. Execute phase-by-phase. Do NOT proceed to the next phase until the **Verification** criteria for the current phase are explicitly confirmed.
-> 2. Utilize terminal commands (`docker ps`, `curl`, `grep`) to validate state before and after modifying files.
-> 3. Refactor existing `compose.yaml` files to match the declarative label-based architecture (Caddy Docker Proxy + Homepage auto-discovery).
-> 4. Strictly enforce isolation: Databases and docker-socket-proxy must reside on `*_internal` networks, NEVER on the global `homelab_net`.
+> 1. Execute stage-by-stage. Do not start the next stage until the current stage is verified.
+> 2. Validate every change with Docker commands and service health checks.
+> 3. Keep the plan simple, deterministic, and explicitly executable by an LLM agent.
+> 4. Do not remove `homelab_net` until the new internal network architecture is fully validated.
 
 ---
 
-## Phase 1: Pre-flight, Backups & Environment Bootstrap
+## How to use this plan
 
-**Objective:** Secure the environment, backup existing state, and align the file system with the target architecture.
-
-**Execution Steps:**
-
-1. **Database Backups:** Run `scripts/backup-dbs.sh` to generate SQL dumps of Immich, Paperless, and Joplin. Verify files exist in `/backups`.
-2. **Directory Restructuring:**
-   - Migrate legacy data folders if present (e.g., `./data/audiobooks` to `${DATA_ROOT}/media/audiobooks`) by executing the pre-flight checks in `scripts/up-all.sh`.
-   - Reorganize stack directories: Create `stacks/monitoring/` and `stacks/downloads/` if missing. Move relevant compose snippets from `stacks/infrastructure/` and `stacks/arr/` respectively to match the target layout.
-3. **Secrets Generation:** Run `scripts/generate-secrets.sh` to populate `.env`. Manually prompt the user if critical 3rd-party values (Cloudflare Tunnel token, VPN credentials) are missing.
-
-**Verification:**
-
-- `echo $DATA_ROOT` resolves correctly via `.env`.
-- No databases report errors during the export dump.
-- The `stacks/` directory structure aligns with Phase 3 through 7 targets.
+- Work in passes: detect current state, apply focused change, then verify.
+- Prefer `docker compose config`, `docker ps`, `docker logs`, and `docker exec` for validation.
+- Keep changes to one stack or one architectural concern at a time.
+- Record progress in the `Live Recovery Status` checklist before moving on.
 
 ---
 
-## Phase 2: Network & Socket Security Layer
+## Stage 0: Emergency Recovery
 
-**Objective:** Establish secure networking boundaries and grant least-privilege Docker socket access.
+**Objective:** Stabilize the running stack and remove immediate failures before any refactor.
 
-**Execution Steps:**
+Steps:
+1. Inspect unhealthy containers:
+   ```bash
+   docker ps --filter 'health=unhealthy' --format 'table {{.Names}}	{{.Status}}'
+   ```
+2. Fix broken mounted configs in-place.
+   - Example: repair `config.php` inside the Nextcloud container if PHP syntax is invalid.
+3. Restart the affected containers and confirm service health:
+   ```bash
+   docker restart nextcloud
+   docker exec nextcloud curl -sf http://localhost/
+   docker exec caddy cat /config/caddy/Caddyfile.autosave | grep -E 'auth\.andreasmaita\.com|nextcloud\.andreasmaita\.com'
+   ```
 
-1. **Network Provisioning:** Define and create external networks in Docker:
-   - `proxy_net` (isolated network solely for Caddy and exposed apps to communicate).
-   - `infrastructure_internal`, `downloads_internal`, `cloud_internal`, `services_internal`, `socket_internal` (all internal=true).
-   - *Note: Deprecate and remove the global `homelab_net` entirely to prevent unprotected lateral container communication.*
-2. **Socket Proxy Configuration:** In `stacks/infrastructure/compose.yaml`, deploy `docker-socket-proxy` ensuring it ONLY attaches to `socket_internal`. Do NOT attach it to any global bridge.
-3. **Stack Manager:** Deploy `dockge` in `stacks/monitoring/compose.yaml`. Give it a read-write socket mount but limit its binding to the Tailscale interface (`100.106.40.5:20202`). *Make a hard decision to sunset imperative lifecycle scripts (`up-all.sh` / `down-all.sh`) in favor of allowing Dockge to own the `stacks/` directory exclusively via its Git integration.*
-
-**Verification:**
-
-- `docker network ls` shows `proxy_net` alongside all internal DB/socket networks.
-- `docker-socket-proxy` is unreachable from random containers on any network other than `socket_internal`.
-
----
-
-## Phase 3: Edge Routing & Infrastructure (Label Refactor)
-
-**Objective:** Replace static configs with dynamic Docker labels (`caddy-docker-proxy` and `homepage`).
-
-**Execution Steps:**
-
-1. **Proxy Migration:**
-   - In `stacks/infrastructure/compose.yaml`, replace the `caddy:2-alpine` container with `lucaslorentz/caddy-docker-proxy:ci-alpine`.
-   - Remove the direct docker socket volume mount to preserve security. Instead, configure Caddy with the environment variable `DOCKER_HOST=tcp://docker-socket-proxy:2375` and ensure Caddy joins the `socket_internal` network.
-   - Delete `stacks/infrastructure/Dockerfile.caddy` and bind-mounted `config/caddy/Caddyfile` as they are now obsolete.
-2. **Global Auth & Tunneling:**
-   - Deploy `authelia` and `cloudflared`. Ensure Caddy trusts Cloudflare by setting `caddy.servers.trusted_proxies: "static private_ranges"` on the Caddy container.
-   - Apply specific `caddy` routing labels to `authelia` to handle the `auth.andreasmaita.com` domain and configure forward authentication interceptors.
-3. **Subdomain Integration (Caddy Labels):**
-   - You MUST apply `caddy` reverse proxy labels to the respective services in their `compose.yaml` files. Containers requiring web access should join BOTH their localized internal network AND `proxy_net`. The mandated external tunnels are:
-     - `auth.andreasmaita.com` → Authelia (`auth` container: `9091`)
-     - `homepage.andreasmaita.com` → Homepage (`3000`)
-     - `jellyfin.andreasmaita.com` → Jellyfin (`8096`)
-     - `immich.andreasmaita.com` → Immich Server (`2283`)
-     - `abs.andreasmaita.com` → Audiobookshelf (`80`)
-     - `git.andreasmaita.com` → Forgejo HTTP (`3000`)
-     - `yamtrack.andreasmaita.com` → Yamtrack (`8000`)
-     - `feishin.andreasmaita.com` → Feishin (Check Web UI port, normally `80` or `9180`)
-     - `mealie.andreasmaita.com` → Mealie (`9000`)
-4. **Homepage Migration:**
-   - Attach `homepage` to `socket_internal` so it can communicate with `docker-socket-proxy`.
-   - Update `config/homepage/docker.yaml` to point to the socket proxy.
-   - Move static service definitions out of `config/homepage/services.yaml` into compose service labels (`homepage.group`, `homepage.name`, `homepage.href`, etc.) for all Phase 3 containers.
-
-**Verification:**
-
-- `docker exec <caddy_container> cat /config/caddy/Caddyfile.autosave` successfully generates routing blocks based on labels.
-- The `Caddyfile.autosave` explicitly lists all 9 mandated subdomains.
-- `homepage` dashboard populates widgets dynamically via Docker labels.
+Verification:
+- `nextcloud` is `Up` and `healthy`.
+- `caddy`, `authelia`, and `cloudflared` are `healthy`.
+- The generated `Caddyfile.autosave` contains the expected host blocks.
 
 ---
 
-## Phase 4: Database & Cache Initialization
+## Stage 1: Bootstrap & Inventory
 
-**Objective:** Spin up stateful services securely before bringing up the applications that depend on them.
+**Objective:** Capture current state, protect data, and validate environment variables.
 
-**Execution Steps:**
+Steps:
+1. Back up databases:
+   ```bash
+   ./scripts/backup-dbs.sh
+   ls -l /backups
+   ```
+2. Generate secrets and check for missing manual values:
+   ```bash
+   ./scripts/generate-secrets.sh
+   grep -E 'TUNNEL_TOKEN|PROTONVPN_WIREGUARD_PRIVATE_KEY|VAULTWARDEN_ADMIN_TOKEN' .env
+   ```
+3. Validate `.env` and data root:
+   ```bash
+   source .env
+   echo "$DATA_ROOT"
+   ```
+4. Confirm stack directory structure:
+   - `stacks/infrastructure`
+   - `stacks/monitoring`
+   - `stacks/downloads`
+   - `stacks/arr`
+   - `stacks/media`
+   - `stacks/cloud`
+   - `stacks/services`
+   - `stacks/home`
 
-1. **Services DBs (`stacks/services/compose.db.yaml`):** Deploy Postgres/Redis for Paperless and Joplin. Ensure they bind ONLY to `services_internal`.
-2. **Cloud DBs (`stacks/cloud/compose.db.yaml`):** Deploy `pgvecto-rs` for Immich, standard Postgres for Nextcloud, and their respective Redis caches. Ensure they bind ONLY to `cloud_internal`.
-3. **Verification Constraints:** Maintain strict health checks (`pg_isready` and `redis-cli ping`). Application containers in subsequent phases must use `depends_on: <db>: condition: service_healthy`.
-
-**Verification:**
-
-- All DB containers report `(healthy)` via `docker ps`.
-- DB ports are NOT mapped to the host (no `ports:` overrides) — access must route entirely internally.
-
----
-
-## Phase 5: Cloud & Productivity Services
-
-**Objective:** Deploy primary Nextcloud, Immich, Vaultwarden, and utility applications.
-
-**Execution Steps:**
-
-1. **Nextcloud Pre-config:** Ensure `OVERWRITEPROTOCOL=https`, `OVERWRITEHOST=nextcloud.andreasmaita.com` are present in `.env` before starting the Nextcloud container.
-2. **Immich Restrictions:** Deploy `immich-server` (locking host port strictly to `2283:2283` for hardcoded mobile apps). Confirm the `immich-machine-learning` profile remains `disabled` due to AMD Vega 7 missing ROCm support.
-3. **Auth Overrides:** Ensure Vaultwarden and Immich are NOT protected by Authelia's `forward_auth`, as their mobile clients/APIs break under interactive 2FA intercepts. Ensure `SIGNUPS_ALLOWED=false` is enforced for Vaultwarden.
-4. **Deploy Application Stacks:** Apply Caddy routing labels and Homepage discovery labels to `stacks/cloud/compose.yaml` and `stacks/services/compose.yaml`.
-
-**Verification:**
-
-- Services are accessible at their defined Subdomains / Tailscale IPs.
-- Nextcloud init finishes without setup warnings regarding reverse proxy headers.
-
----
-
-## Phase 6: Downloads & Media Pipelines
-
-**Objective:** Reconfigure the VPN-gated download stack and establish media presentation.
-
-**Execution Steps:**
-
-1. **Downloads Network Namespace:** Deploy `gluetun` in `stacks/downloads/compose.vpn.yaml`.
-2. **Torrent Client Setup:** Bind `qbittorrent` directly to `network_mode: service:gluetun`.
-3. **Port Forwarding Script:** Validate that the volume mount for `scripts/update-qbt-port.sh` functions; verify Gluetun executes it properly against qBittorrent's API on the localhost netns mapping.
-4. **Deunhealth Watcher:** Enable `deunhealth` to monitor the VPN network space with strict labels minimizing its blast radius.
-5. **Arr & Media Deployment:** Deploy `stacks/arr/` and `stacks/media/` apps. Pass `/dev/dri` to `jellyfin` for VA-API hardware transcoding (AMD Vega 7 setup).
-
-**Verification:**
-
-- cURL external IP from inside qBittorrent matches the VPN endpoint.
-- `cat /tmp/gluetun/forwarded_port` propagates correctly to qBittorrent config.
-- Media library mounts (`/data/media/movies`, etc.) have correct POSIX read/write permissions matching `.env`'s `PUID`/`PGID`.
+Verification:
+- `.env` loads cleanly.
+- backups are present and non-empty.
+- stack directories exist and match the intended architecture.
 
 ---
 
-## Phase 7: Uptime Monitoring & Backrest Schedules
+## Stage 2: Secure Network & Socket Isolation
 
-**Objective:** Restore monitoring states and ensure automated backup health.
+**Objective:** Create isolated networks and lock down Docker socket access.
 
-**Execution Steps:**
+Steps:
+1. Ensure these networks exist:
+   - `proxy_net`
+   - `socket_internal`
+   - `infrastructure_internal`
+   - `cloud_internal`
+   - `services_internal`
+   - `downloads_internal`
+2. Keep `homelab_net` in place only for discovery during the migration.
+3. Configure `stacks/infrastructure/compose.yaml`:
+   - `docker-socket-proxy` attached only to `socket_internal`
+   - `caddy` attached to `socket_internal` and `proxy_net`
+   - `DOCKER_HOST=tcp://docker-socket-proxy:2375`
+4. Configure `stacks/monitoring/compose.yaml`:
+   - `dockge` gets raw `/var/run/docker.sock`
+   - bind only to `100.106.40.5:20202`
 
-1. **Uptime Kuma Init:** Bring up `louislam/uptime-kuma:2`. If recreating, import `config/uptime-kuma/monitors.json` manually or via script.
-2. **Backrest UI Setup:** Start `ghcr.io/garethgeorge/backrest:latest` and enforce its Tailscale-only exposure profile (`20211`). Hook the UI up to `scripts/backup-dbs.sh` as a pre-flight execution.
-3. **Cleanup:** Execute `compose-pull-all.sh` to assert no missing images, and `down-all.sh; up-all.sh` representing the ultimate smoke test.
-
-**Verification:**
-
-- The Uptime Kuma dashboard illuminates entirely green for configured HTTP/TCP checks.
-- Backrest reports successful verification against the B2 S3 storage block.
-
----
-
-## Phase 8: Comprehensive Backups Configurations
-
-**Objective:** Guarantee data durability based on the official documentation mandates for Yamtrack, Audiobookshelf, and Immich.
-
-**Execution Steps:**
-
-1. **Immich Backup Implementation:**
-   - Execute database export natively via `pg_dumpall` inside `backup-dbs.sh`.
-   - Update `scripts/backup.sh` (or Backrest equivalent exclusions) to securely back up the `$UPLOAD_LOCATION` (which contains critical `/upload`, `/profile`, `/library`, and auto-generated `/backups`), while selectively excluding unneeded generative folders like `/encoded-video` and `/thumbs`.
-2. **AudioBookShelf Backup Implementation:**
-   - ABS produces daily local backups containing the `/config`, `/metadata/authors`, and `/metadata/items` along with its SQLite database inside the `/metadata/backups` directory natively. Ensure `scripts/backup.sh` explicitely backs up the full `/metadata/backups` folder + the root `/config` map, as dictated by official documentation.
-3. **Yamtrack Backup Implementation:**
-   - Ensure the internal Yamtrack mounted volume (specifically `/yamtrack/db` resolving to `../../data/yamtrack`) is part of the `backup.sh` or Backrest run, catching all configuration and SQLite persistent data.
-
-**Verification:**
-
-- Simulating `scripts/backup.sh` (dry-run) encompasses the Yamtrack volumes, the ABS metadata map, and correctly syncs Immich's `install_location/profile` whilst ignoring `/encoded-video`.
+Verification:
+- `docker network ls` shows the expected internal networks.
+- `docker exec docker-socket-proxy curl -sf http://docker-socket-proxy:2375/_ping`
+- `docker network inspect socket_internal` contains only socket-aware services.
 
 ---
 
+## Stage 3: Label-Driven Edge Routing
+
+**Objective:** Replace static proxy and homepage config with Docker labels.
+
+Steps:
+1. Confirm `caddy` is using `lucaslorentz/caddy-docker-proxy:ci-alpine`.
+2. Remove stale Caddy config files/Dockerfile if they exist only for the old static proxy.
+3. Add labels to all public-facing services.
+4. Ensure services are reachable on both `proxy_net` and their stack-specific internal network.
+5. Configure `homepage` to use `docker-socket-proxy` via `config/homepage/docker.yaml`.
+
+Verification:
+- `docker exec caddy cat /config/caddy/Caddyfile.autosave`
+- `grep -E 'http://.*\.andreasmaita\.com' /config/caddy/Caddyfile.autosave`
+- `homepage` web UI discovers container metadata.
+
+---
+
+## Stage 4: Database & Cache Initialization
+
+**Objective:** Start databases and caches first, then connect applications to them.
+
+Steps:
+1. Start database-only stacks:
+   ```bash
+   docker compose --env-file .env -f stacks/services/compose.db.yaml up -d
+   docker compose --env-file .env -f stacks/cloud/compose.db.yaml up -d
+   ```
+2. Confirm health checks:
+   - `pg_isready` for Postgres
+   - `redis-cli ping` for Redis
+3. Ensure no DB services publish host ports.
+
+Verification:
+- all DB containers are `healthy`
+- no database service has host-facing ports
+
+---
+
+## Stage 5: Application Deployment
+
+**Objective:** Bring up the service stacks after storage and edge are stable.
+
+Steps:
+1. Start `stacks/infrastructure` first.
+2. Start `stacks/cloud`, `stacks/services`, `stacks/home`, and `stacks/media`.
+3. Verify route availability and auth boundaries.
+
+Verification:
+- `nextcloud` loads without reverse proxy warnings
+- `immich` is reachable on the domain and Tailscale IP
+- `Vaultwarden` and `Joplin` are not behind `forward_auth`
+
+---
+
+## Stage 6: Downloads & VPN Validation
+
+**Objective:** Validate the download pipeline and VPN network namespace.
+
+Steps:
+1. Start `stacks/downloads` with `USE_VPN=true` if VPN mode is intended.
+2. Verify `qbittorrent` runs in the Gluetun netns.
+3. Confirm port forwarding sync:
+   ```bash
+   docker exec gluetun cat /tmp/gluetun/forwarded_port
+   ```
+
+Verification:
+- `qbittorrent` sees a VPN public IP
+- qBittorrent listens on the forwarded port
+
+---
+
+## Stage 7: Monitoring & Backup Validation
+
+**Objective:** Confirm monitoring and backup automation work end-to-end.
+
+Steps:
+1. Start the monitoring stack.
+2. Import Uptime Kuma monitor JSON if required.
+3. Run a backup validation via Backrest or `scripts/backup.sh` dry-run.
+
+Verification:
+- Uptime Kuma reports healthy checks
+- backup validation includes Immich, ABS, and Yamtrack data
+
+---
+
+## Stage 8: Post-refactor Audit
+
+**Objective:** Validate the new architecture and retire legacy drift-prone config.
+
+Steps:
+1. Migrate static `config/homepage/services.yaml` entries into compose labels when possible.
+2. Confirm `config/caddy/Caddyfile` is no longer required.
+3. Verify `homelab_net` still functions only as a transition bridge.
+
+Verification:
+- no service routes depend on legacy static Caddy config
+- homepage widgets come from label discovery
+- `docker compose config` passes for all stacks
+
+---
+
+## Live Recovery Status
+
+- [x] Nextcloud `config.php` syntax fixed.
+- [ ] Authelia forward_auth policy verification pending.
+- [ ] Caddy label coverage for all public domains pending.
+- [ ] Homepage discovery validation pending.
+
+---
+
+## Known plan corrections
+
+1. Do not remove `homelab_net` until the internal network migration is fully validated.
+2. Infrastructure must start before application stacks.
+3. Fix runtime failures first, then refactor.
+4. Treat `docker-socket-proxy` ingress network query errors as non-fatal in non-Swarm Docker environments.
+
+---
+
+## Network isolation rule
+
+- `*_internal` networks are the only allowed paths for DB/cache and Docker socket proxy access.
+- `proxy_net` is for Caddy and label-driven public routing.
+- `homelab_net` remains a cross-stack discovery bridge until the new architecture is validated.
 ## Appendix A: Technical Documentation & Best Practice References
 
 To guarantee long-term stability and align with industry/homelab-community standards, refer to these official documentation streams when implementing the phases above:
