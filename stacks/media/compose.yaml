@@ -25,7 +25,7 @@ services:
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "caddy=audiobookshelf.andreasmaita.com"
+      - "caddy=http://audiobookshelf.andreasmaita.com"
       - "caddy.1_import=authelia_auth"
       - "caddy.2_reverse_proxy={{upstreams 80}}"
       - "homepage.group=Media"
@@ -58,7 +58,7 @@ services:
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "caddy=yamtrack.andreasmaita.com"
+      - "caddy=http://yamtrack.andreasmaita.com"
       - "caddy.1_import=authelia_auth"
       - "caddy.2_reverse_proxy={{upstreams 8000}}"
       - "homepage.group=Media"
@@ -155,7 +155,7 @@ services:
       - ND_BASEURL=
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "caddy=navidrome.andreasmaita.com"
+      - "caddy=http://navidrome.andreasmaita.com"
       - "caddy.1_import=authelia_auth"
       - "caddy.2_reverse_proxy={{upstreams 4533}}"
       - "homepage.group=Media"
@@ -202,7 +202,7 @@ services:
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "caddy=feishin.andreasmaita.com"
+      - "caddy=http://feishin.andreasmaita.com"
       - "caddy.1_import=authelia_auth"
       - "caddy.2_reverse_proxy={{upstreams 9180}}"
       - "homepage.group=Media"
@@ -284,7 +284,7 @@ services:
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "caddy=komga.andreasmaita.com"
+      - "caddy=http://komga.andreasmaita.com"
       - "caddy.1_import=authelia_auth"
       - "caddy.2_reverse_proxy={{upstreams 25600}}"
       - "homepage.group=Media"
@@ -330,7 +330,7 @@ services:
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "caddy=calibre-web.andreasmaita.com"
+      - "caddy=http://calibre-web.andreasmaita.com"
       - "caddy.1_import=authelia_auth"
       - "caddy.2_reverse_proxy={{upstreams 8083}}"
       - "homepage.group=Media"
@@ -365,7 +365,7 @@ services:
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "caddy=jellyfin.andreasmaita.com"
+      - "caddy=http://jellyfin.andreasmaita.com"
       - "caddy.1_import=authelia_auth"
       - "caddy.2_reverse_proxy={{upstreams 8096}}"
       - "homepage.group=Media"
@@ -430,7 +430,7 @@ services:
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "caddy=seerr.andreasmaita.com"
+      - "caddy=http://seerr.andreasmaita.com"
       - "caddy.1_import=authelia_auth"
       - "caddy.2_reverse_proxy={{upstreams 5055}}"
       - "homepage.group=Media"

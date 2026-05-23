@@ -444,6 +444,8 @@ No Caddyfile needed. Labels on each service define routing.
 labels:
   caddy.auto_https: "off"                              # CF handles TLS — Caddy serves plain HTTP only
   caddy.servers.trusted_proxies: "static private_ranges"  # Trust X-Forwarded-Proto from cloudflared
+  # When auto_https is disabled, service labels must explicitly use http://
+  # e.g. caddy=http://nextcloud.andreasmaita.com
 ```
 
 > **Why `trusted_proxies` is required:** Cloudflared terminates TLS and forwards plain HTTP to Caddy

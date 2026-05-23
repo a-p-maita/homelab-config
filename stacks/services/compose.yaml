@@ -104,7 +104,7 @@ services:
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "caddy=vault.andreasmaita.com"
+      - "caddy=http://vault.andreasmaita.com"
       - "caddy.reverse_proxy={{upstreams 80}}"
       - "homepage.group=Security"
       - "homepage.name=Vaultwarden"
@@ -181,7 +181,7 @@ services:
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "caddy=joplin.andreasmaita.com"
+      - "caddy=http://joplin.andreasmaita.com"
       - "caddy.1_import=authelia_auth"
       - "caddy.2_reverse_proxy={{upstreams 22300}}"
       - "homepage.group=Productivity"
@@ -240,7 +240,7 @@ services:
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "caddy=paperless.andreasmaita.com"
+      - "caddy=http://paperless.andreasmaita.com"
       - "caddy.1_import=authelia_auth"
       - "caddy.2_reverse_proxy={{upstreams 8000}}"
       - "homepage.group=Documents"
@@ -376,7 +376,7 @@ services:
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "caddy=mealie.andreasmaita.com"
+      - "caddy=http://mealie.andreasmaita.com"
       - "caddy.1_import=authelia_auth"
       - "caddy.2_reverse_proxy={{upstreams 9000}}"
       - "homepage.group=Productivity"
@@ -416,7 +416,7 @@ services:
     container_name: forgejo
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "caddy=forgejo.andreasmaita.com"
+      - "caddy=http://forgejo.andreasmaita.com"
       - "caddy.1_import=authelia_auth"
       - "caddy.2_reverse_proxy={{upstreams 3000}}"
       - "homepage.group=Productivity"

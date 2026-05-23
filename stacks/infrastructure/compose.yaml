@@ -77,7 +77,7 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
       # Caddy routing — protected by Authelia 2FA
-      - "caddy=homepage.andreasmaita.com"
+      - "caddy=http://homepage.andreasmaita.com"
       - "caddy.1_import=authelia_auth"
       - "caddy.2_reverse_proxy={{upstreams 3000}}"
       # Homepage self-discovery
