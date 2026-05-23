@@ -29,6 +29,8 @@
 - Fixed `stacks/cloud/compose.override.yaml` to include the missing `proxy_net` and `immich_internal` network definitions for the combined cloud compose config.
 - Added missing homepage entries for public routes currently present in live Caddy: `actual-budget.andreasmaita.com` and `join.andreasmaita.com`.
 - Re-added live homepage alias `home.andreasmaita.com` to `HOMEPAGE_ALLOWED_HOSTS`.
+- Removed stale Octo-Fiesta runtime homepage configuration from `data/homepage/config/services.yaml`.
+- Fixed Komga host-volume ownership on `data/komga` and verified the container reached `healthy` status.
 - Identified and corrected stale homepage route references: `actual-budget.andreasmaita.com`, `join.andreasmaita.com`, `abs.andreasmaita.com`, `music.andreasmaita.com`, and `home.andreasmaita.com`.
 
 ---
@@ -351,12 +353,14 @@ Verification:
 
 - [ ] `docker compose config` passes for all active stacks.
 - [ ] `caddy` is using `docker-socket-proxy` and labels are discovered correctly.
-- [ ] Authelia forward-auth is applied on protected hostnames.
-- [ ] `nextcloud.andreasmaita.com` route is present and consistent with the live container labels.
-- [ ] `octo-fiesta.andreasmaita.com` is not active and stale dashboard/docs references are removed.
-- [ ] Caddy recoverable hostnames are aligned with repo labels.
-- [ ] Homepage service discovery and live routes agree.
-- [ ] `homelab_net` remains in place until internal isolation is validated.
+- [x] Authelia forward-auth is applied on protected hostnames.
+- [x] `nextcloud.andreasmaita.com` route is present and consistent with the live container labels.
+- [x] `octo-fiesta.andreasmaita.com` is not active in live Caddy and stale dashboard/docs/runtime homepage references are removed.
+- [x] Stale repo copy of `config/caddy/caddy/autosave.json` is removed.
+- [x] Caddy recoverable hostnames are aligned with repo labels.
+- [x] Homepage service discovery and live routes agree.
+- [x] `homelab_net` remains in place until internal isolation is validated.
+- [x] Host header checks confirm auth and public routes are served by Caddy.
 
 ---
 
