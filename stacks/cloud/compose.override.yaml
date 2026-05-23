@@ -13,8 +13,8 @@ services:
       IMMICH_VERSION: ${IMMICH_VERSION}
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "caddy=immich.andreasmaita.com"
-      - "caddy.2_reverse_proxy={{upstreams 2283}}"
+      - "caddy=http://immich.andreasmaita.com"
+      - "caddy.2_reverse_proxy=http://immich-server:2283"
       - "homepage.group=Cloud"
       - "homepage.name=Immich"
       - "homepage.icon=immich.png"
@@ -57,9 +57,9 @@ services:
       - NEXTCLOUD_TRUSTED_DOMAINS=nextcloud.andreasmaita.com 100.106.40.5
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "caddy=nextcloud.andreasmaita.com"
+      - "caddy=http://nextcloud.andreasmaita.com"
       - "caddy.1_import=authelia_auth"
-      - "caddy.2_reverse_proxy={{upstreams 80}}"
+      - "caddy.2_reverse_proxy=http://nextcloud:80"
       - "homepage.group=Cloud"
       - "homepage.name=Nextcloud"
       - "homepage.icon=nextcloud.png"
