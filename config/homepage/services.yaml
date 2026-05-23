@@ -14,430 +14,435 @@
 # -------------------------------------------------------------------------
 
 - "External - Media":
-   - Jellyfin:
-       href: https://jellyfin.andreasmaita.com
-       description: Media server (video, music, TV)
-       icon: jellyfin.png
-       siteMonitor: https://jellyfin.andreasmaita.com
-   - Audiobookshelf:
-       href: https://abs.andreasmaita.com
-       description: Audiobook & podcast library
-       icon: audiobookshelf.png
-       siteMonitor: https://abs.andreasmaita.com
-   - Navidrome:
-       href: https://music.andreasmaita.com
-       description: Music streaming server
-       icon: navidrome.png
-       siteMonitor: https://music.andreasmaita.com
-   - Feishin:
-       href: https://feishin.andreasmaita.com
-       description: Music web player
-       icon: feishin.png
-       siteMonitor: https://feishin.andreasmaita.com
-   - Komga:
-       href: https://komga.andreasmaita.com
-       description: Comics and manga reader
-       icon: komga.png
-       siteMonitor: https://komga.andreasmaita.com
-   - Calibre Web:
-       href: https://calibre-web.andreasmaita.com
-       description: Ebook library manager
-       icon: calibre-web.png
-       siteMonitor: https://calibre-web.andreasmaita.com
-   - Seerr:
-       href: https://seerr.andreasmaita.com
-       description: Media request manager
-       icon: seerr.png
-       siteMonitor: https://seerr.andreasmaita.com
-   - Yamtrack:
-       href: https://yamtrack.andreasmaita.com
-       description: Media tracker for films, TV, games, and manga
-       icon: mdi-television-play
-       siteMonitor: https://yamtrack.andreasmaita.com
-   - Wizarr:
-       href: https://join.andreasmaita.com
-       description: Jellyfin invitation and invite management
-       icon: mdi-account-plus
-       siteMonitor: https://join.andreasmaita.com
+    - Jellyfin:
+        href: https://jellyfin.andreasmaita.com
+        description: Media server (video, music, TV)
+        icon: jellyfin.png
+        siteMonitor: https://jellyfin.andreasmaita.com
+    - Audiobookshelf:
+        href: https://abs.andreasmaita.com
+        description: Audiobook & podcast library
+        icon: audiobookshelf.png
+        siteMonitor: https://abs.andreasmaita.com
+    - Navidrome:
+        href: https://music.andreasmaita.com
+        description: Music streaming server
+        icon: navidrome.png
+        siteMonitor: https://music.andreasmaita.com
+    - Feishin:
+        href: https://feishin.andreasmaita.com
+        description: Music web player
+        icon: feishin.png
+        siteMonitor: https://feishin.andreasmaita.com
+    - Komga:
+        href: https://komga.andreasmaita.com
+        description: Comics and manga reader
+        icon: komga.png
+        siteMonitor: https://komga.andreasmaita.com
+    - Calibre Web:
+        href: https://calibre-web.andreasmaita.com
+        description: Ebook library manager
+        icon: calibre-web.png
+        siteMonitor: https://calibre-web.andreasmaita.com
+    - Seerr:
+        href: https://seerr.andreasmaita.com
+        description: Media request manager
+        icon: seerr.png
+        siteMonitor: https://seerr.andreasmaita.com
+    - Yamtrack:
+        href: https://yamtrack.andreasmaita.com
+        description: Media tracker for films, TV, games, and manga
+        icon: mdi-television-play
+        siteMonitor: https://yamtrack.andreasmaita.com
+    - Wizarr:
+        href: https://join.andreasmaita.com
+        description: Jellyfin invitation and invite management
+        icon: mdi-account-plus
+        siteMonitor: https://join.andreasmaita.com
+    - Octo-Fiesta:
+        href: https://octo-fiesta.andreasmaita.com
+        description: Subsonic API proxy for high-resolution music playback
+        icon: mdi-cloud-music
+        siteMonitor: https://octo-fiesta.andreasmaita.com
 
 - "External - Cloud & Code":
-   - Immich:
-       href: https://immich.andreasmaita.com
-       description: Photo and video backup
-       icon: immich.png
-       siteMonitor: https://immich.andreasmaita.com
-   - Nextcloud:
-       href: https://nextcloud.andreasmaita.com
-       description: Cloud storage and collaboration
-       icon: nextcloud.png
-       siteMonitor: https://nextcloud.andreasmaita.com
-   - Forgejo:
-       href: https://git.andreasmaita.com
-       description: Git hosting and code forge
-       icon: forgejo.png
-       siteMonitor: https://git.andreasmaita.com
-   - Joplin:
-       href: https://joplin.andreasmaita.com
-       description: Note-taking sync server
-       icon: joplin.png
-       siteMonitor: https://joplin.andreasmaita.com
+    - Immich:
+        href: https://immich.andreasmaita.com
+        description: Photo and video backup
+        icon: immich.png
+        siteMonitor: https://immich.andreasmaita.com
+    - Nextcloud:
+        href: https://nextcloud.andreasmaita.com
+        description: Cloud storage and collaboration
+        icon: nextcloud.png
+        siteMonitor: https://nextcloud.andreasmaita.com
+    - Forgejo:
+        href: https://git.andreasmaita.com
+        description: Git hosting and code forge
+        icon: forgejo.png
+        siteMonitor: https://git.andreasmaita.com
+    - Joplin:
+        href: https://joplin.andreasmaita.com
+        description: Note-taking sync server
+        icon: joplin.png
+        siteMonitor: https://joplin.andreasmaita.com
 
 - "External - Services":
-   - Vaultwarden:
-       href: https://vault.andreasmaita.com
-       description: Password manager (Bitwarden-compatible)
-       icon: vaultwarden.png
-       siteMonitor: https://vault.andreasmaita.com
-   - Paperless NGX:
-       href: https://paperless.andreasmaita.com
-       description: Document OCR and archiving
-       icon: paperless.png
-       siteMonitor: https://paperless.andreasmaita.com
-   - Mealie:
-       href: https://mealie.andreasmaita.com
-       description: Recipe manager and meal planner
-       icon: mealie.png
-       siteMonitor: https://mealie.andreasmaita.com
-   - Auth:
-       href: https://auth.andreasmaita.com
-       description: SSO and two-factor auth gateway
-       icon: authelia.png
-       siteMonitor: https://auth.andreasmaita.com
-   - Actual Budget:
-       href: https://actual-budget.andreasmaita.com
-       description: Personal finance and budgeting
-       icon: actual-budget.png
-       siteMonitor: https://actual-budget.andreasmaita.com
-   - Homepage:
-       href: https://homepage.andreasmaita.com
-       description: This dashboard
-       icon: homepage.png
-       siteMonitor: https://homepage.andreasmaita.com
+    - Vaultwarden:
+        href: https://vault.andreasmaita.com
+        description: Password manager (Bitwarden-compatible)
+        icon: vaultwarden.png
+        siteMonitor: https://vault.andreasmaita.com
+    - Paperless NGX:
+        href: https://paperless.andreasmaita.com
+        description: Document OCR and archiving
+        icon: paperless.png
+        siteMonitor: https://paperless.andreasmaita.com
+    - Mealie:
+        href: https://mealie.andreasmaita.com
+        description: Recipe manager and meal planner
+        icon: mealie.png
+        siteMonitor: https://mealie.andreasmaita.com
+    - Auth:
+        href: https://auth.andreasmaita.com
+        description: SSO and two-factor auth gateway
+        icon: authelia.png
+        siteMonitor: https://auth.andreasmaita.com
+    - Actual Budget:
+        href: https://actual-budget.andreasmaita.com
+        description: Personal finance and budgeting
+        icon: mdi-currency-usd
+        siteMonitor: https://actual-budget.andreasmaita.com
+    - Homepage:
+        href: https://homepage.andreasmaita.com
+        description: This dashboard
+        icon: homepage.png
+        siteMonitor: https://homepage.andreasmaita.com
 
 # -------------------------------------------------------------------------
 # MEDIA TAB - Tailscale / LAN (http://100.106.40.5:PORT)
 # -------------------------------------------------------------------------
 
 - "Streaming & Tracking":
-   - Jellyfin:
-       href: http://100.106.40.5:20330
-       description: Media server (video, TV)
-       icon: jellyfin.png
-       server: my-docker
-       container: jellyfin
-       widget:
-         type: jellyfin
-         url: http://jellyfin:8096
-         key: "{{HOMEPAGE_VAR_JELLYFIN_API_KEY}}"
-         enableBlocks: true
-         enableNowPlaying: true
-   - Overseerr:
-       href: http://100.106.40.5:20331
-       description: Media request & discovery
-       icon: overseerr.png
-       server: my-docker
-       container: seerr
-       widget:
-         type: overseerr
-         url: http://seerr:5055
-         key: "{{HOMEPAGE_VAR_SEERR_API_KEY}}"
-   - Audiobookshelf:
-       href: http://100.106.40.5:20020
-       description: Audiobook & podcast library
-       icon: audiobookshelf.png
-       server: my-docker
-       container: audiobookshelf
-   - Navidrome:
-       href: http://100.106.40.5:20070
-       description: Music streaming server
-       icon: navidrome.png
-       server: my-docker
-       container: navidrome
-   - Feishin:
-       href: http://100.106.40.5:20072
-       description: Music web player
-       icon: feishin.png
-       server: my-docker
-       container: feishin
-   - Yamtrack:
-       href: http://100.106.40.5:20041
-       description: Media tracker (movies/TV/games/manga)
-       icon: mdi-television-play
-       server: my-docker
-       container: yamtrack
-   - CrossWatch:
-       href: http://100.106.40.5:20042
-       description: Sync Trakt, AniList, Jellyfin, Simkl
-       icon: mdi-sync
-       server: my-docker
-       container: crosswatch
-   - Maintainerr:
-       href: http://100.106.40.5:6246
-       description: Auto-remove media from Jellyfin by rules
-       icon: maintainerr.png
-       server: my-docker
-       container: maintainerr
-   - Wizarr:
-       href: http://100.106.40.5:20071
-       description: Jellyfin invitation manager
-       icon: mdi-account-plus
-       server: my-docker
-       container: wizarr
+    - Jellyfin:
+        href: http://100.106.40.5:20330
+        description: Media server (video, TV)
+        icon: jellyfin.png
+        server: my-docker
+        container: jellyfin
+        widget:
+          type: jellyfin
+          url: http://jellyfin:8096
+          key: "{{HOMEPAGE_VAR_JELLYFIN_API_KEY}}"
+          enableBlocks: true
+          enableNowPlaying: true
+    - Overseerr:
+        href: http://100.106.40.5:20331
+        description: Media request & discovery
+        icon: overseerr.png
+        server: my-docker
+        container: seerr
+        widget:
+          type: overseerr
+          url: http://seerr:5055
+          key: "{{HOMEPAGE_VAR_SEERR_API_KEY}}"
+    - Audiobookshelf:
+        href: http://100.106.40.5:20020
+        description: Audiobook & podcast library
+        icon: audiobookshelf.png
+        server: my-docker
+        container: audiobookshelf
+    - Navidrome:
+        href: http://100.106.40.5:20070
+        description: Music streaming server
+        icon: navidrome.png
+        server: my-docker
+        container: navidrome
+    - Feishin:
+        href: http://100.106.40.5:20072
+        description: Music web player
+        icon: feishin.png
+        server: my-docker
+        container: feishin
+    - Yamtrack:
+        href: http://100.106.40.5:20041
+        description: Media tracker (movies/TV/games/manga)
+        icon: mdi-television-play
+        server: my-docker
+        container: yamtrack
+    - CrossWatch:
+        href: http://100.106.40.5:20042
+        description: Sync Trakt, AniList, Jellyfin, Simkl
+        icon: mdi-sync
+        server: my-docker
+        container: crosswatch
+    - Maintainerr:
+        href: http://100.106.40.5:6246
+        description: Auto-remove media from Jellyfin by rules
+        icon: maintainerr.png
+        server: my-docker
+        container: maintainerr
+    - Wizarr:
+        href: http://100.106.40.5:20071
+        description: Jellyfin invitation manager
+        icon: mdi-account-plus
+        server: my-docker
+        container: wizarr
 
 - "Books & Reading":
-   - Shelfmark:
-       href: http://100.106.40.5:20079
-       description: Book & audiobook search and download
-       icon: mdi-bookshelf
-       server: my-docker
-       container: shelfmark
-   - Calibre-Web:
-       href: http://100.106.40.5:20078
-       description: Ebook library manager & reader
-       icon: calibre-web.png
-       server: my-docker
-       container: calibre-web
-   - Komga:
-       href: http://100.106.40.5:20077
-       description: Comics and manga server
-       icon: komga.png
-       server: my-docker
-       container: komga
-   - Kiwix:
-       href: http://100.106.40.5:20304
-       description: Offline Wikipedia & ZIM reader
-       icon: mdi-book-open-page-variant
-       server: my-docker
-       container: kiwix
+    - Shelfmark:
+        href: http://100.106.40.5:20079
+        description: Book & audiobook search and download
+        icon: mdi-bookshelf
+        server: my-docker
+        container: shelfmark
+    - Calibre-Web:
+        href: http://100.106.40.5:20078
+        description: Ebook library manager & reader
+        icon: calibre-web.png
+        server: my-docker
+        container: calibre-web
+    - Komga:
+        href: http://100.106.40.5:20077
+        description: Comics and manga server
+        icon: komga.png
+        server: my-docker
+        container: komga
+    - Kiwix:
+        href: http://100.106.40.5:20304
+        description: Offline Wikipedia & ZIM reader
+        icon: mdi-book-open-page-variant
+        server: my-docker
+        container: kiwix
 
 - "Downloads":
-   - qBittorrent:
-       href: http://100.106.40.5:20050
-       description: Torrent client
-       icon: qbittorrent.png
-       server: my-docker
-       container: qbittorrent
-       widget:
-         type: qbittorrent
-         url: http://qbittorrent:20050
-         username: "{{HOMEPAGE_VAR_QBT_USER}}"
-         password: "{{HOMEPAGE_VAR_QBT_PASS}}"
-         enableLeechProgress: true
-   - Autobrr:
-       href: http://100.106.40.5:20074
-       description: Automated torrent/Usenet release manager
-       icon: autobrr.png
-       server: my-docker
-       container: autobrr
-       widget:
-         type: autobrr
-         url: http://autobrr:7474
-         key: "{{HOMEPAGE_VAR_AUTOBRR_API_KEY}}"
-   - Byparr:
-       href: http://100.106.40.5:20060
-       description: Cloudflare bypass for protected indexers
-       icon: mdi-shield-check
-       server: my-docker
-       container: byparr
-   - Radarr:
-       href: http://100.106.40.5:20056
-       description: Movie collection manager
-       icon: radarr.png
-       server: my-docker
-       container: radarr
-       widget:
-         type: radarr
-         url: http://radarr:7878
-         key: "{{HOMEPAGE_VAR_RADARR_API_KEY}}"
-         enableQueue: true
-   - Sonarr:
-       href: http://100.106.40.5:20057
-       description: TV series collection manager
-       icon: sonarr.png
-       server: my-docker
-       container: sonarr
-       widget:
-         type: sonarr
-         url: http://sonarr:8989
-         key: "{{HOMEPAGE_VAR_SONARR_API_KEY}}"
-         enableQueue: true
-   - Lidarr:
-       href: http://100.106.40.5:20059
-       description: Music collection manager
-       icon: lidarr.png
-       server: my-docker
-       container: lidarr
-       widget:
-         type: lidarr
-         url: http://lidarr:8686
-         key: "{{HOMEPAGE_VAR_LIDARR_API_KEY}}"
-   - Prowlarr:
-       href: http://100.106.40.5:20055
-       description: Indexer manager for arr apps
-       icon: prowlarr.png
-       server: my-docker
-       container: prowlarr
-       widget:
-         type: prowlarr
-         url: http://prowlarr:9696
-         key: "{{HOMEPAGE_VAR_PROWLARR_API_KEY}}"
-   - Bazarr:
-       href: http://100.106.40.5:20061
-       description: Subtitle manager for Radarr & Sonarr
-       icon: bazarr.png
-       server: my-docker
-       container: bazarr
-       widget:
-         type: bazarr
-         url: http://bazarr:6767
-         key: "{{HOMEPAGE_VAR_BAZARR_API_KEY}}"
-   - Jackett:
-       href: http://100.106.40.5:20054
-       description: Torrent indexer proxy (legacy - use Prowlarr)
-       icon: jackett.png
-       server: my-docker
-       container: jackett
-   - Profilarr:
-       href: http://100.106.40.5:20075
-       description: Quality profile manager for arr apps
-       icon: mdi-tune-variant
-       server: my-docker
-       container: profilarr
-   - Listenarr:
-       href: http://100.106.40.5:20073
-       description: Auto-download music added to Jellyfin
-       icon: mdi-headphones
-       server: my-docker
-       container: listenarr
+    - qBittorrent:
+        href: http://100.106.40.5:20050
+        description: Torrent client
+        icon: qbittorrent.png
+        server: my-docker
+        container: qbittorrent
+        widget:
+          type: qbittorrent
+          url: http://qbittorrent:20050
+          username: "{{HOMEPAGE_VAR_QBT_USER}}"
+          password: "{{HOMEPAGE_VAR_QBT_PASS}}"
+          enableLeechProgress: true
+    - Autobrr:
+        href: http://100.106.40.5:20074
+        description: Automated torrent/Usenet release manager
+        icon: autobrr.png
+        server: my-docker
+        container: autobrr
+        widget:
+          type: autobrr
+          url: http://autobrr:7474
+          key: "{{HOMEPAGE_VAR_AUTOBRR_API_KEY}}"
+    - Byparr:
+        href: http://100.106.40.5:20060
+        description: Cloudflare bypass for protected indexers
+        icon: mdi-shield-check
+        server: my-docker
+        container: byparr
+    - Radarr:
+        href: http://100.106.40.5:20056
+        description: Movie collection manager
+        icon: radarr.png
+        server: my-docker
+        container: radarr
+        widget:
+          type: radarr
+          url: http://radarr:7878
+          key: "{{HOMEPAGE_VAR_RADARR_API_KEY}}"
+          enableQueue: true
+    - Sonarr:
+        href: http://100.106.40.5:20057
+        description: TV series collection manager
+        icon: sonarr.png
+        server: my-docker
+        container: sonarr
+        widget:
+          type: sonarr
+          url: http://sonarr:8989
+          key: "{{HOMEPAGE_VAR_SONARR_API_KEY}}"
+          enableQueue: true
+    - Lidarr:
+        href: http://100.106.40.5:20059
+        description: Music collection manager
+        icon: lidarr.png
+        server: my-docker
+        container: lidarr
+        widget:
+          type: lidarr
+          url: http://lidarr:8686
+          key: "{{HOMEPAGE_VAR_LIDARR_API_KEY}}"
+    - Prowlarr:
+        href: http://100.106.40.5:20055
+        description: Indexer manager for arr apps
+        icon: prowlarr.png
+        server: my-docker
+        container: prowlarr
+        widget:
+          type: prowlarr
+          url: http://prowlarr:9696
+          key: "{{HOMEPAGE_VAR_PROWLARR_API_KEY}}"
+    - Bazarr:
+        href: http://100.106.40.5:20061
+        description: Subtitle manager for Radarr & Sonarr
+        icon: bazarr.png
+        server: my-docker
+        container: bazarr
+        widget:
+          type: bazarr
+          url: http://bazarr:6767
+          key: "{{HOMEPAGE_VAR_BAZARR_API_KEY}}"
+    - Jackett:
+        href: http://100.106.40.5:20054
+        description: Torrent indexer proxy (legacy - use Prowlarr)
+        icon: jackett.png
+        server: my-docker
+        container: jackett
+    - Profilarr:
+        href: http://100.106.40.5:20075
+        description: Quality profile manager for arr apps
+        icon: mdi-tune-variant
+        server: my-docker
+        container: profilarr
+    - Listenarr:
+        href: http://100.106.40.5:20073
+        description: Auto-download music added to Jellyfin
+        icon: mdi-headphones
+        server: my-docker
+        container: listenarr
 
 # -------------------------------------------------------------------------
 # CLOUD TAB - Tailscale / LAN
 # -------------------------------------------------------------------------
 
 - "Photos":
-   - Immich:
-       href: http://100.106.40.5:2283
-       description: Photo & video backup
-       icon: immich.png
-       server: my-docker
-       container: immich-server
+    - Immich:
+        href: http://100.106.40.5:2283
+        description: Photo & video backup
+        icon: immich.png
+        server: my-docker
+        container: immich-server
 
 - "Notes & Documents":
-   - Paperless-NGX:
-       href: http://100.106.40.5:20301
-       description: Document management & OCR
-       icon: paperless-ngx.png
-       server: my-docker
-       container: paperless-ngx
-   - Joplin Server:
-       href: http://100.106.40.5:20317
-       description: Note-taking sync server
-       icon: joplin.png
-       server: my-docker
-       container: joplin
-   - Stirling PDF:
-       href: http://100.106.40.5:20303
-       description: PDF tools
-       icon: stirling-pdf.png
-       server: my-docker
-       container: stirling-pdf
-   - Nextcloud:
-       href: http://100.106.40.5:20460
-       description: Cloud storage and collaboration
-       icon: nextcloud.png
-       server: my-docker
-       container: nextcloud
+    - Paperless-NGX:
+        href: http://100.106.40.5:20301
+        description: Document management & OCR
+        icon: paperless-ngx.png
+        server: my-docker
+        container: paperless-ngx
+    - Joplin Server:
+        href: http://100.106.40.5:20317
+        description: Note-taking sync server
+        icon: joplin.png
+        server: my-docker
+        container: joplin
+    - Stirling PDF:
+        href: http://100.106.40.5:20303
+        description: PDF tools
+        icon: stirling-pdf.png
+        server: my-docker
+        container: stirling-pdf
+    - Nextcloud:
+        href: http://100.106.40.5:20460
+        description: Cloud storage and collaboration
+        icon: nextcloud.png
+        server: my-docker
+        container: nextcloud
 
 - "Code & Development":
-   - Forgejo:
-       href: http://100.106.40.5:20110
-       description: Git hosting
-       icon: forgejo.png
-       server: my-docker
-       container: forgejo
+    - Forgejo:
+        href: http://100.106.40.5:20110
+        description: Git hosting
+        icon: forgejo.png
+        server: my-docker
+        container: forgejo
 
 # -------------------------------------------------------------------------
 # SERVICES TAB - Tailscale / LAN
 # -------------------------------------------------------------------------
 
 - "Finance & Food":
-   - Actual Budget:
-       href: http://100.106.40.5:20316
-       description: Personal finance & budgeting
-       icon: actual-budget.png
-       server: my-docker
-       container: actual-budget
-   - Mealie:
-       href: http://100.106.40.5:20321
-       description: Recipe manager & meal planner
-       icon: mealie.png
-       server: my-docker
-       container: mealie
+    - Actual Budget:
+        href: http://100.106.40.5:20316
+        description: Personal finance & budgeting
+        icon: actual-budget.png
+        server: my-docker
+        container: actual-budget
+    - Mealie:
+        href: http://100.106.40.5:20321
+        description: Recipe manager & meal planner
+        icon: mealie.png
+        server: my-docker
+        container: mealie
 
 - "Productivity Tools":
-   - Draw.io:
-       href: http://100.106.40.5:20311
-       description: Diagram editor
-       icon: mdi-vector-square
-       server: my-docker
-       container: drawio
-   - Excalidraw:
-       href: http://100.106.40.5:20312
-       description: Collaborative whiteboard
-       icon: mdi-pencil-ruler
-       server: my-docker
-       container: excalidraw
-   - IT-Tools:
-       href: http://100.106.40.5:20313
-       description: Developer utilities
-       icon: mdi-tools
-       server: my-docker
-       container: it-tools
+    - Draw.io:
+        href: http://100.106.40.5:20311
+        description: Diagram editor
+        icon: mdi-vector-square
+        server: my-docker
+        container: drawio
+    - Excalidraw:
+        href: http://100.106.40.5:20312
+        description: Collaborative whiteboard
+        icon: mdi-pencil-ruler
+        server: my-docker
+        container: excalidraw
+    - IT-Tools:
+        href: http://100.106.40.5:20313
+        description: Developer utilities
+        icon: mdi-tools
+        server: my-docker
+        container: it-tools
 
 - "Security & Access":
-   - Vaultwarden:
-       href: http://100.106.40.5:20315
-       description: Password manager (Bitwarden-compatible)
-       icon: vaultwarden.png
-       server: my-docker
-       container: vaultwarden
-   - Authelia:
-       href: http://100.106.40.5:9091
-       description: SSO and two-factor authentication gateway
-       icon: authelia.png
-       server: my-docker
-       container: authelia
+    - Vaultwarden:
+        href: http://100.106.40.5:20315
+        description: Password manager (Bitwarden-compatible)
+        icon: vaultwarden.png
+        server: my-docker
+        container: vaultwarden
+    - Authelia:
+        href: http://100.106.40.5:9091
+        description: SSO and two-factor authentication gateway
+        icon: authelia.png
+        server: my-docker
+        container: authelia
 
 - "Smart Home":
-   - Home Assistant:
-       href: http://100.106.40.5:20340
-       description: Home automation platform
-       icon: home-assistant.png
-       server: my-docker
-       container: home-assistant
+    - Home Assistant:
+        href: http://100.106.40.5:20340
+        description: Home automation platform
+        icon: home-assistant.png
+        server: my-docker
+        container: home-assistant
 
 # -------------------------------------------------------------------------
 # SYSTEM TAB - Infrastructure
 # -------------------------------------------------------------------------
 
 - "Monitoring":
-   - Uptime Kuma:
-       href: http://100.106.40.5:20201
-       description: Uptime monitor
-       icon: uptime-kuma.png
-       server: my-docker
-       container: uptime-kuma
+    - Uptime Kuma:
+        href: http://100.106.40.5:20201
+        description: Uptime monitor
+        icon: uptime-kuma.png
+        server: my-docker
+        container: uptime-kuma
 
 - "Infrastructure":
-   - Cloudflared:
-       href: http://100.106.40.5:20280
-       description: Cloudflare Tunnel connector
-       icon: cloudflare.png
-       server: my-docker
-       container: cloudflared
-   - Homepage:
-       href: http://100.106.40.5:20200
-       description: This dashboard
-       icon: homepage.png
-       server: my-docker
-       container: homepage
+    - Cloudflared:
+        href: http://100.106.40.5:20280
+        description: Cloudflare Tunnel connector
+        icon: cloudflare.png
+        server: my-docker
+        container: cloudflared
+    - Homepage:
+        href: http://100.106.40.5:20200
+        description: This dashboard
+        icon: homepage.png
+        server: my-docker
+        container: homepage

@@ -5,7 +5,7 @@
 > - Execute stage-by-stage. Do not advance until the current stage is verified.
 > - Prefer live Docker state, Caddy autosave, and compose config over stale documentation.
 > - Keep the plan deterministic and explicit. Use exact commands, one change at a time.
-> - Treat `config/caddy/caddy/autosave.json` as the source of truth for public hostnames.
+> - Treat the `caddy` container's live `/config/caddy/autosave.json` as the source of truth for public hostnames.
 
 ---
 
@@ -17,11 +17,30 @@
 - Update the `Live Recovery Status` checklist after every verification.
 - Do not remove `homelab_net` until the new internal network architecture passes validation.
 
+## Actions completed so far
+
+- Verified `docker compose config` for all active stack definitions, including the combined overlay command for `stacks/cloud/compose.yaml` + `stacks/cloud/compose.override.yaml`.
+- Confirmed live `caddy` uses `DOCKER_HOST=tcp://docker-socket-proxy:2375`.
+- Confirmed `nextcloud.andreasmaita.com` is present in live Caddy autosave and is a valid active host.
+- Confirmed `dockge` is running and bound to the expected data and stack directories.
+- Confirmed `forgejo` service is running; live Caddy currently exposes it as `git.andreasmaita.com` and homepage metadata has been updated accordingly.
+- Confirmed `actual-budget` and `wizarr` are currently exposed by live Caddy at `actual-budget.andreasmaita.com` and `join.andreasmaita.com` respectively.
+- Updated homepage metadata to match live hostnames and route aliases from Caddy: `git.andreasmaita.com`, `abs.andreasmaita.com`, `music.andreasmaita.com`, and `seerr.andreasmaita.com`.
+- Added missing homepage entries for public routes currently present in live Caddy: `actual-budget.andreasmaita.com`, `join.andreasmaita.com`, and `octo-fiesta.andreasmaita.com`.
+- Re-added live homepage alias `home.andreasmaita.com` to `HOMEPAGE_ALLOWED_HOSTS`.
+- Identified and corrected stale homepage route references: `actual-budget.andreasmaita.com`, `join.andreasmaita.com`, `abs.andreasmaita.com`, `music.andreasmaita.com`, and `home.andreasmaita.com`.
+
 ---
 
 ## Live Caddy route baseline
 
-The live Caddy config in `config/caddy/caddy/autosave.json` currently advertises these hostnames:
+The live Caddy config inside the `caddy` container is authoritative. Inspect it with:
+
+```bash
+docker exec caddy cat /config/caddy/autosave.json | python3 -c 'import json,sys; data=json.load(sys.stdin); print(sorted({h for r in data["apps"]["http"]["servers"]["srv0"]["routes"] for m in r.get("match",[]) for h in m.get("host",[])}))'
+```
+
+The currently active hostnames in the live `caddy` container are:
 
 - `abs.andreasmaita.com`
 - `actual-budget.andreasmaita.com`
@@ -44,9 +63,14 @@ The live Caddy config in `config/caddy/caddy/autosave.json` currently advertises
 
 ### Important reconciliation notes
 
-- `nextcloud.andreasmaita.com` is defined in `stacks/cloud/compose.override.yaml` but is not present in the live Caddy route list.
-- `octo-fiesta.andreasmaita.com` is present in live Caddy, but no active `octo-fiesta` container appears in current Docker state. Treat this as a stale legacy route.
-- `join.andreasmaita.com` is live and maps to the running `wizarr` container.
+- The runtime authoritative source is `/config/caddy/autosave.json` inside the `caddy` container, not the repo copy under `config/caddy/caddy/autosave.json`.
+- `audiobookshelf.andreasmaita.com` and `navidrome.andreasmaita.com` are not currently active in live Caddy; the current live aliases are `abs.andreasmaita.com` and `music.andreasmaita.com`.
+- `forgejo.andreasmaita.com` is not currently active in live Caddy; the live host for the Forgejo service is `git.andreasmaita.com`.
+- `actual-budget.andreasmaita.com`, `join.andreasmaita.com`, and `octo-fiesta.andreasmaita.com` are active in live Caddy and should be present on the homepage.
+- `seer.andreasmaita.com` is a stale/incorrect alias; the live route is `seerr.andreasmaita.com`.
+- `home.andreasmaita.com` is accepted by live Caddy alongside `homepage.andreasmaita.com`.
+- `wizarr` is currently exposed at `join.andreasmaita.com`, so Homepage should include it as an external service.
+- `nextcloud.andreasmaita.com` is present in live Caddy and should be treated as a valid route.
 
 ---
 
@@ -98,17 +122,20 @@ Steps:
 
    ```bash
    docker compose -f stacks/infrastructure/compose.yaml config >/dev/null
+   docker compose -f stacks/cloud/compose.db.yaml config >/dev/null
    docker compose -f stacks/cloud/compose.yaml -f stacks/cloud/compose.override.yaml config >/dev/null
+   docker compose -f stacks/services/compose.db.yaml config >/dev/null
    docker compose -f stacks/services/compose.yaml config >/dev/null
    docker compose -f stacks/media/compose.yaml config >/dev/null
    docker compose -f stacks/arr/compose.yaml config >/dev/null
    docker compose -f stacks/home/compose.yaml config >/dev/null
+   docker compose -f stacks/monitoring/compose.yaml config >/dev/null
    ```
 
 3. Record the current network and socket topology:
 
    ```bash
-   docker network ls | grep -E 'proxy_net|socket_internal|infrastructure_internal|cloud_internal|services_internal|homelab_net'
+   docker network ls | grep -E 'proxy_net|socket_internal|infrastructure_internal|cloud_internal|services_internal|media_internal|immich_internal|homelab_net'
    docker network inspect socket_internal | jq '.Containers | keys'
    ```
 
@@ -175,7 +202,7 @@ Verification:
 
 ## Stage 3: Route reconciliation and homepage alignment
 
-**Objective:** Align public routing, homepage discovery, and repo labels.
+**Objective:** Align public routing, homepage discovery, and repo labels to the live Caddy state.
 
 Steps:
 
@@ -188,25 +215,30 @@ Steps:
    docker compose -f stacks/home/compose.yaml config | grep 'caddy=' || true
    ```
 
-2. Identify mismatch cases:
-   - `nextcloud.andreasmaita.com` should exist in live Caddy but does not.
-   - `octo-fiesta.andreasmaita.com` exists in live Caddy but no running container is present.
+2. Identify current live mismatches:
+   - `abs.andreasmaita.com` is the live alias for Audiobookshelf; `audiobookshelf.andreasmaita.com` is not currently active.
+   - `music.andreasmaita.com` is the live alias for Navidrome; `navidrome.andreasmaita.com` is not currently active.
+   - `git.andreasmaita.com` is the live host for Forgejo; `forgejo.andreasmaita.com` is not currently active.
+   - `actual-budget.andreasmaita.com`, `join.andreasmaita.com`, and `octo-fiesta.andreasmaita.com` are active in live Caddy and should be represented on the homepage.
+   - `home.andreasmaita.com` is accepted by live Caddy along with `homepage.andreasmaita.com` and should be treated as a valid public alias.
 
 3. Repair routing sources:
-   - If a stale route exists in a legacy Caddy file, remove it.
-   - If a current container has correct labels, restart that service and let Caddy re-read labels.
-   - If `nextcloud` labels are present but route is absent, restart `caddy` and confirm the route appears.
+   - If a service's repo labels are stale, update the compose labels or homepage metadata to match the live alias.
+   - Restart `caddy` after label reconciliation and confirm the present routes in `/config/caddy/autosave.json`.
+   - If live Caddy has a public host that is not represented in `config/homepage/services.yaml`, add it as a dashboard entry.
+   - If a route is intentionally removed, remove it from `config/homepage/services.yaml` and from any stale compose label references.
 
 4. Confirm homepage discovery is consistent:
-   - `Homepage` should use Docker labels wherever possible.
-   - If `config/homepage/services.yaml` is still required, keep only active, reachable entries.
+   - External entries must use live public hostnames from Caddy.
+   - `siteMonitor` should be present for external services to keep the dashboard easy to verify.
+   - Internal Tailscale/LAN entries may remain in `config/homepage/services.yaml` for local access.
 
 Verification:
 
-- `nextcloud.andreasmaita.com` is either intentionally absent or restored consistently to labels.
-- `octo-fiesta.andreasmaita.com` is removed if stale; `OCTOFIESTA_*` env vars are cleaned.
-- `config/homepage/services.yaml` and live Caddy hostnames agree on active public services.
-- `join.andreasmaita.com` mapping is confirmed with `wizarr` if still needed.
+- Live Caddy hostnames and `config/homepage/services.yaml` agree on the active public services.
+- `git.andreasmaita.com`, `abs.andreasmaita.com`, `music.andreasmaita.com`, `actual-budget.andreasmaita.com`, `join.andreasmaita.com`, and `octo-fiesta.andreasmaita.com` are present in the dashboard if they are live.
+- `nextcloud.andreasmaita.com` is validated as a live route and represented correctly.
+- External homepage entries include `siteMonitor` for public routes.
 
 ---
 
@@ -216,11 +248,11 @@ Verification:
 
 Steps:
 
-1. Bring up the ordered stacks:
+1. Bring up the ordered stacks with database-first boot ordering where applicable:
    - `stacks/infrastructure`
    - `stacks/monitoring`
-   - `stacks/cloud`
-   - `stacks/services`
+   - `stacks/cloud/compose.db.yaml` before `stacks/cloud/compose.yaml`
+   - `stacks/services/compose.db.yaml` before `stacks/services/compose.yaml`
    - `stacks/media`
    - `stacks/arr`
    - `stacks/home`
@@ -231,7 +263,7 @@ Steps:
    - `cloud_internal`
    - `services_internal`
    - `media_internal`
-   - `arr_internal`
+   - `immich_internal`
 
 4. Confirm rich services are reachable via the expected hostnames or local tunnels.
 
@@ -252,12 +284,15 @@ Steps:
 1. Remove stale route state and obsolete env settings:
    - `OCTOFIESTA_*` lines if the service is no longer active.
    - Legacy Caddy static config that duplicates label-driven routing.
+   - Archive or remove any stale repo copy of `config/caddy/caddy/autosave.json` if it is not the live container route source.
 
 2. Re-run full composition checks:
 
    ```bash
    docker compose -f stacks/infrastructure/compose.yaml config >/dev/null
+   docker compose -f stacks/cloud/compose.db.yaml config >/dev/null
    docker compose -f stacks/cloud/compose.yaml -f stacks/cloud/compose.override.yaml config >/dev/null
+   docker compose -f stacks/services/compose.db.yaml config >/dev/null
    docker compose -f stacks/services/compose.yaml config >/dev/null
    docker compose -f stacks/media/compose.yaml config >/dev/null
    docker compose -f stacks/arr/compose.yaml config >/dev/null
@@ -270,9 +305,43 @@ Steps:
 Verification:
 
 - `docker compose config` passes for all stacks.
-- `config/caddy/caddy/autosave.json` reflects only intended services.
+- The live `caddy` container config reflects only intended services.
 - `.env` contains no stale `OCTOFIESTA_*` settings.
-- `config/homepage/services.yaml` is not fighting the live route state.
+- `config/homepage/services.yaml` is aligned with live routes, especially for `abs.andreasmaita.com` / `audiobookshelf.andreasmaita.com` and `music.andreasmaita.com` / `navidrome.andreasmaita.com`.
+
+---
+
+## Stage 6: Monitoring validation and stack manager check
+
+**Objective:** Validate the Tailscale-only stack manager and infrastructure monitoring services currently present in the repo.
+
+Steps:
+
+1. Start `stacks/monitoring/compose.yaml` and confirm `dockge` is up.
+2. Start `stacks/infrastructure/compose.yaml` and confirm `uptime-kuma` is up and healthy.
+3. Verify `dockge` is bound only to the Tailscale IP and has raw `/var/run/docker.sock` access:
+
+   ```bash
+   docker inspect dockge --format '{{json .HostConfig.Binds}}'
+   docker exec dockge sh -c 'ip addr show | grep 100.106.40.5'
+   ```
+
+4. Verify monitoring reachability:
+   - Uptime Kuma is reachable on the expected port and reports configured monitors.
+   - The service should be accessible via the Tailscale IP if the public route is not intended.
+
+5. Note service expectations for this repo:
+   - `dockge` is the only monitoring stack service defined in `stacks/monitoring`.
+   - `uptime-kuma` is defined in `stacks/infrastructure`.
+   - `backrest` and `scrutiny` are not present in the current repository and should not be assumed installed.
+
+Verification:
+
+- `docker compose -f stacks/monitoring/compose.yaml config >/dev/null` passes.
+- `docker compose -f stacks/infrastructure/compose.yaml config >/dev/null` passes.
+- `dockge` is running and bound to `100.106.40.5:20202` only.
+- Uptime Kuma returns HTTP 200 and its own monitor API is responsive.
+- The repo no longer treats missing `backrest` or `scrutiny` services as present.
 
 ---
 
@@ -281,7 +350,7 @@ Verification:
 - [ ] `docker compose config` passes for all active stacks.
 - [ ] `caddy` is using `docker-socket-proxy` and labels are discovered correctly.
 - [ ] Authelia forward-auth is applied on protected hostnames.
-- [ ] `nextcloud.andreasmaita.com` route is either intentionally absent or restored.
+- [ ] `nextcloud.andreasmaita.com` route is present and consistent with the live container labels.
 - [ ] `octo-fiesta.andreasmaita.com` stale route is removed from Caddy and `.env`.
 - [ ] Caddy recoverable hostnames are aligned with repo labels.
 - [ ] Homepage service discovery and live routes agree.
