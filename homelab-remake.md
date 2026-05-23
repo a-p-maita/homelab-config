@@ -1,12 +1,211 @@
-# Homelab Remake — Architecture Plan
+# Homelab Remake — Agentic Execution Plan
 
-> Authoritative planning document for a full homelab rebuild from scratch.
-> Generated: 2026-05-19. All decisions recorded with rationale.
-> Work from this document phase-by-phase, consulting upstream docs at each step.
+> **[META] AGENT INSTRUCTIONS:**
+> This is a strictly ordered, machine-actionable implementation plan.
+>
+> 1. Execute phase-by-phase. Do NOT proceed to the next phase until the **Verification** criteria for the current phase are explicitly confirmed.
+> 2. Utilize terminal commands (`docker ps`, `curl`, `grep`) to validate state before and after modifying files.
+> 3. Refactor existing `compose.yaml` files to match the declarative label-based architecture (Caddy Docker Proxy + Homepage auto-discovery).
+> 4. Strictly enforce isolation: Databases and docker-socket-proxy must reside on `*_internal` networks, NEVER on the global `homelab_net`.
 
 ---
 
-## 1. System Context
+## Phase 1: Pre-flight, Backups & Environment Bootstrap
+
+**Objective:** Secure the environment, backup existing state, and align the file system with the target architecture.
+
+**Execution Steps:**
+
+1. **Database Backups:** Run `scripts/backup-dbs.sh` to generate SQL dumps of Immich, Paperless, and Joplin. Verify files exist in `/backups`.
+2. **Directory Restructuring:**
+   - Migrate legacy data folders if present (e.g., `./data/audiobooks` to `${DATA_ROOT}/media/audiobooks`) by executing the pre-flight checks in `scripts/up-all.sh`.
+   - Reorganize stack directories: Create `stacks/monitoring/` and `stacks/downloads/` if missing. Move relevant compose snippets from `stacks/infrastructure/` and `stacks/arr/` respectively to match the target layout.
+3. **Secrets Generation:** Run `scripts/generate-secrets.sh` to populate `.env`. Manually prompt the user if critical 3rd-party values (Cloudflare Tunnel token, VPN credentials) are missing.
+
+**Verification:**
+
+- `echo $DATA_ROOT` resolves correctly via `.env`.
+- No databases report errors during the export dump.
+- The `stacks/` directory structure aligns with Phase 3 through 7 targets.
+
+---
+
+## Phase 2: Network & Socket Security Layer
+
+**Objective:** Establish secure networking boundaries and grant least-privilege Docker socket access.
+
+**Execution Steps:**
+
+1. **Network Provisioning:** Define and create external networks in Docker:
+   - `proxy_net` (isolated network solely for Caddy and exposed apps to communicate).
+   - `infrastructure_internal`, `downloads_internal`, `cloud_internal`, `services_internal`, `socket_internal` (all internal=true).
+   - *Note: Deprecate and remove the global `homelab_net` entirely to prevent unprotected lateral container communication.*
+2. **Socket Proxy Configuration:** In `stacks/infrastructure/compose.yaml`, deploy `docker-socket-proxy` ensuring it ONLY attaches to `socket_internal`. Do NOT attach it to any global bridge.
+3. **Stack Manager:** Deploy `dockge` in `stacks/monitoring/compose.yaml`. Give it a read-write socket mount but limit its binding to the Tailscale interface (`100.106.40.5:20202`). *Make a hard decision to sunset imperative lifecycle scripts (`up-all.sh` / `down-all.sh`) in favor of allowing Dockge to own the `stacks/` directory exclusively via its Git integration.*
+
+**Verification:**
+
+- `docker network ls` shows `proxy_net` alongside all internal DB/socket networks.
+- `docker-socket-proxy` is unreachable from random containers on any network other than `socket_internal`.
+
+---
+
+## Phase 3: Edge Routing & Infrastructure (Label Refactor)
+
+**Objective:** Replace static configs with dynamic Docker labels (`caddy-docker-proxy` and `homepage`).
+
+**Execution Steps:**
+
+1. **Proxy Migration:**
+   - In `stacks/infrastructure/compose.yaml`, replace the `caddy:2-alpine` container with `lucaslorentz/caddy-docker-proxy:ci-alpine`.
+   - Remove the direct docker socket volume mount to preserve security. Instead, configure Caddy with the environment variable `DOCKER_HOST=tcp://docker-socket-proxy:2375` and ensure Caddy joins the `socket_internal` network.
+   - Delete `stacks/infrastructure/Dockerfile.caddy` and bind-mounted `config/caddy/Caddyfile` as they are now obsolete.
+2. **Global Auth & Tunneling:**
+   - Deploy `authelia` and `cloudflared`. Ensure Caddy trusts Cloudflare by setting `caddy.servers.trusted_proxies: "static private_ranges"` on the Caddy container.
+   - Apply specific `caddy` routing labels to `authelia` to handle the `auth.andreasmaita.com` domain and configure forward authentication interceptors.
+3. **Subdomain Integration (Caddy Labels):**
+   - You MUST apply `caddy` reverse proxy labels to the respective services in their `compose.yaml` files. Containers requiring web access should join BOTH their localized internal network AND `proxy_net`. The mandated external tunnels are:
+     - `auth.andreasmaita.com` → Authelia (`auth` container: `9091`)
+     - `homepage.andreasmaita.com` → Homepage (`3000`)
+     - `jellyfin.andreasmaita.com` → Jellyfin (`8096`)
+     - `immich.andreasmaita.com` → Immich Server (`2283`)
+     - `abs.andreasmaita.com` → Audiobookshelf (`80`)
+     - `git.andreasmaita.com` → Forgejo HTTP (`3000`)
+     - `yamtrack.andreasmaita.com` → Yamtrack (`8000`)
+     - `feishin.andreasmaita.com` → Feishin (Check Web UI port, normally `80` or `9180`)
+     - `mealie.andreasmaita.com` → Mealie (`9000`)
+4. **Homepage Migration:**
+   - Attach `homepage` to `socket_internal` so it can communicate with `docker-socket-proxy`.
+   - Update `config/homepage/docker.yaml` to point to the socket proxy.
+   - Move static service definitions out of `config/homepage/services.yaml` into compose service labels (`homepage.group`, `homepage.name`, `homepage.href`, etc.) for all Phase 3 containers.
+
+**Verification:**
+
+- `docker exec <caddy_container> cat /config/caddy/Caddyfile.autosave` successfully generates routing blocks based on labels.
+- The `Caddyfile.autosave` explicitly lists all 9 mandated subdomains.
+- `homepage` dashboard populates widgets dynamically via Docker labels.
+
+---
+
+## Phase 4: Database & Cache Initialization
+
+**Objective:** Spin up stateful services securely before bringing up the applications that depend on them.
+
+**Execution Steps:**
+
+1. **Services DBs (`stacks/services/compose.db.yaml`):** Deploy Postgres/Redis for Paperless and Joplin. Ensure they bind ONLY to `services_internal`.
+2. **Cloud DBs (`stacks/cloud/compose.db.yaml`):** Deploy `pgvecto-rs` for Immich, standard Postgres for Nextcloud, and their respective Redis caches. Ensure they bind ONLY to `cloud_internal`.
+3. **Verification Constraints:** Maintain strict health checks (`pg_isready` and `redis-cli ping`). Application containers in subsequent phases must use `depends_on: <db>: condition: service_healthy`.
+
+**Verification:**
+
+- All DB containers report `(healthy)` via `docker ps`.
+- DB ports are NOT mapped to the host (no `ports:` overrides) — access must route entirely internally.
+
+---
+
+## Phase 5: Cloud & Productivity Services
+
+**Objective:** Deploy primary Nextcloud, Immich, Vaultwarden, and utility applications.
+
+**Execution Steps:**
+
+1. **Nextcloud Pre-config:** Ensure `OVERWRITEPROTOCOL=https`, `OVERWRITEHOST=nextcloud.andreasmaita.com` are present in `.env` before starting the Nextcloud container.
+2. **Immich Restrictions:** Deploy `immich-server` (locking host port strictly to `2283:2283` for hardcoded mobile apps). Confirm the `immich-machine-learning` profile remains `disabled` due to AMD Vega 7 missing ROCm support.
+3. **Auth Overrides:** Ensure Vaultwarden and Immich are NOT protected by Authelia's `forward_auth`, as their mobile clients/APIs break under interactive 2FA intercepts. Ensure `SIGNUPS_ALLOWED=false` is enforced for Vaultwarden.
+4. **Deploy Application Stacks:** Apply Caddy routing labels and Homepage discovery labels to `stacks/cloud/compose.yaml` and `stacks/services/compose.yaml`.
+
+**Verification:**
+
+- Services are accessible at their defined Subdomains / Tailscale IPs.
+- Nextcloud init finishes without setup warnings regarding reverse proxy headers.
+
+---
+
+## Phase 6: Downloads & Media Pipelines
+
+**Objective:** Reconfigure the VPN-gated download stack and establish media presentation.
+
+**Execution Steps:**
+
+1. **Downloads Network Namespace:** Deploy `gluetun` in `stacks/downloads/compose.vpn.yaml`.
+2. **Torrent Client Setup:** Bind `qbittorrent` directly to `network_mode: service:gluetun`.
+3. **Port Forwarding Script:** Validate that the volume mount for `scripts/update-qbt-port.sh` functions; verify Gluetun executes it properly against qBittorrent's API on the localhost netns mapping.
+4. **Deunhealth Watcher:** Enable `deunhealth` to monitor the VPN network space with strict labels minimizing its blast radius.
+5. **Arr & Media Deployment:** Deploy `stacks/arr/` and `stacks/media/` apps. Pass `/dev/dri` to `jellyfin` for VA-API hardware transcoding (AMD Vega 7 setup).
+
+**Verification:**
+
+- cURL external IP from inside qBittorrent matches the VPN endpoint.
+- `cat /tmp/gluetun/forwarded_port` propagates correctly to qBittorrent config.
+- Media library mounts (`/data/media/movies`, etc.) have correct POSIX read/write permissions matching `.env`'s `PUID`/`PGID`.
+
+---
+
+## Phase 7: Uptime Monitoring & Backrest Schedules
+
+**Objective:** Restore monitoring states and ensure automated backup health.
+
+**Execution Steps:**
+
+1. **Uptime Kuma Init:** Bring up `louislam/uptime-kuma:2`. If recreating, import `config/uptime-kuma/monitors.json` manually or via script.
+2. **Backrest UI Setup:** Start `ghcr.io/garethgeorge/backrest:latest` and enforce its Tailscale-only exposure profile (`20211`). Hook the UI up to `scripts/backup-dbs.sh` as a pre-flight execution.
+3. **Cleanup:** Execute `compose-pull-all.sh` to assert no missing images, and `down-all.sh; up-all.sh` representing the ultimate smoke test.
+
+**Verification:**
+
+- The Uptime Kuma dashboard illuminates entirely green for configured HTTP/TCP checks.
+- Backrest reports successful verification against the B2 S3 storage block.
+
+---
+
+## Phase 8: Comprehensive Backups Configurations
+
+**Objective:** Guarantee data durability based on the official documentation mandates for Yamtrack, Audiobookshelf, and Immich.
+
+**Execution Steps:**
+
+1. **Immich Backup Implementation:**
+   - Execute database export natively via `pg_dumpall` inside `backup-dbs.sh`.
+   - Update `scripts/backup.sh` (or Backrest equivalent exclusions) to securely back up the `$UPLOAD_LOCATION` (which contains critical `/upload`, `/profile`, `/library`, and auto-generated `/backups`), while selectively excluding unneeded generative folders like `/encoded-video` and `/thumbs`.
+2. **AudioBookShelf Backup Implementation:**
+   - ABS produces daily local backups containing the `/config`, `/metadata/authors`, and `/metadata/items` along with its SQLite database inside the `/metadata/backups` directory natively. Ensure `scripts/backup.sh` explicitely backs up the full `/metadata/backups` folder + the root `/config` map, as dictated by official documentation.
+3. **Yamtrack Backup Implementation:**
+   - Ensure the internal Yamtrack mounted volume (specifically `/yamtrack/db` resolving to `../../data/yamtrack`) is part of the `backup.sh` or Backrest run, catching all configuration and SQLite persistent data.
+
+**Verification:**
+
+- Simulating `scripts/backup.sh` (dry-run) encompasses the Yamtrack volumes, the ABS metadata map, and correctly syncs Immich's `install_location/profile` whilst ignoring `/encoded-video`.
+
+---
+
+## Appendix A: Technical Documentation & Best Practice References
+
+To guarantee long-term stability and align with industry/homelab-community standards, refer to these official documentation streams when implementing the phases above:
+
+### 1. Stack Management & `.env` Isolation
+
+- **Dockge Documentation**: [https://github.com/louislam/dockge](https://github.com/louislam/dockge)
+- **Best Practice**: The community highly advises abandoning imperative `bash` deployment scripts (`up-all.sh`) in favor of managing compose files natively inside the Dockge UI or via its Git syncing interface.
+- **Scoped Environment Variables**: Instead of a monolithic `homelab-config/.env` passing keys to unrelated containers, split environment states per stack. [Docker Compose ENV Docs](https://docs.docker.com/compose/how-tos/environment-variables/) recommend keeping `.env` precisely next to the `compose.yaml` utilizing those specific keys, limiting surface exposure if a single stack is compromised.
+
+### 2. Edge Routing: Caddy Docker Proxy
+
+- **CDP Official Repository**: [https://github.com/lucaslorentz/caddy-docker-proxy](https://github.com/lucaslorentz/caddy-docker-proxy)
+- **Best Practice**: Never bind the docker socket directly to Caddy. Always use `DOCKER_HOST=tcp://docker-socket-proxy:2375`. Follow CDP's labeling semantics (`caddy: "example.com"`, `caddy.reverse_proxy: "{{upstreams 80}}"`) ensuring the Caddy container polls proxy networking metadata safely.
+
+### 3. Permissions & Mount Handling: Docker Configs vs Bind Mounts
+
+- **Docker Configs Documentation**: [https://docs.docker.com/compose/use-configs/](https://docs.docker.com/compose/use-configs/)
+- **Best Practice**: Replace static file bind mounts (e.g., `volumes: - ./config.yml:/app/config.yml:ro`) with `configs:`. Mounting loose config files via `volumes` heavily restricts portability, invokes POSIX permission-masking clashes, and creates "directory creation" race conditions on Linux endpoints. `configs:` resolves this by treating the file as an immutable memory buffer.
+
+### 4. Docker Socket Proxy Protection
+
+- **Tecnativa Repository**: [https://github.com/Tecnativa/docker-socket-proxy](https://github.com/Tecnativa/docker-socket-proxy)
+- **Best Practice**: Expose only the required subsets of the Docker API to tools like Homepage or Caddy. By default, ensure `CONTAINERS=1` is set while sensitive methods (`POST=0`, `AUTH=0`) are permanently off, stopping lateral container breakout attacks completely.
+
+---
+**[END OF EXECUTION PLAN]**
 
 | Attribute    | Value                                                               |
 | ------------ | ------------------------------------------------------------------- |
