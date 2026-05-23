@@ -351,7 +351,7 @@ Verification:
 - [ ] `caddy` is using `docker-socket-proxy` and labels are discovered correctly.
 - [ ] Authelia forward-auth is applied on protected hostnames.
 - [ ] `nextcloud.andreasmaita.com` route is present and consistent with the live container labels.
-- [ ] `octo-fiesta.andreasmaita.com` stale route is removed from Caddy and `.env`.
+- [ ] `octo-fiesta.andreasmaita.com` is validated as an active route and documented correctly.
 - [ ] Caddy recoverable hostnames are aligned with repo labels.
 - [ ] Homepage service discovery and live routes agree.
 - [ ] `homelab_net` remains in place until internal isolation is validated.
@@ -362,6 +362,6 @@ Verification:
 
 1. Use live Caddy autosave as the authoritative public route source.
 2. Do not assume `nextcloud` is exposed through Caddy unless the live route is present.
-3. Treat `octo-fiesta` as a legacy route until its container and stack are verified.
+3. Treat `octo-fiesta` as an active route only after its container and stack are verified; remove stale labels if it is intentionally disabled.
 4. Keep `homelab_net` in place until the internal network migration is fully validated.
 5. Prefer label-driven routing over legacy static `Caddyfile` entries.

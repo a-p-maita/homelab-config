@@ -146,12 +146,20 @@ services:
     restart: unless-stopped
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+      - "caddy=http://actual-budget.andreasmaita.com"
+      - "caddy.2_reverse_proxy={{upstreams 5006}}"
+      - "homepage.group=Services"
+      - "homepage.name=Actual Budget"
+      - "homepage.icon=mdi-currency-usd"
+      - "homepage.href=https://actual-budget.andreasmaita.com"
+      - "homepage.description=Personal finance and budgeting"
     ports:
       - "${ACTUAL_BUDGET_PORT}:5006"
     volumes:
       - ../../data/actual-budget:/data
     networks:
       - homelab_net
+      - proxy_net
     healthcheck:
       # actual-budget image has node but not wget/curl; use Node.js TCP check
       test:
@@ -416,13 +424,13 @@ services:
     container_name: forgejo
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
-      - "caddy=http://forgejo.andreasmaita.com"
+      - "caddy=http://git.andreasmaita.com"
       - "caddy.1_import=authelia_auth"
       - "caddy.2_reverse_proxy={{upstreams 3000}}"
       - "homepage.group=Productivity"
       - "homepage.name=Forgejo"
       - "homepage.icon=forgejo.png"
-      - "homepage.href=https://forgejo.andreasmaita.com"
+      - "homepage.href=https://git.andreasmaita.com"
       - "homepage.description=Git forge and code hosting"
     environment:
       - USER_UID=${PUID}
@@ -478,6 +486,7 @@ services:
     restart: unless-stopped
     networks:
       - homelab_net
+      - proxy_net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5690"]
       interval: 1m
@@ -486,6 +495,13 @@ services:
       start_period: 30s
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
+      - "caddy=http://join.andreasmaita.com"
+      - "caddy.2_reverse_proxy={{upstreams 5690}}"
+      - "homepage.group=Media"
+      - "homepage.name=Wizarr"
+      - "homepage.icon=mdi-account-plus"
+      - "homepage.href=https://join.andreasmaita.com"
+      - "homepage.description=Jellyfin invitation manager"
     deploy:
       resources:
         limits:

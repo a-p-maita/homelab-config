@@ -149,12 +149,12 @@ Services exposed via Cloudflare tunnel (configured in Zero Trust → Networks �
 
 | Subdomain                         | Internal service            | Auth                                 |
 | --------------------------------- | --------------------------- | ------------------------------------ |
-| `audiobookshelf.andreasmaita.com` | `http://audiobookshelf:80`  | Audiobookshelf own login             |
-| `navidrome.andreasmaita.com`      | `http://navidrome:4533`     | Navidrome own login                  |
+| `abs.andreasmaita.com` | `http://audiobookshelf:80`  | Audiobookshelf own login             |
+| `music.andreasmaita.com`      | `http://navidrome:4533`     | Navidrome own login                  |
 | `octo-fiesta.andreasmaita.com`    | `http://octo-fiesta:8080`   | Navidrome own login (Subsonic proxy) |
 | `feishin.andreasmaita.com`        | `http://feishin:9180`       | Navidrome own login (via Feishin)    |
 | `immich.andreasmaita.com`         | `http://immich-server:2283` | Immich own login                     |
-| `forgejo.andreasmaita.com`        | `http://forgejo:3000`       | Forgejo own login                    |
+| `git.andreasmaita.com`        | `http://forgejo:3000`       | Forgejo own login                    |
 | `homepage.andreasmaita.com`       | `http://homepage:3000`      | None (internal dashboard)            |
 
 **Feishin `SERVER_URL`:** Set `NAVIDROME_EXTERNAL_URL` in `.env` to the public Navidrome tunnel URL. Feishin's browser client connects to Navidrome from the user's device, not from Docker, so it must be a publicly reachable URL.
@@ -164,7 +164,7 @@ Services exposed via Cloudflare tunnel (configured in Zero Trust → Networks �
 Mobile music apps (Symfonium, Ultrasonic, etc.) can't complete a browser-based Access challenge. Bypass Access for the API paths only so clients can authenticate directly with Navidrome:
 
 1. Zero Trust → Access → Applications → Add application → Self-hosted
-2. Set application domain: `navidrome.andreasmaita.com`
+2. Set application domain: `music.andreasmaita.com`
 3. Under **Policies**, add a rule:
    - Action: **Bypass**
    - Include rule: **Everyone**
