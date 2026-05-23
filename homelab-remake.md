@@ -24,13 +24,17 @@
 **Objective:** Stabilize the running stack and remove immediate failures before any refactor.
 
 Steps:
+
 1. Inspect unhealthy containers:
+
    ```bash
-   docker ps --filter 'health=unhealthy' --format 'table {{.Names}}	{{.Status}}'
+   docker ps --filter 'health=unhealthy' --format 'table {{.Names}} {{.Status}}'
    ```
+
 2. Fix broken mounted configs in-place.
    - Example: repair `config.php` inside the Nextcloud container if PHP syntax is invalid.
 3. Restart the affected containers and confirm service health:
+
    ```bash
    docker restart nextcloud
    docker exec nextcloud curl -sf http://localhost/
@@ -38,6 +42,7 @@ Steps:
    ```
 
 Verification:
+
 - `nextcloud` is `Up` and `healthy`.
 - `caddy`, `authelia`, and `cloudflared` are `healthy`.
 - The generated `Caddyfile.autosave` contains the expected host blocks.
@@ -49,21 +54,28 @@ Verification:
 **Objective:** Capture current state, protect data, and validate environment variables.
 
 Steps:
+
 1. Back up databases:
+
    ```bash
    ./scripts/backup-dbs.sh
    ls -l /backups
    ```
+
 2. Generate secrets and check for missing manual values:
+
    ```bash
    ./scripts/generate-secrets.sh
    grep -E 'TUNNEL_TOKEN|PROTONVPN_WIREGUARD_PRIVATE_KEY|VAULTWARDEN_ADMIN_TOKEN' .env
    ```
+
 3. Validate `.env` and data root:
+
    ```bash
    source .env
    echo "$DATA_ROOT"
    ```
+
 4. Confirm stack directory structure:
    - `stacks/infrastructure`
    - `stacks/monitoring`
@@ -75,6 +87,7 @@ Steps:
    - `stacks/home`
 
 Verification:
+
 - `.env` loads cleanly.
 - backups are present and non-empty.
 - stack directories exist and match the intended architecture.
@@ -86,6 +99,7 @@ Verification:
 **Objective:** Create isolated networks and lock down Docker socket access.
 
 Steps:
+
 1. Ensure these networks exist:
    - `proxy_net`
    - `socket_internal`
@@ -96,6 +110,7 @@ Steps:
 2. Keep `homelab_net` in place only for discovery during the migration.
 3. Configure `stacks/infrastructure/compose.yaml`:
    - `docker-socket-proxy` attached only to `socket_internal`
+   - `docker-socket-proxy` must allow `NETWORKS=1` so Caddy can resolve container networks via `{{upstreams}}`
    - `caddy` attached to `socket_internal` and `proxy_net`
    - `DOCKER_HOST=tcp://docker-socket-proxy:2375`
 4. Configure `stacks/monitoring/compose.yaml`:
@@ -103,6 +118,7 @@ Steps:
    - bind only to `100.106.40.5:20202`
 
 Verification:
+
 - `docker network ls` shows the expected internal networks.
 - `docker exec docker-socket-proxy curl -sf http://docker-socket-proxy:2375/_ping`
 - `docker network inspect socket_internal` contains only socket-aware services.
@@ -114,6 +130,7 @@ Verification:
 **Objective:** Replace static proxy and homepage config with Docker labels.
 
 Steps:
+
 1. Confirm `caddy` is using `lucaslorentz/caddy-docker-proxy:ci-alpine`.
 2. Remove stale Caddy config files/Dockerfile if they exist only for the old static proxy.
 3. Add labels to all public-facing services.
@@ -121,6 +138,7 @@ Steps:
 5. Configure `homepage` to use `docker-socket-proxy` via `config/homepage/docker.yaml`.
 
 Verification:
+
 - `docker exec caddy cat /config/caddy/Caddyfile.autosave`
 - `grep -E 'http://.*\.andreasmaita\.com' /config/caddy/Caddyfile.autosave`
 - `homepage` web UI discovers container metadata.
@@ -132,17 +150,21 @@ Verification:
 **Objective:** Start databases and caches first, then connect applications to them.
 
 Steps:
+
 1. Start database-only stacks:
+
    ```bash
    docker compose --env-file .env -f stacks/services/compose.db.yaml up -d
    docker compose --env-file .env -f stacks/cloud/compose.db.yaml up -d
    ```
+
 2. Confirm health checks:
    - `pg_isready` for Postgres
    - `redis-cli ping` for Redis
 3. Ensure no DB services publish host ports.
 
 Verification:
+
 - all DB containers are `healthy`
 - no database service has host-facing ports
 
@@ -153,11 +175,13 @@ Verification:
 **Objective:** Bring up the service stacks after storage and edge are stable.
 
 Steps:
+
 1. Start `stacks/infrastructure` first.
 2. Start `stacks/cloud`, `stacks/services`, `stacks/home`, and `stacks/media`.
 3. Verify route availability and auth boundaries.
 
 Verification:
+
 - `nextcloud` loads without reverse proxy warnings
 - `immich` is reachable on the domain and Tailscale IP
 - `Vaultwarden` and `Joplin` are not behind `forward_auth`
@@ -169,14 +193,17 @@ Verification:
 **Objective:** Validate the download pipeline and VPN network namespace.
 
 Steps:
+
 1. Start `stacks/downloads` with `USE_VPN=true` if VPN mode is intended.
 2. Verify `qbittorrent` runs in the Gluetun netns.
 3. Confirm port forwarding sync:
+
    ```bash
    docker exec gluetun cat /tmp/gluetun/forwarded_port
    ```
 
 Verification:
+
 - `qbittorrent` sees a VPN public IP
 - qBittorrent listens on the forwarded port
 
@@ -187,11 +214,13 @@ Verification:
 **Objective:** Confirm monitoring and backup automation work end-to-end.
 
 Steps:
+
 1. Start the monitoring stack.
 2. Import Uptime Kuma monitor JSON if required.
 3. Run a backup validation via Backrest or `scripts/backup.sh` dry-run.
 
 Verification:
+
 - Uptime Kuma reports healthy checks
 - backup validation includes Immich, ABS, and Yamtrack data
 
@@ -202,11 +231,13 @@ Verification:
 **Objective:** Validate the new architecture and retire legacy drift-prone config.
 
 Steps:
+
 1. Migrate static `config/homepage/services.yaml` entries into compose labels when possible.
 2. Confirm `config/caddy/Caddyfile` is no longer required.
 3. Verify `homelab_net` still functions only as a transition bridge.
 
 Verification:
+
 - no service routes depend on legacy static Caddy config
 - homepage widgets come from label discovery
 - `docker compose config` passes for all stacks
@@ -236,6 +267,7 @@ Verification:
 - `*_internal` networks are the only allowed paths for DB/cache and Docker socket proxy access.
 - `proxy_net` is for Caddy and label-driven public routing.
 - `homelab_net` remains a cross-stack discovery bridge until the new architecture is validated.
+
 ## Appendix A: Technical Documentation & Best Practice References
 
 To guarantee long-term stability and align with industry/homelab-community standards, refer to these official documentation streams when implementing the phases above:

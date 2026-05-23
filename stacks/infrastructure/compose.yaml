@@ -165,7 +165,7 @@ services:
       - DOCKER_API_VERSION=1.40
     restart: unless-stopped
     networks:
-      - homelab_net
+      - socket_internal
     deploy:
       resources:
         limits:
@@ -285,10 +285,10 @@ services:
     container_name: docker-socket-proxy
     restart: unless-stopped
     environment:
-      # Allow read-only container inspection (Homepage widgets + Caddy label polling)
+      # Allow read-only container and network inspection for Caddy + Homepage label discovery
       - CONTAINERS=1
       - EVENTS=1
-      - NETWORKS=0
+      - NETWORKS=1
       - VOLUMES=0
       - IMAGES=0
       - SERVICES=0
