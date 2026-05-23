@@ -64,7 +64,7 @@ services:
       - proxy_net
       - cloud_internal
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/ || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost/ || exit 1"]
       interval: 1m
       timeout: 10s
       retries: 5
