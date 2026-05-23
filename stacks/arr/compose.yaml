@@ -17,7 +17,7 @@ name: arr
 #
 # VPN (optional): bring up with compose.vpn.yaml overlay:
 #   USE_VPN=true in .env  → scripts/up-all.sh handles automatically
-#   Manual: docker compose -f dockerfiles/arr/compose.yaml -f dockerfiles/arr/compose.vpn.yaml up -d
+#   Manual: docker compose -f stacks/arr/compose.yaml -f stacks/arr/compose.vpn.yaml up -d
 #
 # Paths: all *arr apps and qbittorrent mount ${DATA_ROOT}:/data
 #   qBittorrent categories → /data/torrents/{movies,tv,music,books}

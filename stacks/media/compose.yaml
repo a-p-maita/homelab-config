@@ -3,7 +3,7 @@ name: media
 # ─────────────────────────────────────────────────────────────────────────────
 # Media stack: audiobooks, podcasts, music, media tracking
 #
-# Services moved to dockerfiles/arr/compose.yaml:
+# Services moved to stacks/arr/compose.yaml:
 #   qbittorrent, jackett, audiobookbay-downloader, lidarr
 # ─────────────────────────────────────────────────────────────────────────────
 

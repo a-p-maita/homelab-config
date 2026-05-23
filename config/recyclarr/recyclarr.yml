@@ -2,5 +2,5 @@
 #   configs/hd-bluray-web.yml  — Radarr: HD Bluray + WEB (1080p)
 #   configs/web-1080p.yml      — Sonarr: WEB-1080p
 #
-# Manual sync:  docker compose --env-file .env -f dockerfiles/arr/compose.yaml run --rm --no-deps recyclarr sync
-# Dry-run:      docker compose --env-file .env -f dockerfiles/arr/compose.yaml run --rm --no-deps recyclarr sync --dry-run
+# Manual sync:  docker compose --env-file .env -f stacks/arr/compose.yaml run --rm --no-deps recyclarr sync
+# Dry-run:      docker compose --env-file .env -f stacks/arr/compose.yaml run --rm --no-deps recyclarr sync --dry-run

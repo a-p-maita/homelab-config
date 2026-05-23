@@ -79,12 +79,13 @@ Steps:
 4. Confirm stack directory structure:
    - `stacks/infrastructure`
    - `stacks/monitoring`
-   - `stacks/downloads`
    - `stacks/arr`
    - `stacks/media`
    - `stacks/cloud`
    - `stacks/services`
    - `stacks/home`
+
+> Note: `stacks/downloads` may exist as an empty placeholder directory in this repo; the actual download/VPN pipeline is managed from `stacks/arr`.
 
 Verification:
 
@@ -106,7 +107,6 @@ Steps:
    - `infrastructure_internal`
    - `cloud_internal`
    - `services_internal`
-   - `downloads_internal`
 2. Keep `homelab_net` in place only for discovery during the migration.
 3. Configure `stacks/infrastructure/compose.yaml`:
    - `docker-socket-proxy` attached only to `socket_internal`
@@ -133,6 +133,7 @@ Steps:
 
 1. Confirm `caddy` is using `lucaslorentz/caddy-docker-proxy:ci-alpine`.
 2. Remove stale Caddy config files/Dockerfile if they exist only for the old static proxy.
+   - Archive `config/caddy/Caddyfile` if it is only legacy config; caddy-docker-proxy uses its own data directory.
 3. Add labels to all public-facing services.
 4. Recreate or restart the updated service containers so Docker applies the new labels.
 5. Ensure services are reachable on both `proxy_net` and their stack-specific internal network.
@@ -193,7 +194,8 @@ Verification:
 
 - `nextcloud` loads without reverse proxy warnings
 - `immich` is reachable on the domain and Tailscale IP
-- `Vaultwarden` and `Joplin` are not behind `forward_auth`
+- `Vaultwarden` returns `200 OK`
+- `Joplin` returns `401 Unauthorized`, indicating it is protected by `forward_auth` as configured
 - `vault.andreasmaita.com` returns `200 OK`
 - `jellyfin.andreasmaita.com`, `seerr.andreasmaita.com`, and `joplin.andreasmaita.com` return `401 Unauthorized` as expected
 
@@ -205,9 +207,11 @@ Verification:
 
 Steps:
 
-1. Start `stacks/downloads` with `USE_VPN=true` if VPN mode is intended.
-2. Verify `qbittorrent` runs in the Gluetun netns.
-3. Confirm port forwarding sync:
+1. Start `stacks/arr` with the VPN overlay when `USE_VPN=true`:
+   `docker compose -f stacks/arr/compose.yaml -f stacks/arr/compose.vpn.yaml up -d`
+   - Ignore the empty placeholder `stacks/downloads` directory; it is not the active stack.
+2. Verify `gluetun` and `qbittorrent` are running.
+3. Confirm `qbittorrent` is available as `http://qbittorrent:20050` on `homelab_net` and that Gluetun port forwarding is active.
 
    ```bash
    docker exec gluetun cat /tmp/gluetun/forwarded_port
@@ -215,6 +219,8 @@ Steps:
 
 Verification:
 
+- `gluetun` and `qbittorrent` are `running`
+- `docker compose -f stacks/arr/compose.yaml -f stacks/arr/compose.vpn.yaml config` passes
 - `qbittorrent` sees a VPN public IP
 - qBittorrent listens on the forwarded port
 
@@ -364,7 +370,6 @@ Usenet traffic (placeholder — no provider yet):
 | --------------------------- | --------------------- | -------------------------------------------- |
 | `homelab_net`             | Bridge, external=true | Cross-stack service discovery (all services) |
 | `infrastructure_internal` | Bridge, internal=true | Authelia ↔ Redis isolated                   |
-| `downloads_internal`      | Bridge, internal=true | Download clients isolated from media         |
 | `cloud_internal`          | Bridge, internal=true | Immich/Nextcloud internal DB/cache access    |
 | `services_internal`       | Bridge, internal=true | Paperless/Joplin DB access                   |
 
@@ -591,7 +596,7 @@ labels:
 
 ---
 
-### Stack 3 — Downloads (`stacks/downloads/`)
+### Stack 3 — Downloads / Arr (`stacks/arr/`)
 
 **Files:** `compose.yaml` + `compose.vpn.yaml` (VPN overlay)
 
@@ -605,7 +610,7 @@ labels:
 | `deunhealth`                  | `qmcgaw/deunhealth:latest`               | —            | —                      | Internal  | Auto-restarts unhealthy containers (VPN overlay only)     |
 | `sabnzbd` *(commented out)* | `lscr.io/linuxserver/sabnzbd:latest`     | 8080          | 20300                   | Tailscale | Usenet client — enable when you have a paid provider     |
 
-**Networks:** `homelab_net`, `downloads_internal`
+**Networks:** `homelab_net`
 
 **VPN notes:**
 
@@ -1381,7 +1386,7 @@ docker exec -i immich-postgres psql -U postgres < backups/immich-full-YYYY-MM-DD
 ### Phase 9 — SABnzbd (when provider is ready)
 
 - [ ] Choose usenet provider (Frugal, Eweka, or Newshosting recommended — ~£3–5/month)
-- [ ] Uncomment SABnzbd in `stacks/downloads/compose.yaml`
+- [ ] Uncomment SABnzbd in `stacks/arr/compose.yaml`
 - [ ] Add newznab indexer in Prowlarr pointing at provider
 - [ ] Configure SABnzbd as a download client in Radarr, Sonarr, Lidarr
 

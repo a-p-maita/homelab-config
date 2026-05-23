@@ -1,6 +1,6 @@
 # VPN overlay for the arr stack.
 # Usage: applied automatically by up-all.sh when USE_VPN=true
-# Manual: docker compose -f dockerfiles/arr/compose.yaml -f dockerfiles/arr/compose.vpn.yaml up -d
+# Manual: docker compose -f stacks/arr/compose.yaml -f stacks/arr/compose.vpn.yaml up -d
 #
 # Architecture:
 #   gluetun gets alias "qbittorrent" on homelab_net.
