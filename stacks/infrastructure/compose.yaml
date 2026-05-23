@@ -1,21 +1,18 @@
 name: infrastructure
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Infrastructure stack: Cloudflare tunnel + monitoring + dashboard
+# Infrastructure stack: edge routing, auth, dashboard, monitoring
 #
 # Service statuses (all AUTOMATED):
-#   cloudflared    → Connects to Cloudflare tunnel. Requires TUNNEL_TOKEN in .env.
-#   homepage       → Dashboard. Seed config from config/homepage/ via up-all.sh.
-#   uptime-kuma    → Monitoring. First visit creates admin account.
-#   watchtower     → Opt-in auto-updates (label: com.centurylinklabs.watchtower.enable=true)
-#   prometheus     → Metrics collection. Auto-configured from config/prometheus/.
-#   node-exporter  → Host metrics. Requires network_mode: host (see F5 in homelab-plan.md).
-#   grafana        → Dashboards. Import dashboards 1860 + 893 after first start.
-#   scrutiny       → NVMe health. Requires /dev/nvme0 device.
-#
-# Commented-out services:
-#   caddy          → Add after Cloudflare API token is set (CF_API_TOKEN in .env).
-#   authelia       → Requires caddy to be running first (Phase 11).
+#   caddy          → caddy-docker-proxy; reads labels from all containers for routing.
+#   cloudflared    → Cloudflare Tunnel outbound daemon. Requires TUNNEL_TOKEN in .env.
+#   authelia       → 2FA portal at auth.andreasmaita.com.
+#   authelia-redis → Session store for Authelia (services_internal only).
+#   homepage       → Dashboard with label-based service discovery.
+#   watchtower     → Opt-in image update notifications (monitor-only).
+#   uptime-kuma    → HTTP/TCP uptime monitoring.
+#   docker-socket-proxy → Least-privilege Docker API proxy (socket_internal only).
+#   dockge         → Stack manager UI (Tailscale-only, port 20202).
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
@@ -159,112 +156,6 @@ services:
         reservations:
           cpus: "0.05"
           memory: 32M
-
-  # ── Prometheus ───────────────────────────────────────────────────────────────
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    restart: unless-stopped
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
-    volumes:
-      - ../../data/prometheus:/prometheus
-      - ../../config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    ports:
-      - "${PROMETHEUS_PORT}:9090"
-    networks:
-      - homelab_net
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 512M
-        reservations:
-          cpus: "0.1"
-          memory: 128M
-
-  # ── Node Exporter ─────────────────────────────────────────────────────────────
-  # EXCEPTION: network_mode: host required for full system visibility (see F5 in homelab-plan.md)
-  node-exporter:
-    image: prom/node-exporter:latest
-    container_name: node-exporter
-    restart: unless-stopped
-    network_mode: host
-    pid: host
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - "--path.procfs=/host/proc"
-      - "--path.sysfs=/host/sys"
-      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: 128M
-        reservations:
-          cpus: "0.05"
-          memory: 32M
-
-  # ── Grafana ──────────────────────────────────────────────────────────────────
-  # After first start: import dashboards 1860 (Node Exporter Full) + 893 (Docker)
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    restart: unless-stopped
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
-    volumes:
-      - ../../data/grafana:/var/lib/grafana
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - TZ=${TZ}
-    ports:
-      - "${GRAFANA_PORT}:3000"
-    networks:
-      - homelab_net
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 512M
-        reservations:
-          cpus: "0.1"
-          memory: 128M
-
-  # ── Scrutiny ─────────────────────────────────────────────────────────────────
-  # NVMe health monitoring with SMART data.
-  #   Adjust /dev/nvme0 if your device path differs.
-  scrutiny:
-    image: ghcr.io/analogj/scrutiny:master-omnibus
-    container_name: scrutiny
-    restart: unless-stopped
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
-    cap_add:
-      - SYS_RAWIO
-      - SYS_ADMIN
-    devices:
-      - /dev/nvme0:/dev/nvme0
-    volumes:
-      - /run/udev:/run/udev:ro
-      - ../../data/scrutiny:/opt/scrutiny/config
-      - ../../data/scrutiny/influxdb:/opt/scrutiny/influxdb
-    ports:
-      - "${SCRUTINY_PORT}:8080"
-    networks:
-      - homelab_net
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 512M
-        reservations:
-          cpus: "0.1"
-          memory: 128M
 
   # ── Caddy ─────────────────────────────────────────────────────────────────────
   # HTTP reverse proxy — Cloudflare Tunnel terminates TLS at the edge.
