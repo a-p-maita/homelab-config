@@ -3,17 +3,17 @@ SHELL := /bin/bash
 
 infra-up:
 	@echo "Validating infra compose..."
-	docker compose -f stacks/infrastructure/compose.yaml config --quiet
+	docker compose --env-file .env -f stacks/infrastructure/compose.yaml config --quiet
 	@echo "Bringing infra up (detached)"
-	docker compose -f stacks/infrastructure/compose.yaml up -d
+	docker compose --env-file .env -f stacks/infrastructure/compose.yaml up -d
 
 all-up:
 	@echo "Bringing up all stacks (cloud -> services -> media -> arr -> home)"
-	docker compose -f stacks/cloud/compose.yaml up -d
-	docker compose -f stacks/services/compose.yaml up -d
-	docker compose -f stacks/media/compose.yaml up -d
-	docker compose -f stacks/arr/compose.yaml up -d
-	docker compose -f stacks/home/compose.yaml up -d
+	docker compose --env-file .env -f stacks/cloud/compose.yaml up -d
+	docker compose --env-file .env -f stacks/services/compose.yaml up -d
+	docker compose --env-file .env -f stacks/media/compose.yaml up -d
+	docker compose --env-file .env -f stacks/arr/compose.yaml up -d
+	docker compose --env-file .env -f stacks/home/compose.yaml up -d
 
 generate-secrets:
 	./scripts/generate-secrets.sh

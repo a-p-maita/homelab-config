@@ -259,8 +259,11 @@ services:
     secrets:
       - authelia-session-secret
       - authelia-storage-encryption-key
+      - authelia-users-db
     volumes:
       - ../../config/authelia:/config
+      # Override in-repo configuration with an explicitly managed file under backups/secrets
+      - ../../backups/secrets/authelia-configuration.yml:/config/configuration.yml:ro
     networks:
       - proxy_net
       - infrastructure_internal
@@ -340,3 +343,5 @@ secrets:
     file: ../../backups/secrets/authelia-session-secret.secret
   authelia-storage-encryption-key:
     file: ../../backups/secrets/authelia-storage-encryption-key.secret
+  authelia-users-db:
+    file: ../../backups/secrets/authelia-users-db.secret

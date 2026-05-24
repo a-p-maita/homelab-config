@@ -19,6 +19,7 @@ config/caddy/caddy/
 # Authelia auto-generated runtime files
 config/authelia/db.sqlite3
 config/authelia/notification.txt
+config/authelia/users_database.yml
 
 # Java heap dumps (Stirling-PDF OOM artifacts)
 *.hprof
