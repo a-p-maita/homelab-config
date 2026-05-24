@@ -34,34 +34,34 @@ hardening-scan:
 
 # Generic compose wrapper
 compose:
-	@STACK=${STACK:-$(DEFAULT_STACK)}; \
-	ARGS="${COMPOSE_ARGS:-}"; \
+	@STACK=$(if $(STACK),$(STACK),$(DEFAULT_STACK)); \
+	ARGS="$(COMPOSE_ARGS)"; \
 	echo "Running: $(COMPOSE) -f $$STACK $$ARGS"; \
 	$(COMPOSE) -f $$STACK $$ARGS
 
 compose-config:
-	@STACK=${STACK:-$(DEFAULT_STACK)}; \
+	@STACK=$(if $(STACK),$(STACK),$(DEFAULT_STACK)); \
 	echo "Validating: $(COMPOSE) -f $$STACK config --quiet"; \
 	$(COMPOSE) -f $$STACK config --quiet
 
 # Bring up default or specified stack (allows extra args via COMPOSE_ARGS)
 compose-up:
-	@STACK=${STACK:-$(DEFAULT_STACK)}; \
-	ARGS="${COMPOSE_ARGS:-up -d}"; \
+	@STACK=$(if $(STACK),$(STACK),$(DEFAULT_STACK)); \
+	ARGS="$(if $(COMPOSE_ARGS),$(COMPOSE_ARGS),up -d)"; \
 	echo "Running: $(COMPOSE) -f $$STACK $$ARGS"; \
 	$(COMPOSE) -f $$STACK $$ARGS
 
 # Start an individual service by name: make service-up SERVICE=authelia
 service-up:
-	@STACK=${STACK:-$(DEFAULT_STACK)}; \
-	SRV=${SERVICE:?Service name required (SERVICE=<name>)}; \
-	echo "Starting service $$SRV in $$STACK"; \
-	$(COMPOSE) -f $$STACK up -d $$SRV
+	@if [ -z "$(SERVICE)" ]; then echo "Service name required: make service-up SERVICE=<name>"; exit 1; fi; \
+	STACK=$(if $(STACK),$(STACK),$(DEFAULT_STACK)); \
+	echo "Starting service $(SERVICE) in $$STACK"; \
+	$(COMPOSE) -f $$STACK up -d $(SERVICE)
 
 # Tail logs for a service using the compose file: make logs SERVICE=authelia
 logs:
-	@STACK=${STACK:-$(DEFAULT_STACK)}; \
-	SRV=${SERVICE:-authelia}; \
+	@SRV=$(if $(SERVICE),$(SERVICE),authelia); \
+	STACK=$(if $(STACK),$(STACK),$(DEFAULT_STACK)); \
 	echo "Tailing logs for $$SRV (compose file $$STACK)"; \
 	$(COMPOSE) -f $$STACK logs -f $$SRV
 
