@@ -1,6 +1,6 @@
 #!/bin/bash
 # Script to bring up all homelab stacks with correct env and data directories
-set -e
+set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
@@ -92,7 +92,6 @@ mkdir -p \
   ./data/home-assistant
 
 # ── Fix ABS podcast write permissions ────────────────────────────────────────
-# ABS needs to write episode files as the host user (PUID:PGID)
 if [ -n "$PUID" ] && [ -n "$PGID" ]; then
   chown -R "${PUID}:${PGID}" "${DATA_ROOT}/media/podcasts" "${DATA_ROOT}/media/audiobooks" 2>/dev/null || true
 fi
@@ -101,9 +100,7 @@ fi
 QBT_CONF="./data/qbittorrent/config/qBittorrent/qBittorrent.conf"
 if [ -f "$QBT_CONF" ]; then
   echo "Patching existing qBittorrent.conf paths ..."
-  sed -i \
-    's|/downloads/incomplete/|/data/torrents/incomplete/|g; s|/downloads/|/data/torrents/|g' \
-    "$QBT_CONF"
+  sed -i 's|/downloads/incomplete/|/data/torrents/incomplete/|g; s|/downloads/|/data/torrents/|g' "$QBT_CONF"
 fi
 
 # ── Force-update qBittorrent categories (always sync from template) ───────────
@@ -118,39 +115,27 @@ if [ ! -f "$QBT_CONF" ]; then
   cp config/qbittorrent/qBittorrent.conf "$QBT_CONF"
   echo "Seeded qBittorrent.conf from config-templates."
 fi
-if [ ! -f ./data/homepage/config/services.yaml ]; then
-  cp config/homepage/services.yaml ./data/homepage/config/services.yaml
-  echo "Seeded Homepage services.yaml from config-templates."
-fi
-if [ ! -f ./data/homepage/config/settings.yaml ]; then
-  cp config/homepage/settings.yaml ./data/homepage/config/settings.yaml
-  echo "Seeded Homepage settings.yaml from config-templates."
-fi
-if [ ! -f ./data/homepage/config/docker.yaml ]; then
-  cp config/homepage/docker.yaml ./data/homepage/config/docker.yaml
-  echo "Seeded Homepage docker.yaml from config-templates."
-fi
-if [ ! -f ./data/homepage/config/widgets.yaml ]; then
-  cp config/homepage/widgets.yaml ./data/homepage/config/widgets.yaml
-  echo "Seeded Homepage widgets.yaml from config-templates."
-fi
-if [ ! -f ./data/homepage/config/bookmarks.yaml ]; then
-  cp config/homepage/bookmarks.yaml ./data/homepage/config/bookmarks.yaml
-  echo "Seeded Homepage bookmarks.yaml from config-templates."
-fi
-if [ ! -f ./data/stirling-pdf/configs/settings.yml ]; then
+for f in services.yaml settings.yaml docker.yaml widgets.yaml bookmarks.yaml; do
+  if [ ! -f "./data/homepage/config/$f" ] && [ -f "./config/homepage/$f" ]; then
+    cp "./config/homepage/$f" "./data/homepage/config/$f"
+    echo "Seeded Homepage $f from config templates."
+  fi
+done
+if [ ! -f ./data/stirling-pdf/configs/settings.yml ] && [ -f ./config/stirling-pdf/settings.yml ]; then
+  mkdir -p ./data/stirling-pdf/configs
   cp config/stirling-pdf/settings.yml ./data/stirling-pdf/configs/settings.yml
   echo "Seeded Stirling PDF settings.yml from config-templates."
 fi
-if [ ! -f ./data/crosswatch/config.json ]; then
+if [ ! -f ./data/crosswatch/config.json ] && [ -f ./config/crosswatch/config.json ]; then
   cp config/crosswatch/config.json ./data/crosswatch/config.json
   echo "Seeded CrossWatch config.json from config-templates."
 fi
-if [ ! -f ./data/recyclarr/config/recyclarr.yml ]; then
+if [ ! -f ./data/recyclarr/config/recyclarr.yml ] && [ -f ./config/recyclarr/recyclarr.yml ]; then
+  mkdir -p ./data/recyclarr/config
   cp config/recyclarr/recyclarr.yml ./data/recyclarr/config/recyclarr.yml
   echo "Seeded Recyclarr recyclarr.yml from config-templates."
 fi
-if [ ! -f ./data/recyclarr/config/configs/hd-bluray-web.yml ]; then
+if [ ! -f ./data/recyclarr/config/configs/hd-bluray-web.yml ] && [ -f ./config/recyclarr/configs/hd-bluray-web.yml ]; then
   mkdir -p ./data/recyclarr/config/configs
   cp config/recyclarr/configs/hd-bluray-web.yml ./data/recyclarr/config/configs/hd-bluray-web.yml
   cp config/recyclarr/configs/web-1080p.yml ./data/recyclarr/config/configs/web-1080p.yml
@@ -167,36 +152,43 @@ else
   ENV_FILE_ARG=""
 fi
 
-# ── Arr stack: compose files depend on USE_VPN flag ──────────────────────────
-if [ "${USE_VPN}" = "true" ]; then
-  ARR_COMPOSE="-f stacks/arr/compose.yaml -f stacks/arr/compose.vpn.yaml"
-  echo "VPN mode enabled — arr stack will use gluetun."
-else
-  ARR_COMPOSE="-f stacks/arr/compose.yaml"
-  echo "VPN mode disabled — arr stack running without VPN."
-fi
-
 failures=()
 
 up_stack() {
   local name="$1"; shift
   echo "Bringing up ${name}..."
-  if ! docker compose $ENV_FILE_ARG "$@" up -d; then
+  if ! docker compose $ENV_FILE_ARG "$@" up -d --remove-orphans; then
     failures+=("$name")
     echo "WARNING: ${name} failed" >&2
   fi
 }
 
-up_stack "infrastructure" -f stacks/infrastructure/compose.yaml
-up_stack "arr"             $ARR_COMPOSE
-up_stack "media"           -f stacks/media/compose.yaml
-up_stack "cloud"           -f stacks/cloud/compose.yaml -f stacks/cloud/compose.override.yaml
-up_stack "services-db"     -f stacks/services/compose.db.yaml
-up_stack "services"        -f stacks/services/compose.yaml
-up_stack "home"            -f stacks/home/compose.yaml
+for dir in stacks/*; do
+  [ -d "$dir" ] || continue
+  stack_name="$(basename "$dir")"
+  if [ -f "$dir/compose.db.yaml" ]; then
+    up_stack "${stack_name}-db" -f "$dir/compose.db.yaml"
+  fi
+
+  files=()
+  if [ -f "$dir/compose.yaml" ]; then
+    files+=(-f "$dir/compose.yaml")
+  fi
+  if [ -f "$dir/compose.override.yaml" ]; then
+    files+=(-f "$dir/compose.override.yaml")
+  fi
+  if [ "${USE_VPN}" = "true" ] && [ -f "$dir/compose.vpn.yaml" ]; then
+    files+=(-f "$dir/compose.vpn.yaml")
+  fi
+
+  if [ ${#files[@]} -gt 0 ]; then
+    up_stack "$stack_name" "${files[@]}"
+  fi
+done
 
 if [ ${#failures[@]} -gt 0 ]; then
   echo "FAILED stacks: ${failures[*]}"
   exit 1
 fi
+
 echo "All stacks are up"

@@ -183,7 +183,7 @@ Services exposed via Cloudflare tunnel (configured in Zero Trust â†’ Networks â†
 | `music.andreasmaita.com`      | `http://navidrome:4533`     | Navidrome own login                  |
 | `feishin.andreasmaita.com`        | `http://feishin:9180`       | Navidrome own login (via Feishin)    |
 | `immich.andreasmaita.com`         | `http://immich-server:2283` | Immich own login                     |
-| `git.andreasmaita.com`        | `http://forgejo:3000`       | Forgejo own login                    |
+| `forgejo`        | `http://forgejo:3000`       | Forgejo own login                    |
 | `homepage.andreasmaita.com`       | `http://homepage:3000`      | None (internal dashboard)            |
 
 **Feishin `SERVER_URL`:** Set `NAVIDROME_EXTERNAL_URL` in `.env` to the public Navidrome tunnel URL. Feishin's browser client connects to Navidrome from the user's device, not from Docker, so it must be a publicly reachable URL.

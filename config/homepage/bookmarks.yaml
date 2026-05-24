@@ -6,9 +6,6 @@
     - Homelab Config (GitHub):
         - abbr: GH
           href: https://github.com/Andreas-PM/homelab-config
-    - Cloudflare Tunnel Dashboard:
-        - abbr: CF
-          href: https://one.dash.cloudflare.com
     - Cloudflare DNS:
         - abbr: DNS
           href: https://dash.cloudflare.com
@@ -32,17 +29,3 @@
     - Steam API:
         - abbr: ST
           href: https://steamcommunity.com/dev/apikey
-
-- Self-Hosted Docs:
-    - Homepage Docs:
-        - abbr: HP
-          href: https://gethomepage.dev
-    - Authelia Docs:
-        - abbr: AU
-          href: https://www.authelia.com/configuration/prologue/introduction/
-    - Caddy Docs:
-        - abbr: CD
-          href: https://caddyserver.com/docs
-    - Immich Releases:
-        - abbr: IM
-          href: https://github.com/immich-app/immich/releases

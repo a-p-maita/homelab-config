@@ -13,32 +13,27 @@ fi
 
 USE_VPN=$(grep -E '^USE_VPN=' .env 2>/dev/null | head -1 | cut -d= -f2-)
 
-# Pull both compose files when VPN is enabled (gluetun + deunhealth images)
-if [ "${USE_VPN}" = "true" ]; then
-  ARR_COMPOSE="-f stacks/arr/compose.yaml -f stacks/arr/compose.vpn.yaml"
-else
-  ARR_COMPOSE="-f stacks/arr/compose.yaml"
-fi
+for dir in stacks/*; do
+  [ -d "$dir" ] || continue
+  stack_name="$(basename "$dir")"
+  files=()
+  if [ -f "$dir/compose.yaml" ]; then
+    files+=(-f "$dir/compose.yaml")
+  fi
+  if [ -f "$dir/compose.override.yaml" ]; then
+    files+=(-f "$dir/compose.override.yaml")
+  fi
+  if [ "${USE_VPN}" = "true" ] && [ -f "$dir/compose.vpn.yaml" ]; then
+    files+=(-f "$dir/compose.vpn.yaml")
+  fi
+  if [ -f "$dir/compose.db.yaml" ]; then
+    files+=(-f "$dir/compose.db.yaml")
+  fi
 
-echo "Pulling infrastructure images..."
-docker compose $ENV_FILE_ARG -f stacks/infrastructure/compose.yaml pull
-
-echo "Pulling arr images..."
-docker compose $ENV_FILE_ARG $ARR_COMPOSE pull
-
-echo "Pulling media images..."
-docker compose $ENV_FILE_ARG -f stacks/media/compose.yaml pull
-
-echo "Pulling cloud images..."
-docker compose $ENV_FILE_ARG -f stacks/cloud/compose.yaml -f stacks/cloud/compose.override.yaml pull
-
-echo "Pulling services-db images..."
-docker compose $ENV_FILE_ARG -f stacks/services/compose.db.yaml pull
-
-echo "Pulling services images..."
-docker compose $ENV_FILE_ARG -f stacks/services/compose.yaml pull
-
-echo "Pulling home images..."
-docker compose $ENV_FILE_ARG -f stacks/home/compose.yaml pull
+  if [ ${#files[@]} -gt 0 ]; then
+    echo "Pulling ${stack_name} images..."
+    docker compose $ENV_FILE_ARG "${files[@]}" pull
+  fi
+done
 
 echo "All images pulled!"

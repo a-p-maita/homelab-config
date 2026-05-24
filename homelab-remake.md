@@ -23,9 +23,9 @@
 - Confirmed live `caddy` uses `DOCKER_HOST=tcp://docker-socket-proxy:2375`.
 - Confirmed `nextcloud.andreasmaita.com` is present in live Caddy autosave and is a valid active host.
 - Confirmed `dockge` is running and bound to the expected data and stack directories.
-- Confirmed `forgejo` service is running; live Caddy currently exposes it as `git.andreasmaita.com` and homepage metadata has been updated accordingly.
+- Confirmed `forgejo` service is running; live Caddy currently exposes it as `forgejo` and homepage metadata has been updated accordingly.
 - Confirmed `actual-budget` and `wizarr` are currently exposed by live Caddy at `actual-budget.andreasmaita.com` and `join.andreasmaita.com` respectively.
-- Updated homepage metadata to match live hostnames and route aliases from Caddy: `git.andreasmaita.com`, `abs.andreasmaita.com`, `music.andreasmaita.com`, and `seerr.andreasmaita.com`.
+- Updated homepage metadata to match live hostnames and route aliases from Caddy: `forgejo`, `abs.andreasmaita.com`, `music.andreasmaita.com`, and `seerr.andreasmaita.com`.
 - Fixed `stacks/cloud/compose.override.yaml` to include the missing `proxy_net` and `immich_internal` network definitions for the combined cloud compose config.
 - Added missing homepage entries for public routes currently present in live Caddy: `actual-budget.andreasmaita.com` and `join.andreasmaita.com`.
 - Re-added live homepage alias `home.andreasmaita.com` to `HOMEPAGE_ALLOWED_HOSTS`.
@@ -49,7 +49,7 @@ The currently active hostnames in the live `caddy` container are:
 - `actual-budget.andreasmaita.com`
 - `auth.andreasmaita.com`
 - `feishin.andreasmaita.com`
-- `git.andreasmaita.com`
+- `forgejo`
 - `home.andreasmaita.com`
 - `homepage.andreasmaita.com`
 - `immich.andreasmaita.com`
@@ -67,7 +67,7 @@ The currently active hostnames in the live `caddy` container are:
 
 - The runtime authoritative source is `/config/caddy/autosave.json` inside the `caddy` container, not the repo copy under `config/caddy/caddy/autosave.json`.
 - `audiobookshelf.andreasmaita.com` and `navidrome.andreasmaita.com` are not currently active in live Caddy; the current live aliases are `abs.andreasmaita.com` and `music.andreasmaita.com`.
-- `forgejo.andreasmaita.com` is not currently active in live Caddy; the live host for the Forgejo service is `git.andreasmaita.com`.
+- `forgejo.andreasmaita.com` is not currently active in live Caddy; the live host for the Forgejo service is `forgejo`.
 - `actual-budget.andreasmaita.com` and `join.andreasmaita.com` are active in live Caddy and should be present on the homepage.
 - `octo-fiesta.andreasmaita.com` is not currently active in live Caddy and should be removed from the homepage and docs unless the service is deployed later.
 - `seer.andreasmaita.com` is a stale/incorrect alias; the live route is `seerr.andreasmaita.com`.
@@ -221,7 +221,7 @@ Steps:
 2. Identify current live mismatches:
    - `abs.andreasmaita.com` is the live alias for Audiobookshelf; `audiobookshelf.andreasmaita.com` is not currently active.
    - `music.andreasmaita.com` is the live alias for Navidrome; `navidrome.andreasmaita.com` is not currently active.
-   - `git.andreasmaita.com` is the live host for Forgejo; `forgejo.andreasmaita.com` is not currently active.
+   - `forgejo` is the live host for Forgejo; `forgejo.andreasmaita.com` is not currently active.
    - `actual-budget.andreasmaita.com` and `join.andreasmaita.com` are active in live Caddy and should be represented on the homepage.
    - `octo-fiesta.andreasmaita.com` is not currently active in live Caddy and should be removed from the homepage and docs unless the service is deployed later.
    - `home.andreasmaita.com` is accepted by live Caddy along with `homepage.andreasmaita.com` and should be treated as a valid public alias.
@@ -240,7 +240,7 @@ Steps:
 Verification:
 
 - Live Caddy hostnames and `config/homepage/services.yaml` agree on the active public services.
-- `git.andreasmaita.com`, `abs.andreasmaita.com`, `music.andreasmaita.com`, `actual-budget.andreasmaita.com`, and `join.andreasmaita.com` are present in the dashboard if they are live.
+- `forgejo`, `abs.andreasmaita.com`, `music.andreasmaita.com`, `actual-budget.andreasmaita.com`, and `join.andreasmaita.com` are present in the dashboard if they are live.
 - `nextcloud.andreasmaita.com` is validated as a live route and represented correctly.
 - External homepage entries include `siteMonitor` for public routes.
 

@@ -13,32 +13,29 @@ fi
 
 USE_VPN=$(grep -E '^USE_VPN=' .env 2>/dev/null | head -1 | cut -d= -f2-)
 
-# Arr stack compose files depend on USE_VPN flag
-if [ "${USE_VPN}" = "true" ]; then
-  ARR_COMPOSE="-f stacks/arr/compose.yaml -f stacks/arr/compose.vpn.yaml"
-else
-  ARR_COMPOSE="-f stacks/arr/compose.yaml"
-fi
+for dir in stacks/*; do
+  [ -d "$dir" ] || continue
+  stack_name="$(basename "$dir")"
+  echo "Bringing down ${stack_name}..."
+  if [ -f "$dir/compose.db.yaml" ]; then
+    docker compose $ENV_FILE_ARG -f "$dir/compose.db.yaml" down --remove-orphans || true
+  fi
 
-echo "Bringing down home..."
-docker compose $ENV_FILE_ARG -f stacks/home/compose.yaml down --remove-orphans
+  files=()
+  if [ -f "$dir/compose.yaml" ]; then
+    files+=(-f "$dir/compose.yaml")
+  fi
+  if [ -f "$dir/compose.override.yaml" ]; then
+    files+=(-f "$dir/compose.override.yaml")
+  fi
+  if [ "${USE_VPN}" = "true" ] && [ -f "$dir/compose.vpn.yaml" ]; then
+    files+=(-f "$dir/compose.vpn.yaml")
+  fi
 
-echo "Bringing down services..."
-docker compose $ENV_FILE_ARG -f stacks/services/compose.yaml down --remove-orphans
+  if [ ${#files[@]} -gt 0 ]; then
+    docker compose $ENV_FILE_ARG "${files[@]}" down --remove-orphans || true
+  fi
 
-echo "Bringing down services-db..."
-docker compose $ENV_FILE_ARG -f stacks/services/compose.db.yaml down --remove-orphans
-
-echo "Bringing down cloud..."
-docker compose $ENV_FILE_ARG -f stacks/cloud/compose.yaml -f stacks/cloud/compose.override.yaml down --remove-orphans
-
-echo "Bringing down media..."
-docker compose $ENV_FILE_ARG -f stacks/media/compose.yaml down --remove-orphans
-
-echo "Bringing down arr..."
-docker compose $ENV_FILE_ARG $ARR_COMPOSE down --remove-orphans
-
-echo "Bringing down infrastructure..."
-docker compose $ENV_FILE_ARG -f stacks/infrastructure/compose.yaml down --remove-orphans
+done
 
 echo "All stacks are down!"

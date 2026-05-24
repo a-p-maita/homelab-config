@@ -367,7 +367,7 @@ MONITORS = [
     {
         "name":     "Forgejo (external)",
         "type":     MonitorType.HTTP,
-        "url":      "https://git.andreasmaita.com",
+        "url":      "https://forgejo",
         "interval": 120,
     },
     {

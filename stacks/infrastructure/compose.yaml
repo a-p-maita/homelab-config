@@ -279,8 +279,8 @@ services:
   #  # NOTE: do NOT add watchtower label to redis
 
   # ── Docker Socket Proxy ───────────────────────────────────────────────────────
-  # Least-privilege Docker API proxy — exposes only CONTAINERS=1 (read) to
-  # Homepage and Caddy. Never accessible outside socket_internal.
+  # Least-privilege Docker API proxy — exposes only the permissions needed by
+  # Caddy and Homepage. Never accessible outside socket_internal.
   docker-socket-proxy:
     image: ghcr.io/tecnativa/docker-socket-proxy:latest
     container_name: docker-socket-proxy
@@ -288,11 +288,13 @@ services:
     environment:
       # Allow read-only container and network inspection for Caddy + Homepage label discovery
       - CONTAINERS=1
-      - EVENTS=1
+      - INFO=1
+      - VERSION=1
       - NETWORKS=1
+      - SERVICES=1
+      - EVENTS=1
       - VOLUMES=0
       - IMAGES=0
-      - SERVICES=0
       - TASKS=0
       - NODES=0
       # Hard-disable all write/auth endpoints
