@@ -1,6 +1,6 @@
 services:
   qbittorrent:
-    image: lscr.io/linuxserver/qbittorrent:latest
+    image: lscr.io/linuxserver/qbittorrent@sha256:eeea9f8a8cdde23555186843d26e8ded1222421f31f98a5cc1b50c2882ebcf4e
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -24,6 +24,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    cpus: "0.5"
+    mem_limit: 256M
+    mem_reservation: 128M
     deploy:
       resources:
         limits:
@@ -34,7 +37,7 @@ services:
           memory: 128M
 
   navidrome:
-    image: deluan/navidrome:latest
+    image: deluan/navidrome@sha256:9fa40b3d8dec43ceb2213d1fa551da3dcfef6ac6d19c2e534efb92527c2bafd2
     restart: unless-stopped
     environment:
       - ND_USERNAME=${NAVIDROME_USER}
@@ -55,6 +58,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    cpus: "0.25"
+    mem_limit: 192M
+    mem_reservation: 64M
     deploy:
       resources:
         limits:
@@ -65,7 +71,7 @@ services:
           memory: 64M
 
   yamtrack:
-    image: ghcr.io/fuzzygrim/yamtrack:latest
+    image: ghcr.io/fuzzygrim/yamtrack@sha256:928df13c46c9f615b37f5ef1eb5a87fc8813f5941f28c7d8227af73d291b0d19
     restart: unless-stopped
     environment:
       - YAMTRACK_EXTERNAL_URL=${YAMTRACK_EXTERNAL_URL}
@@ -80,6 +86,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    cpus: "0.25"
+    mem_limit: 192M
+    mem_reservation: 64M
     deploy:
       resources:
         limits:

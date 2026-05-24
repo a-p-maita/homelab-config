@@ -1,6 +1,6 @@
 services:
   prowlarr:
-    image: prowlarr/prowlarr:latest
+    image: linuxserver/prowlarr@sha256:c9fe528f34b1fd3715438b6f6d6991d64e2965f2c055db36398bc66a0e7eab01
     restart: unless-stopped
     volumes:
       - ${DATA_ROOT}/prowlarr:/config
@@ -16,6 +16,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    cpus: "0.25"
+    mem_limit: 128M
+    mem_reservation: 64M
     deploy:
       resources:
         limits:
@@ -26,7 +29,7 @@ services:
           memory: 64M
 
   radarr:
-    image: linuxserver/radarr:latest
+    image: linuxserver/radarr@sha256:079e48870584baf2a3e7e43e7ba6d3c834555931851a59c82c51cc792d285caf
     restart: unless-stopped
     volumes:
       - ${DATA_ROOT}/radarr:/config
@@ -42,6 +45,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    cpus: "0.25"
+    mem_limit: 128M
+    mem_reservation: 64M
     deploy:
       resources:
         limits:
@@ -52,7 +58,7 @@ services:
           memory: 64M
 
   sonarr:
-    image: linuxserver/sonarr:latest
+    image: linuxserver/sonarr@sha256:0b5c4803f92456fb9b65bae8375716ea120b4ea17b3cced7da32b63f0085782b
     restart: unless-stopped
     volumes:
       - ${DATA_ROOT}/sonarr:/config
@@ -68,6 +74,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    cpus: "0.25"
+    mem_limit: 128M
+    mem_reservation: 64M
     deploy:
       resources:
         limits:

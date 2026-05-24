@@ -1,6 +1,6 @@
 services:
   paperless:
-    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    image: ghcr.io/paperless-ngx/paperless-ngx@sha256:6c86cad803970ea782683a8e80e7403444c5bf3cf70de63b4d3c8e87500db92f
     restart: unless-stopped
     environment:
       - PAPERLESS_ADMIN_USER=${PAPERLESS_ADMIN_USER}
@@ -21,6 +21,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    cpus: "0.5"
+    mem_limit: 512M
+    mem_reservation: 128M
     deploy:
       resources:
         limits:
@@ -31,7 +34,7 @@ services:
           memory: 128M
 
   joplin:
-    image: joplin/server:latest
+    image: joplin/server@sha256:0877bfba41a943017c42c58e90db9d8d548bfe699b5e410248b5b879371734f9
     restart: unless-stopped
     environment:
       - DB_PASSWORD=${JOPLIN_DB_PASS}
@@ -50,6 +53,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    cpus: "0.25"
+    mem_limit: 256M
+    mem_reservation: 64M
     deploy:
       resources:
         limits:
@@ -60,7 +66,7 @@ services:
           memory: 64M
 
   vaultwarden:
-    image: vaultwarden/server:latest
+    image: vaultwarden/server@sha256:d626d04934cd1192ad8ced1adb975099fca78cec33ab467d2d3c923cde7f3b0c
     restart: unless-stopped
     environment:
       - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
@@ -79,6 +85,9 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    cpus: "0.25"
+    mem_limit: 256M
+    mem_reservation: 64M
     deploy:
       resources:
         limits:

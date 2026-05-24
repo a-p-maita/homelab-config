@@ -1,7 +1,7 @@
 services:
   # ── Cloudflared ─────────────────────────────────────────────────────────────
   cloudflared:
-    image: cloudflare/cloudflared:2024.5.1
+    image: cloudflare/cloudflared@sha256:59bab8d3aceec09bf6bdb07d6beca0225ca5cd7ab79436a87ea97978fe1dc4f9
     container_name: cloudflared
     restart: unless-stopped
     labels:
@@ -31,10 +31,13 @@ services:
         reservations:
           cpus: "0.05"
           memory: 64M
+    cpus: "0.25"
+    mem_limit: 128M
+    mem_reservation: 64M
 
   # ── Homepage ─────────────────────────────────────────────────────────────────
   homepage:
-    image: ghcr.io/gethomepage/homepage:0.6.2
+    image: ghcr.io/gethomepage/homepage@sha256:d8d784e5090111b6e4c56dfd90e272d2953a2094e87349f647165df0fa6c4401
     container_name: homepage
     ports:
       - "${HOMEPAGE_PORT}:3000"
@@ -88,10 +91,13 @@ services:
         reservations:
           cpus: "0.05"
           memory: 64M
+    cpus: "0.25"
+    mem_limit: 256M
+    mem_reservation: 64M
 
   # ── Uptime Kuma ──────────────────────────────────────────────────────────────
   uptime-kuma:
-    image: louislam/uptime-kuma:1.23.1
+    image: louislam/uptime-kuma@sha256:3d632903e6af34139a37f18055c4f1bfd9b7205ae1138f1e5e8940ddc1d176f9
     container_name: uptime-kuma
     ports:
       - "${UPTIMEKUMA_PORT}:3001"
@@ -123,10 +129,13 @@ services:
         reservations:
           cpus: "0.05"
           memory: 128M
+    cpus: "0.25"
+    mem_limit: 256M
+    mem_reservation: 128M
 
   # ── Watchtower ───────────────────────────────────────────────────────────────
   watchtower:
-    image: containrrr/watchtower:1.9.2
+    image: containrrr/watchtower@sha256:6dd50763bbd632a83cb154d5451700530d1e44200b268a4e9488fefdfcf2b038
     container_name: watchtower
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -157,6 +166,9 @@ services:
         reservations:
           cpus: "0.05"
           memory: 32M
+    cpus: "0.25"
+    mem_limit: 128M
+    mem_reservation: 32M
 
   # ── Caddy (caddy-docker-proxy) ────────────────────────────────────────────────
   # Label-driven HTTP reverse proxy. Reads caddy.* labels from all containers.
@@ -164,7 +176,7 @@ services:
   # Uses docker-socket-proxy (socket_internal) to enumerate container labels safely.
   # In non-Swarm Docker, Caddy may still log non-fatal 403s while checking ingress/swarm resources.
   caddy:
-    image: lucaslorentz/caddy-docker-proxy:ci-alpine
+    image: lucaslorentz/caddy-docker-proxy@sha256:1574be2205e4882e7a7b6f802e8b60fd82d7777e27ea7aae069624eb11ac6f9b
     container_name: caddy
     restart: unless-stopped
     ports:
@@ -202,13 +214,16 @@ services:
         reservations:
           cpus: "0.1"
           memory: 64M
+    cpus: "0.5"
+    mem_limit: 256M
+    mem_reservation: 64M
 
   # ── Authelia ─────────────────────────────────────────────────────────────────
   #   STOP: Caddy must be running first. Requires config/authelia/ files.
   # See homelab-plan.md Phase 11 for setup instructions.
   #
   authelia:
-    image: authelia/authelia:5.13.0
+    image: authelia/authelia@sha256:0c824dcab1ae97c56bf673c5e77fe8cc6bcd400564555140cc8002a12c6b6463
     container_name: authelia
     restart: unless-stopped
     labels:
@@ -246,7 +261,7 @@ services:
       - infrastructure_internal
 
   authelia-redis:
-    image: redis:7.2-alpine
+    image: redis@sha256:dfa18828cbc07b3ae6a95ec7343f6c214fdee2d836197b4be8e9904420762cd8
     container_name: authelia-redis
     restart: unless-stopped
     volumes:
@@ -265,7 +280,7 @@ services:
   # Least-privilege Docker API proxy — exposes only the permissions needed by
   # Caddy and Homepage. Never accessible outside socket_internal.
   docker-socket-proxy:
-    image: ghcr.io/tecnativa/docker-socket-proxy:1.7.0
+    image: ghcr.io/tecnativa/docker-socket-proxy@sha256:1f3a6f303320723d199d2316a3e82b2e2685d86c275d5e3deeaf182573b47476
     container_name: docker-socket-proxy
     restart: unless-stopped
     environment:
@@ -297,6 +312,9 @@ services:
         reservations:
           cpus: "0.05"
           memory: 16M
+    cpus: "0.25"
+    mem_limit: 64M
+    mem_reservation: 16M
 
 networks:
   homelab_net:
