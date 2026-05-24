@@ -49,6 +49,30 @@
   - Well-supported Authelia middleware
   - Many community examples
 - **References**:
+
+## Mailserver & SMTP (self-hosted)
+
+Recommendations:
+
+- For production-grade self-hosted email, deploy `docker-mailserver` or
+  `Mailu` (both are full-featured and actively maintained). This repo includes
+  a minimal scaffold at `stacks/mail/compose.yaml` and helpers under
+  `scripts/mail/` to generate DKIM keys.
+- For testing or initial onboarding, keep Authelia's notifier startup checks
+  disabled until SMTP is configured (`notifier.disable_startup_check: true`).
+
+Steps:
+
+1. Copy `backups/secrets/mailserver.env.example` → `backups/secrets/mailserver.env` and set `MAIL_DOMAIN` and `POSTMASTER_ADDRESS`.
+2. Run `./scripts/mail/generate_dkim_keys.sh mail ${MAIL_DOMAIN}` and publish the printed TXT record to your DNS provider.
+3. Start the mailserver: `docker compose -f stacks/mail/compose.yaml up -d`.
+4. Create mail accounts per docker-mailserver docs and move any SMTP passwords into Docker secrets.
+
+Notes:
+
+- Sending mail directly from a home IP may be blocked or result in poor deliverability. Consider using an outbound relay (VPS or provider) if you need mail to reach arbitrary public inboxes.
+- Keep private keys and passwords in `backups/secrets/` and out of git.
+
   - [Reddit: Cloudflare + Traefik + Authelia](https://www.reddit.com/r/selfhosted/comments/1pb819m/took_my_selfhosted_homelab_public_cloudflare/)
   - [Reddit: Traefik 401 instead of redirect](https://www.reddit.com/r/docker/comments/16tpdh8/traefic_giving_401_instead_of_redirecting_to/)
 

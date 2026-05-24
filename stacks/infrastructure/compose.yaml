@@ -288,6 +288,9 @@ services:
       retries: 3
       start_period: 15s
   #  # NOTE: do NOT add watchtower label to redis
+  # Mail server options moved to `stacks/mail/compose.yaml`. Use a production
+  # mailserver (docker-mailserver/Mailu) or a lightweight relay for testing.
+  # See stacks/mail/README.md for setup steps and DNS guidance.
 
   # ── Docker Socket Proxy ───────────────────────────────────────────────────────
   # Least-privilege Docker API proxy — exposes only the permissions needed by

@@ -71,4 +71,53 @@ help:
 	@echo "  make compose-config STACK=..."; \
 	@echo "  make compose-up STACK=... COMPOSE_ARGS='up -d'"; \
 	@echo "  make service-up SERVICE=authelia"; \
+
+# Generic stack helpers: list, up, down, validate any compose file under stacks/
+.PHONY: stack-list stack-up stack-down stack-validate stacks-validate
+
+stack-list:
+	@echo "Compose files under stacks/:"; \
+	@find stacks -type f -name 'compose.yaml' | sort
+
+# Usage: make stack-up STACK=stacks/mail/compose.yaml [SERVICE=<name>]
+stack-up:
+	@if [ -n "$(STACK)" ]; then \
+		echo "Bringing up compose: $(STACK)"; \
+		$(COMPOSE) -f $(STACK) up -d $(SERVICE); \
+	else \
+		echo "Bringing up all stacks under stacks/"; \
+		for f in $(shell find stacks -type f -name 'compose.yaml' | sort); do \
+			echo "Up: $$f"; \
+			$(COMPOSE) -f $$f up -d $(SERVICE); \
+		done; \
+	fi
+
+# Usage: make stack-down STACK=stacks/mail/compose.yaml [SERVICE=<name>]
+stack-down:
+	@if [ -n "$(STACK)" ]; then \
+		echo "Taking down compose: $(STACK)"; \
+		$(COMPOSE) -f $(STACK) down; \
+	else \
+		echo "Taking down all stacks under stacks/"; \
+		for f in $(shell find stacks -type f -name 'compose.yaml' | sort); do \
+			echo "Down: $$f"; \
+			$(COMPOSE) -f $$f down; \
+		done; \
+	fi
+
+# Validate a single stack or all stacks
+stack-validate:
+	@if [ -n "$(STACK)" ]; then \
+		echo "Validating compose: $(STACK)"; \
+		$(COMPOSE) -f $(STACK) config --quiet; \
+	else \
+		echo "Validating all stacks under stacks/"; \
+		for f in $(shell find stacks -type f -name 'compose.yaml' | sort); do \
+			echo "Validate: $$f"; \
+			$(COMPOSE) -f $$f config --quiet || exit 1; \
+		done; \
+	fi
+
+stacks-validate: stack-validate
+
 	@echo "  make logs SERVICE=authelia";
