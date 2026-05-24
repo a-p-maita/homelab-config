@@ -1,7 +1,7 @@
 services:
   # ── Cloudflared ─────────────────────────────────────────────────────────────
   cloudflared:
-    image: cloudflare/cloudflared:latest
+    image: cloudflare/cloudflared:2024.5.1
     container_name: cloudflared
     restart: unless-stopped
     labels:
@@ -34,7 +34,7 @@ services:
 
   # ── Homepage ─────────────────────────────────────────────────────────────────
   homepage:
-    image: ghcr.io/gethomepage/homepage:latest
+    image: ghcr.io/gethomepage/homepage:0.6.2
     container_name: homepage
     ports:
       - "${HOMEPAGE_PORT}:3000"
@@ -91,7 +91,7 @@ services:
 
   # ── Uptime Kuma ──────────────────────────────────────────────────────────────
   uptime-kuma:
-    image: louislam/uptime-kuma:1
+    image: louislam/uptime-kuma:1.23.1
     container_name: uptime-kuma
     ports:
       - "${UPTIMEKUMA_PORT}:3001"
@@ -126,7 +126,7 @@ services:
 
   # ── Watchtower ───────────────────────────────────────────────────────────────
   watchtower:
-    image: containrrr/watchtower:latest
+    image: containrrr/watchtower:1.9.2
     container_name: watchtower
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -208,7 +208,7 @@ services:
   # See homelab-plan.md Phase 11 for setup instructions.
   #
   authelia:
-    image: authelia/authelia:latest
+    image: authelia/authelia:5.13.0
     container_name: authelia
     restart: unless-stopped
     labels:
@@ -246,7 +246,7 @@ services:
       - infrastructure_internal
 
   authelia-redis:
-    image: redis:7-alpine
+    image: redis:7.2-alpine
     container_name: authelia-redis
     restart: unless-stopped
     volumes:
@@ -265,7 +265,7 @@ services:
   # Least-privilege Docker API proxy — exposes only the permissions needed by
   # Caddy and Homepage. Never accessible outside socket_internal.
   docker-socket-proxy:
-    image: ghcr.io/tecnativa/docker-socket-proxy:latest
+    image: ghcr.io/tecnativa/docker-socket-proxy:1.7.0
     container_name: docker-socket-proxy
     restart: unless-stopped
     environment:

@@ -7,3 +7,17 @@ services:
     network_mode: host
     environment:
       - TZ=${TZ}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8123/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1024M
+        reservations:
+          cpus: "0.2"
+          memory: 256M
