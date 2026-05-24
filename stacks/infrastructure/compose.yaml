@@ -9,7 +9,9 @@ services:
     # --metrics enables the health/ready endpoint on port 8080
     command: tunnel --metrics 0.0.0.0:8080 run
     environment:
-      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+      - TUNNEL_TOKEN_FILE=/run/secrets/tunnel-token
+    secrets:
+      - tunnel-token
     ports:
       - "${CLOUDFLARED_PORT}:8080"
     networks:
@@ -55,7 +57,7 @@ services:
       - HOMEPAGE_VAR_JELLYFIN_API_KEY=${JELLYFIN_API_KEY:-}
       # ── qBittorrent widget credentials (same as WebUI login) ─────────────────
       - HOMEPAGE_VAR_QBT_USER=${QBITTORRENT_WEBUI_USER}
-      - HOMEPAGE_VAR_QBT_PASS=${QBITTORRENT_WEBUI_PASS}
+      - HOMEPAGE_VAR_QBT_PASS_FILE=/run/secrets/qbittorrent-webui-pass
     volumes:
       - ../../data/homepage/config:/app/config
       - /etc/localtime:/etc/localtime:ro
@@ -251,9 +253,12 @@ services:
     environment:
       - TZ=${TZ}
       # Secrets injected at runtime — kept out of config/authelia/ (which is git-tracked)
-      - AUTHELIA_SESSION_SECRET=${AUTHELIA_SESSION_SECRET}
-      - AUTHELIA_STORAGE_ENCRYPTION_KEY=${AUTHELIA_STORAGE_ENCRYPTION_KEY}
-      - AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET=${AUTHELIA_SESSION_SECRET}
+      - AUTHELIA_SESSION_SECRET_FILE=/run/secrets/authelia-session-secret
+      - AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE=/run/secrets/authelia-storage-encryption-key
+      - AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET_FILE=/run/secrets/authelia-session-secret
+    secrets:
+      - authelia-session-secret
+      - authelia-storage-encryption-key
     volumes:
       - ../../config/authelia:/config
     networks:
@@ -325,3 +330,13 @@ networks:
     external: true
   infrastructure_internal:
     external: true
+
+secrets:
+  tunnel-token:
+    file: ../../backups/secrets/tunnel-token.secret
+  qbittorrent-webui-pass:
+    file: ../../backups/secrets/qbittorrent-webui-pass.secret
+  authelia-session-secret:
+    file: ../../backups/secrets/authelia-session-secret.secret
+  authelia-storage-encryption-key:
+    file: ../../backups/secrets/authelia-storage-encryption-key.secret

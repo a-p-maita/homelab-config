@@ -4,8 +4,8 @@ services:
     restart: unless-stopped
     environment:
       - PAPERLESS_ADMIN_USER=${PAPERLESS_ADMIN_USER}
-      - PAPERLESS_ADMIN_PASSWORD=${PAPERLESS_ADMIN_PASS}
-      - PAPERLESS_DB_PASSWORD=${PAPERLESS_DB_PASS}
+      - PAPERLESS_ADMIN_PASSWORD_FILE=/run/secrets/paperless-admin-pass
+      - PAPERLESS_DB_PASSWORD_FILE=/run/secrets/paperless-db-pass
     volumes:
       - ${DATA_ROOT}/paperless:/usr/src/paperless/data
     networks:
@@ -37,7 +37,7 @@ services:
     image: joplin/server@sha256:0877bfba41a943017c42c58e90db9d8d548bfe699b5e410248b5b879371734f9
     restart: unless-stopped
     environment:
-      - DB_PASSWORD=${JOPLIN_DB_PASS}
+      - DB_PASSWORD_FILE=/run/secrets/joplin-db-pass
     volumes:
       - ${DATA_ROOT}/joplin:/data
     networks:
@@ -69,7 +69,7 @@ services:
     image: vaultwarden/server@sha256:d626d04934cd1192ad8ced1adb975099fca78cec33ab467d2d3c923cde7f3b0c
     restart: unless-stopped
     environment:
-      - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
+      - ADMIN_TOKEN_FILE=/run/secrets/vaultwarden-admin-token
     volumes:
       - ${DATA_ROOT}/vaultwarden:/data
     networks:
@@ -102,3 +102,13 @@ networks:
     external: true
   backend:
     internal: true
+
+secrets:
+  paperless-admin-pass:
+    file: ../../backups/secrets/paperless-admin-pass.secret
+  paperless-db-pass:
+    file: ../../backups/secrets/paperless-db-pass.secret
+  joplin-db-pass:
+    file: ../../backups/secrets/joplin-db-pass.secret
+  vaultwarden-admin-token:
+    file: ../../backups/secrets/vaultwarden-admin-token.secret

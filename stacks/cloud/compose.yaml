@@ -4,8 +4,10 @@ services:
     restart: unless-stopped
     environment:
       - POSTGRES_USER=nextcloud
-      - POSTGRES_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+      - POSTGRES_PASSWORD_FILE=/run/secrets/nextcloud-db-password
       - POSTGRES_DB=nextcloud
+    secrets:
+      - nextcloud-db-password
     volumes:
       - ${DATA_ROOT}/postgres/nextcloud:/var/lib/postgresql/data
     networks:
@@ -32,7 +34,7 @@ services:
     image: nextcloud@sha256:92da6b0a45c52903fc4a4eed2e7274fd89ff3ef05f501299d9df810c804cc59b
     restart: unless-stopped
     environment:
-      - MYSQL_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+      - MYSQL_PASSWORD_FILE=/run/secrets/nextcloud-db-password
       - MYSQL_DATABASE=nextcloud
       - MYSQL_USER=nextcloud
     volumes:
@@ -67,3 +69,7 @@ networks:
     external: true
   backend:
     internal: true
+
+secrets:
+  nextcloud-db-password:
+    file: ../../backups/secrets/nextcloud-db-password.secret

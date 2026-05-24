@@ -41,7 +41,7 @@ services:
     restart: unless-stopped
     environment:
       - ND_USERNAME=${NAVIDROME_USER}
-      - ND_PASSWORD=${NAVIDROME_PASS}
+      - ND_PASSWORD_FILE=/run/secrets/navidrome-pass
     volumes:
       - ${DATA_ROOT}/music:/music
       - ${DATA_ROOT}/navidrome_db:/data
@@ -103,3 +103,7 @@ networks:
     external: true
   backend:
     internal: true
+
+secrets:
+  navidrome-pass:
+    file: ../../backups/secrets/navidrome-pass.secret
