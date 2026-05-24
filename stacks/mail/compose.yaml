@@ -1,24 +1,25 @@
 services:
   mailserver:
-    image: docker-mailserver/docker-mailserver:latest
+    # Use GHCR image for docker-mailserver (more reliable than Docker Hub mirrors)
+    image: ghcr.io/docker-mailserver/docker-mailserver:latest
     container_name: mailserver
     restart: unless-stopped
     env_file:
       - ../../backups/secrets/mailserver.env
     hostname: mail
     domainname: ${MAIL_DOMAIN:-andreasmaita.com}
-    ports:
-      - "25:25"
-      - "587:587"
+    # Use host networking so the mailserver binds directly to host ports.
+    # This avoids docker-proxy/port-mapping issues and is acceptable on a
+    # single-host homelab. Revert if you prefer Docker NAT mode.
+    network_mode: host
     volumes:
       - ../../data/mailserver/maildata:/var/mail
       - ../../data/mailserver/state:/var/mail-state
       - ../../backups/secrets/mailserver:/tmp/docker-mailserver
       - ../../backups/secrets/mail/dkim:/tmp/docker-mailserver/dkim
-    networks:
-      - infrastructure_internal
     healthcheck:
-      test: ["CMD-SHELL", "sleep 1 && exit 0"]
+      # Check EXIM/SMTP port is listening locally inside the container
+      test: ["CMD-SHELL", "ss -ltnp | grep :25 || exit 1"]
       interval: 1m
       timeout: 10s
       retries: 3
