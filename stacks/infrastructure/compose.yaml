@@ -256,6 +256,10 @@ services:
       - AUTHELIA_SESSION_SECRET_FILE=/run/secrets/authelia-session-secret
       - AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE=/run/secrets/authelia-storage-encryption-key
       - AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET_FILE=/run/secrets/authelia-session-secret
+      # Let Authelia read the SMTP password from the Docker secret file.
+      # The secret is declared below as `authelia-smtp-password` and mapped to
+      # /run/secrets/authelia-smtp-password by Docker Compose.
+      - AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE=/run/secrets/authelia-smtp-password
     secrets:
       - authelia-session-secret
       - authelia-storage-encryption-key
