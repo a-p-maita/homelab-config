@@ -231,16 +231,16 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
       # Forward-auth snippet — referenced by caddy.1_import=authelia_auth on protected services
-      - "caddy_0=(authelia_auth)"
-      - "caddy_0.forward_auth=authelia:9091"
-      - "caddy_0.forward_auth.uri=/api/verify"
-      - "caddy_0.forward_auth.copy_headers=Remote-User Remote-Groups Remote-Email Remote-Name"
-      - "caddy_0.forward_auth.header_up=X-Forwarded-Proto https"
-      - "caddy_0.forward_auth.header_up=X-Forwarded-Host {http.request.host}"
-      - "caddy_0.forward_auth.header_up=X-Forwarded-Uri {http.request.uri}"
+      - "caddy.0=(authelia_auth)"
+      - "caddy.0.forward_auth=authelia:9091"
+      - "caddy.0.forward_auth.uri=/api/verify"
+      - "caddy.0.forward_auth.copy_headers=Remote-User Remote-Groups Remote-Email Remote-Name"
+      - "caddy.0.forward_auth.header_up=X-Forwarded-Proto https"
+      - "caddy.0.forward_auth.header_up=X-Forwarded-Host {http.request.host}"
+      - "caddy.0.forward_auth.header_up=X-Forwarded-Uri {http.request.uri}"
       # Authelia own public domain
-      - "caddy_1=http://auth.andreasmaita.com"
-      - "caddy_1.reverse_proxy=http://authelia:9091"
+      - "caddy.1=http://auth.andreasmaita.com"
+      - "caddy.1.reverse_proxy=http://authelia:9091"
       # Homepage discovery
       - "homepage.group=Infrastructure"
       - "homepage.name=Authelia"
@@ -260,6 +260,7 @@ services:
       - authelia-session-secret
       - authelia-storage-encryption-key
       - authelia-users-db
+      - authelia-smtp-password
     volumes:
       - ../../config/authelia:/config
       # Override in-repo configuration with an explicitly managed file under backups/secrets
@@ -345,3 +346,5 @@ secrets:
     file: ../../backups/secrets/authelia-storage-encryption-key.secret
   authelia-users-db:
     file: ../../backups/secrets/authelia-users-db.secret
+  authelia-smtp-password:
+    file: ../../backups/secrets/authelia-smtp-password.secret
