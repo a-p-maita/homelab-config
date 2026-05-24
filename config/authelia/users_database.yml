@@ -1,7 +1,0 @@
-users:
-  andreas:
-    displayname: "Andreas"
-    password: "$argon2id$v=19$m=65536,t=3,p=4$B4KTQimD1/m51eZvJqBNlQ$zMPk1HeM9Ru3VoZKIp0tcJM6z3m02HNuO4yl+xapTeU"
-    email: admin@andreasmaita.com
-    groups:
-      - admins
