@@ -10,6 +10,22 @@
 
 ---
 
+## Assumptions & Host Constraints
+
+- Single-host laptop: Ryzen 5 5500U, ~14GB RAM, ~1TB SSD (no RAID). These constraints drive low-memory, single-node choices.
+- No cloud backups or managed K8s — all backups are local (Restic to an attached disk or external NAS you control).
+- Persistent app data lives under `DATA_ROOT` (default: /home/a-p-maita/homelab-data) and must be preserved during any repo purge.
+- The user prefers minimal interaction: Traefik + Authelia + Cloudflare Tunnel (no public host port exposure), and secrets managed in a secrets manager where practical.
+
+## Files created during analysis & scaffolding
+
+- `scripts/analyze_env.py` — env analyzer (detects duplicates, reused secrets, and generates `.env.optimized.example`).
+- `evals/env-evals.json` — simple eval cases for the analyzer.
+- `.env.optimized.example` — draft optimized example (secrets blanked).
+- `backups/env-analysis-report.txt` — masked analysis report (sensitive values hashed).
+- `backups/env-dedupe-plan.md` — step-by-step dedupe & migration plan.
+- `scripts/prepare_env_migration.sh` — non-destructive scaffold to back up `.env` and generate migration command templates.
+
 ## 1. Architecture Overview
 
 - **Reverse Proxy**: Use Traefik (recommended) for automatic HTTPS, routing, and integration with Authelia.
@@ -77,16 +93,205 @@ Caddy is a capable reverse proxy and provides a simple configuration model and a
 
 ## 6. Migration/Remake Steps
 
-1. **Backup `/data` and `.env`**
-2. **Wipe all containers, volumes, and configs except `/data`**
-3. **Clone repo on new host**
-4. **Copy `.env` and `/data` to new host**
-5. **Run `./scripts/generate-secrets.sh` to fill any missing secrets**
-6. **Bring up infrastructure stack (proxy, Authelia, homepage, monitoring)**
-7. **Bring up media, cloud, and services stacks**
-8. **Onboard Authelia with a real email, complete device trust**
-9. **Onboard all apps via web UI (admin user, etc.)**
-10. **Verify all public domains route via Cloudflare and require login**
+Optimized minimal migration steps (single-host, safe, reversible):
+
+1. **Snapshot & backup** — create a timestamped backup of `.env` and a Restic snapshot of `DATA_ROOT` (or `rsync` to an external disk).
+
+2. **Analyze & plan** — run `scripts/analyze_env.py` and review `backups/env-analysis-report.txt`; run `bash scripts/prepare_env_migration.sh` to produce `backups/env-migration-commands.sh` (review before executing).
+
+3. **Prepare minimal bootstrap `.env`** — keep only host-level values in tracked `.env.example` (`DATA_ROOT`, `DOMAIN`, `TUNNEL_TOKEN`, `PUID/PGID`, `USE_VPN`). Use `.env.optimized.example` as a reference. For secrets choose one of two flows:
+
+- Quick flow: run `./scripts/generate-secrets.sh` (creates a local `.env` with generated secrets). Use this for fast provisioning but rotate shared passwords later.
+- Managed flow (recommended): use a secrets manager (Infisical preferred for small homelabs) and render secrets at deploy time to `.env.rendered` or create Docker secrets from the rendered output.
+
+1. **Bring up infra only**
+
+```bash
+docker compose -f stacks/infrastructure/compose.yaml config && \
+  docker compose -f stacks/infrastructure/compose.yaml up -d
+```
+
+Start Traefik, Cloudflared, Authelia, homepage, and monitoring first. Complete Authelia onboarding with a real email and verify device trust before exposing other services.
+
+1. **Migrate per-service secrets & rotate reused passwords**
+
+- Review `backups/env-analysis-report.txt` and `backups/env-migration-commands.sh` for grouped reused values. For each reuse-group do a manual, service-aware rotation:
+
+  1) Generate a new secret locally (example):
+
+  ```bash
+  openssl rand -base64 32
+  # or: python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+  ```
+
+  1) Preferred: create a Docker secret and update Compose to `_FILE` semantics:
+
+  ```bash
+  echo -n "<NEWSECRET>" | docker secret create paperless_db_pass -
+  # then update compose: PAPERLESS_DB_PASS_FILE=/run/secrets/paperless_db_pass
+  ```
+
+  1) Quick (not recommended long-term): update `.env` in-place and restart the affected service(s):
+
+  ```bash
+  sed -i "s|^PAPERLESS_DB_PASS=.*|PAPERLESS_DB_PASS='<NEWSECRET>'|" .env
+  docker compose -f stacks/services/compose.yaml up -d paperless
+  ```
+
+Notes:
+
+- Do NOT run mass `sed` replacements blind — review each service's migration requirements (some apps need an in-app password change step or DB credentials re-provisioning).
+- Keep a mapping of old→new for critical rotations in `backups/env-rotate-log.txt` (store only hashes, not cleartext).
+
+1. **Bring up application stacks & verify**
+
+```bash
+docker compose -f stacks/media/compose.yaml up -d
+docker compose -f stacks/services/compose.yaml up -d
+```
+
+Verify healthchecks (`docker compose ps`, `docker logs <service>`). Confirm monitoring (Uptime Kuma, Prometheus/Grafana) reports services healthy. Run a sample restore from the backups to validate the backup pipeline.
+
+1. **Finalize (pinning, hardening, automation controls)**
+
+- Pin images for critical services (Traefik, Authelia, DBs, Nextcloud) to semver tags or digests. Avoid `:latest`.
+- Add `healthcheck` and resource limits to key Compose services. Add Watchtower opt-in labels and exclude stateful services from auto-update.
+- Remove or archive unnecessary `scripts/` that replicate Compose behavior; keep only small, well-scoped helpers (`generate-secrets.sh`, `backup.sh`).
+
+Rollback & safety commands (quick reference):
+
+```bash
+# restore .env from backup
+cp backups/.env.bak.<timestamp> .env
+
+# restart infra
+docker compose -f stacks/infrastructure/compose.yaml down && \
+  docker compose -f stacks/infrastructure/compose.yaml up -d
+
+# restic restore (example)
+# restic -r /mnt/backup/restic-repo restore latest --target /restore/target
+```
+
+---
+
+## 7. Hardening pass (Compose hygiene)
+
+- Detect `:latest` usage and list candidates for pinning:
+
+```bash
+grep -R "image:.*:latest\|image: .*:latest" -n stacks/ || true
+```
+
+- Pin images to tags or digests. Example workflow to capture digest:
+
+```bash
+docker pull traefik:2.10
+docker inspect --format='{{index .RepoDigests 0}}' traefik:2.10
+# set image: traefik@sha256:<digest> in compose file
+```
+
+- Add `healthcheck` blocks and basic `deploy.resources` (or `mem_limit`/`cpus` for compatibility) to critical services.
+- Ensure DBs and caches are on internal networks only; do not publish DB ports publicly.
+- Add `read_only: true` and `no-new-privileges: true` where supported for infra containers.
+- Configure Watchtower labels as opt-in; do not enable auto-update for stateful services.
+
+## 8. Secrets migration & Infisical bootstrap (recommended flow)
+
+1. Create `infisical-mapping.json` mapping `.env` keys to Infisical secret names (example below). This file is tracked and contains only key names, not secret values.
+
+```json
+{
+  "PAPERLESS_DB_PASS": "paperless/db/password",
+  "NEXTCLOUD_DB_PASSWORD": "nextcloud/db/password",
+  "AUTHELIA_JWT_SECRET": "authelia/jwt"
+}
+```
+
+1. User flow (Infisical):
+
+- Admin: `infisical login` (manual, secure)
+- Push secrets once: `infisical push --path infisical-mapping.json --values-from .env.rendered`
+- Render at deploy time:
+
+```bash
+infisical render --project homelab --output .env.rendered
+# or: infisical render --project homelab --to /run/secrets/...
+```
+
+1. Create Docker secrets from rendered values when you prefer runtime secrets:
+
+```bash
+echo -n "$(grep '^PAPERLESS_DB_PASS=' .env.rendered | cut -d'=' -f2-)" | docker secret create paperless_db_pass -
+```
+
+Notes:
+
+- Keep `infisical-mapping.json` tracked, but never commit `.env.rendered` or any secret-bearing files.
+- The Infisical approach centralizes secrets and allows team-friendly rotation. It is the recommended path for minimal manual steps during deploy.
+
+## 9. Validation & Testing Checklist
+
+- Validate each compose file after edits:
+
+```bash
+docker compose -f stacks/infrastructure/compose.yaml config --quiet
+docker compose -f stacks/services/compose.yaml config --quiet
+```
+
+- Verify running containers and health:
+
+```bash
+docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'
+docker compose ps
+```
+
+- Confirm monitoring alerts are green (Uptime Kuma), and run a sample backup+restore of a small dataset from `DATA_ROOT`.
+- Check Authelia onboarding and device trust operations (sign in, 2FA, device trust cookie). If 401 occurs, consult Authelia DB and web console.
+
+## 10. Next recommended actionable steps (what I can do now)
+
+Pick one and I will prepare the artifacts (I will not execute destructive commands without your explicit approval):
+
+- A) Convert `backups/env-migration-commands.sh` templates into concrete, non-executing command templates (exact `docker secret create`, `sed` lines, and a dry-run plan). — good first step for manual review.
+- B) Scaffold `infisical-mapping.json` and a `README-INFISICAL.md` with exact `infisical` CLI commands to push/render secrets (no secrets added to repo). — recommended for long-term hygiene.
+- C) Create a focused PR that adds `healthcheck` and resource limits to a small set of critical compose files (infra: Traefik, Authelia, DBs) and identifies images to pin. — useful to harden quickly.
+- D) Run a dry-run checklist and produce `backups/env-rotate-log.txt` (old key → new secret-name hashes only) as a migration ledger (I will not store plaintext secrets).
+
+---
+
+## Appendix: Useful commands (copyable)
+
+```bash
+# Backup .env
+cp .env backups/.env.bak.$(date +%F_%H%M%S)
+
+# Run analyzer & regen migration templates
+python3 scripts/analyze_env.py
+bash scripts/prepare_env_migration.sh
+
+# Validate compose files
+docker compose -f stacks/infrastructure/compose.yaml config
+
+# Create a Docker secret (example)
+echo -n "<NEWSECRET>" | docker secret create my_service_db_pass -
+```
+
+Files created by the analyzer/migration scaffold:
+
+- `backups/env-analysis-report.txt` (masked analysis)
+- `backups/env-migration-commands.sh` (templates)
+- `.env.optimized.example` (optimized example)
+- `scripts/analyze_env.py`, `scripts/prepare_env_migration.sh`
+
+---
+
+If you'd like, I can now (choose one):
+
+1) Produce concrete, reviewed non-executing command templates for each reuse-group (option A above).
+2) Scaffold `infisical-mapping.json` + `README-INFISICAL.md` (option B).
+3) Open a PR with a minimal hardening patch for infra compose files (option C).
+
+Tell me which option, and I'll prepare the artifacts (I will not run any secret-rotation commands without explicit confirmation).
 
 ---
 
@@ -453,3 +658,26 @@ If you want, I can now:
 2) Create a `Makefile` and `FIRST-RUN.md` with the exact minimal commands above and a safe Watchtower opt-in example.
 
 Tell me which of (1) or (2) to do next, or say both and I'll implement them.
+
+---
+
+## Implementation progress (ongoing)
+
+- Added `scripts/harden_compose.py`: non-destructive scanner that produces
+  `backups/compose-hardening-suggestions.txt` and per-file snippets under
+  `backups/hardening-snippets/`. The script does not alter any repo files — it
+  only emits human-reviewable suggestions.
+- Added `README-HARDENING.md` with usage instructions and guidance for
+  applying the suggested snippets safely.
+
+Next immediate steps I can perform now (safe, non-destructive):
+
+- Run `python3 scripts/harden_compose.py` to generate the current suggestions
+  (read-only) and commit the results to `backups/` for your review.
+- Prepare a focused hardening patch (example changes) for the infra stacks
+  (Traefik, Authelia, Cloudflared) as a draft branch/PR. I will NOT change any
+  running services or rotate secrets without explicit approval.
+
+If you'd like me to run the hardening scan now and add the generated suggestions
+to the repo, reply with: "Run hardening scan". To proceed with a draft PR for
+infra hardening, reply with: "Prepare infra hardening PR".
