@@ -1,0 +1,40 @@
+services:
+  postgres-nextcloud:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=nextcloud
+      - POSTGRES_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+      - POSTGRES_DB=nextcloud
+    volumes:
+      - ${DATA_ROOT}/postgres/nextcloud:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nextcloud -d nextcloud || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  nextcloud:
+    image: nextcloud:stable-apache
+    restart: unless-stopped
+    environment:
+      - MYSQL_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+    volumes:
+      - ${DATA_ROOT}/nextcloud:/var/www/html
+    networks:
+      - proxy_net
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nextcloud.rule=Host(`nextcloud.${DOMAIN}`)"
+      - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
+
+networks:
+  proxy_net:
+    external: true
+  backend:
+    internal: true

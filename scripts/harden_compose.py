@@ -171,8 +171,16 @@ def main():
     args = parser.parse_args()
 
     out_path = Path(args.output)
+    # If user provided a relative path, anchor it under the repo root so
+    # subsequent relative_to(ROOT) calls succeed. Resolve to an absolute
+    # path for consistent behavior.
+    if not out_path.is_absolute():
+        out_path = (ROOT / out_path).resolve()
+    else:
+        out_path = out_path.resolve()
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    snippets_dir = Path(args.output).parent / "hardening-snippets"
+    snippets_dir = out_path.parent / "hardening-snippets"
     snippets_dir.mkdir(parents=True, exist_ok=True)
 
     files = find_compose_files(ROOT)

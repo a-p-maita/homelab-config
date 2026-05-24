@@ -1,0 +1,42 @@
+services:
+  prowlarr:
+    image: prowlarr/prowlarr:latest
+    restart: unless-stopped
+    volumes:
+      - ${DATA_ROOT}/prowlarr:/config
+    networks:
+      - backend
+      - proxy_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.${DOMAIN}`)"
+
+  radarr:
+    image: linuxserver/radarr:latest
+    restart: unless-stopped
+    volumes:
+      - ${DATA_ROOT}/radarr:/config
+    networks:
+      - backend
+      - proxy_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.radarr.rule=Host(`radarr.${DOMAIN}`)"
+
+  sonarr:
+    image: linuxserver/sonarr:latest
+    restart: unless-stopped
+    volumes:
+      - ${DATA_ROOT}/sonarr:/config
+    networks:
+      - backend
+      - proxy_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.${DOMAIN}`)"
+
+networks:
+  proxy_net:
+    external: true
+  backend:
+    internal: true

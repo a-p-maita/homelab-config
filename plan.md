@@ -250,13 +250,18 @@ docker compose ps
 
 ## 10. Next recommended actionable steps (what I can do now)
 
+Status: `FIRST-RUN.md` and `Makefile` have been added to the repo (see [FIRST-RUN.md](FIRST-RUN.md) and [Makefile](Makefile)). With those in place, the next safe actions are listed below.
+
 Pick one and I will prepare the artifacts (I will not execute destructive commands without your explicit approval):
 
-- A) Convert `backups/env-migration-commands.sh` templates into concrete, non-executing command templates (exact `docker secret create`, `sed` lines, and a dry-run plan). — good first step for manual review.
-- B) Scaffold `infisical-mapping.json` and a `README-INFISICAL.md` with exact `infisical` CLI commands to push/render secrets (no secrets added to repo). — recommended for long-term hygiene.
-- C) Create a focused PR that adds `healthcheck` and resource limits to a small set of critical compose files (infra: Traefik, Authelia, DBs) and identifies images to pin. — useful to harden quickly.
-- D) Run a dry-run checklist and produce `backups/env-rotate-log.txt` (old key → new secret-name hashes only) as a migration ledger (I will not store plaintext secrets).
+- A) Produce concrete, non-executing migration commands for each reuse-group (exact `docker secret create` examples, `_FILE` Compose snippets, and a dry-run plan). Good first step for manual review.
+- B) Scaffold or review `infisical-mapping.json` and `README-INFISICAL.md` with exact `infisical` CLI commands to push/render secrets (no secret values will be stored in the repo).
+- C) Draft a minimal hardening PR for infra compose files (pin Traefik/Authelia images to tags/digests, add `healthcheck` and basic resource limits, and opt-in Watchtower labels). Non-destructive; ready for review.
+- D) Run compose validation (dry-run) for each stack and report problems (`docker compose -f <stack> config --quiet`). Requires Docker on this host — I will only run this if you confirm the environment is available.
+- E) Run the hardening scanner and produce `backups/compose-hardening-suggestions.txt` and `backups/hardening-snippets/` for review.
+- F) Produce `backups/env-rotate-log.txt` (migration ledger with old key → new secret-name hashes only) to plan an orderly rotation; no plaintext secrets stored.
 
+Tell me which option to execute next and I'll prepare the artifacts or run the safe checks. I will not perform any secret rotations or destructive operations without `CONFIRM=YES` from you
 ---
 
 ## Appendix: Useful commands (copyable)
@@ -681,3 +686,26 @@ Next immediate steps I can perform now (safe, non-destructive):
 If you'd like me to run the hardening scan now and add the generated suggestions
 to the repo, reply with: "Run hardening scan". To proceed with a draft PR for
 infra hardening, reply with: "Prepare infra hardening PR".
+
+### Recent implementation actions
+
+- Scaffolder: Added minimal Compose scaffolds under `stacks/`:
+  - `stacks/infrastructure/compose.yaml` (Traefik, Cloudflared, Authelia, Homepage, Uptime Kuma, Watchtower)
+  - `stacks/media/compose.yaml` (qBittorrent, Navidrome, Yamtrack)
+  - `stacks/services/compose.yaml` (Paperless, Joplin, Vaultwarden)
+  - `stacks/cloud/compose.yaml` (Postgres + Nextcloud)
+  - `stacks/arr/compose.yaml` (Prowlarr, Radarr, Sonarr)
+  - `stacks/home/compose.yaml` (Home Assistant)
+
+- Helper: Added `scripts/generate-secrets.sh` — conservative generator that
+  creates `.env` from `.env.example` by populating blank secret-like keys.
+
+These are scaffolds for review. They intentionally use environment variables
+from `.env` and include labels and internal `backend`/`proxy_net` networks.
+Before bringing stacks up in production, pin images to tags/digests and
+populate secrets (use `scripts/generate-secrets.sh` or Infisical).
+
+If you'd like me to proceed, choose one:
+
+- "Run compose validation" — I will run a read-only `docker compose config` check per stack (requires Docker installed on this host).
+- "Draft hardening PR" — I will prepare a draft branch with example pinning/healthcheck changes for infra services.

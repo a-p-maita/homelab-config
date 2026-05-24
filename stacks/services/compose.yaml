@@ -1,0 +1,53 @@
+services:
+  paperless:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    restart: unless-stopped
+    environment:
+      - PAPERLESS_ADMIN_USER=${PAPERLESS_ADMIN_USER}
+      - PAPERLESS_ADMIN_PASSWORD=${PAPERLESS_ADMIN_PASS}
+      - PAPERLESS_DB_PASSWORD=${PAPERLESS_DB_PASS}
+    volumes:
+      - ${DATA_ROOT}/paperless:/usr/src/paperless/data
+    networks:
+      - backend
+      - proxy_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.paperless.rule=Host(`paperless.${DOMAIN}`)"
+      - "traefik.http.services.paperless.loadbalancer.server.port=8000"
+
+  joplin:
+    image: joplin/server:latest
+    restart: unless-stopped
+    environment:
+      - DB_PASSWORD=${JOPLIN_DB_PASS}
+    volumes:
+      - ${DATA_ROOT}/joplin:/data
+    networks:
+      - backend
+      - proxy_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.joplin.rule=Host(`joplin.${DOMAIN}`)"
+      - "traefik.http.services.joplin.loadbalancer.server.port=22300"
+
+  vaultwarden:
+    image: vaultwarden/server:latest
+    restart: unless-stopped
+    environment:
+      - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
+    volumes:
+      - ${DATA_ROOT}/vaultwarden:/data
+    networks:
+      - backend
+      - proxy_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vaultwarden.rule=Host(`vault.${DOMAIN}`)"
+      - "traefik.http.services.vaultwarden.loadbalancer.server.port=80"
+
+networks:
+  proxy_net:
+    external: true
+  backend:
+    internal: true

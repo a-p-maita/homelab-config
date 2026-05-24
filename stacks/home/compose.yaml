@@ -1,0 +1,9 @@
+services:
+  homeassistant:
+    image: ghcr.io/home-assistant/home-assistant:stable
+    restart: unless-stopped
+    volumes:
+      - ${DATA_ROOT}/homeassistant:/config
+    network_mode: host
+    environment:
+      - TZ=${TZ}

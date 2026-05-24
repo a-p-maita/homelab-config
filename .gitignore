@@ -31,3 +31,15 @@ config/authelia/notification.txt
 __pycache__/
 *.pyc
 *.pyo
+
+# Rendered secret outputs (never commit)
+.env.rendered
+*.rendered
+
+# Local override and generated files
+docker-compose.override.yml
+.env.local
+
+# TLS/le-tencrypt and cert directories
+letsencrypt/
+certs/

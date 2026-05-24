@@ -1,0 +1,54 @@
+services:
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - WEBUI_PORT=${QBITTORRENT_WEBUI_PORT}
+    restart: unless-stopped
+    volumes:
+      - ${DATA_ROOT}/qbit:/config
+      - ${DATA_ROOT}/downloads:/downloads
+    ports:
+      - "${QBITTORRENT_WEBUI_PORT}:8080"
+    networks:
+      - proxy_net
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.qbittorrent.rule=Host(`qbit.${DOMAIN}`)"
+      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8080"
+
+  navidrome:
+    image: deluan/navidrome:latest
+    restart: unless-stopped
+    environment:
+      - ND_USERNAME=${NAVIDROME_USER}
+      - ND_PASSWORD=${NAVIDROME_PASS}
+    volumes:
+      - ${DATA_ROOT}/music:/music
+      - ${DATA_ROOT}/navidrome_db:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.navidrome.rule=Host(`music.${DOMAIN}`)"
+      - "traefik.http.services.navidrome.loadbalancer.server.port=4533"
+    networks:
+      - proxy_net
+      - backend
+
+  yamtrack:
+    image: ghcr.io/fuzzygrim/yamtrack:latest
+    restart: unless-stopped
+    environment:
+      - YAMTRACK_EXTERNAL_URL=${YAMTRACK_EXTERNAL_URL}
+    volumes:
+      - ${DATA_ROOT}/yamtrack:/data
+    networks:
+      - proxy_net
+      - backend
+
+networks:
+  proxy_net:
+    external: true
+  backend:
+    internal: true
