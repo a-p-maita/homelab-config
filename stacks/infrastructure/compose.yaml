@@ -77,9 +77,9 @@ services:
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
       # Caddy routing — protected by Authelia 2FA
-      - "caddy=http://homepage.andreasmaita.com,home.andreasmaita.com"
+      - "caddy=http://homepage.andreasmaita.com http://home.andreasmaita.com"
       - "caddy.1_import=authelia_auth"
-      - "caddy.2_reverse_proxy={{upstreams 3000}}"
+      - "caddy.2_reverse_proxy=http://homepage:3000"
       # Homepage self-discovery
       - "homepage.group=Infrastructure"
       - "homepage.name=Homepage"
@@ -255,6 +255,7 @@ services:
       # Secrets injected at runtime — kept out of config/authelia/ (which is git-tracked)
       - AUTHELIA_SESSION_SECRET=${AUTHELIA_SESSION_SECRET}
       - AUTHELIA_STORAGE_ENCRYPTION_KEY=${AUTHELIA_STORAGE_ENCRYPTION_KEY}
+      - AUTHELIA_STORAGE_KEY=${AUTHELIA_STORAGE_KEY}
       - AUTHELIA_IDENTITY_VALIDATION_RESET_PASSWORD_JWT_SECRET=${AUTHELIA_SESSION_SECRET}
     volumes:
       - ../../config/authelia:/config

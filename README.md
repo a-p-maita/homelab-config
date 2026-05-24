@@ -1,6 +1,15 @@
 A homelab setup to repurpose my old laptop.
 
-Uses a variety of microservices that I deem essential but will eventually add onto.
+This repository defines a Docker Compose-based homelab with multiple stack files under `stacks/`, persistent app data stored in `data/`, and runtime secrets + ports configured in `.env`.
+
+The system is organized into purpose-driven stacks:
+
+- `stacks/infrastructure/compose.yaml` — edge routing, auth, dashboard, monitoring, proxy, and Cloudflare tunnel.
+- `stacks/cloud/compose*.yaml` — cloud services such as Immich and Nextcloud plus supporting DB/cache containers.
+- `stacks/services/compose*.yaml` — productivity and utility apps like Forgejo, Vaultwarden, Joplin, Actual Budget, and Paperless.
+- `stacks/media/compose.yaml` — media servers, audiobooks, music, and related tracking services.
+- `stacks/arr/compose.yaml` — download automation and optional VPN overlay for qBittorrent.
+- `stacks/home/compose.yaml` — Home Assistant.
 
 Depends on/creates another directory one step up called `data/` which holds all the permanent data being written like images, audiobooks and databases (all gitignored). Ports are set to high, non-standard values to avoid errors.
 
@@ -141,6 +150,28 @@ Then bring everything up:
 ```
 
 > **First run:** Several services require manual steps after startup (setting credentials, completing wizards, etc.). See **[FIRST-RUN.md](FIRST-RUN.md)** for the complete guide.
+
+## Restoring data from backup
+
+If you have a pre-rework backup of `~/homelab-data`, restore it by copying the backup tree into the repo's `data/` directory instead of moving the source. This keeps the original backup intact while restoring service data.
+
+Example:
+
+```bash
+cd /home/a-p-maita/homelab-config
+mkdir -p data
+rsync -a --info=progress2 ~/homelab-data/ ./data/
+# or
+cp -a ~/homelab-data/. ./data/
+```
+
+After copying, verify ownership and permissions for the container user:
+
+```bash
+sudo chown -R 1000:1000 data/
+```
+
+Do not delete or move the original `~/homelab-data` backup; keep it as a safe copy until the restored system is verified.
 
 ## Cloudflare tunnel
 
