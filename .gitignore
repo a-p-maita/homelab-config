@@ -20,6 +20,7 @@ config/caddy/caddy/
 config/authelia/db.sqlite3
 config/authelia/notification.txt
 config/authelia/users_database.yml
+config/authelia/configuration.yml
 
 # Java heap dumps (Stirling-PDF OOM artifacts)
 *.hprof

@@ -1,19 +1,26 @@
+
 SHELL := /bin/bash
-.PHONY: infra-up all-up generate-secrets backup-data hardening-scan
+
+# Generic docker compose wrapper (run from project root)
+COMPOSE := docker compose --env-file .env
+DEFAULT_STACK ?= stacks/infrastructure/compose.yaml
+
+.PHONY: infra-up all-up generate-secrets backup-data hardening-scan \
+        compose compose-config compose-up service-up logs help
 
 infra-up:
 	@echo "Validating infra compose..."
-	docker compose --env-file .env -f stacks/infrastructure/compose.yaml config --quiet
+	$(COMPOSE) -f stacks/infrastructure/compose.yaml config --quiet
 	@echo "Bringing infra up (detached)"
-	docker compose --env-file .env -f stacks/infrastructure/compose.yaml up -d
+	$(COMPOSE) -f stacks/infrastructure/compose.yaml up -d $(EXTRA)
 
 all-up:
 	@echo "Bringing up all stacks (cloud -> services -> media -> arr -> home)"
-	docker compose --env-file .env -f stacks/cloud/compose.yaml up -d
-	docker compose --env-file .env -f stacks/services/compose.yaml up -d
-	docker compose --env-file .env -f stacks/media/compose.yaml up -d
-	docker compose --env-file .env -f stacks/arr/compose.yaml up -d
-	docker compose --env-file .env -f stacks/home/compose.yaml up -d
+	$(COMPOSE) -f stacks/cloud/compose.yaml up -d $(EXTRA)
+	$(COMPOSE) -f stacks/services/compose.yaml up -d $(EXTRA)
+	$(COMPOSE) -f stacks/media/compose.yaml up -d $(EXTRA)
+	$(COMPOSE) -f stacks/arr/compose.yaml up -d $(EXTRA)
+	$(COMPOSE) -f stacks/home/compose.yaml up -d $(EXTRA)
 
 generate-secrets:
 	./scripts/generate-secrets.sh
@@ -24,3 +31,44 @@ backup-data:
 
 hardening-scan:
 	python3 scripts/harden_compose.py --output backups/compose-hardening-suggestions.txt
+
+# Generic compose wrapper
+compose:
+	@STACK=${STACK:-$(DEFAULT_STACK)}; \
+	ARGS="${COMPOSE_ARGS:-}"; \
+	echo "Running: $(COMPOSE) -f $$STACK $$ARGS"; \
+	$(COMPOSE) -f $$STACK $$ARGS
+
+compose-config:
+	@STACK=${STACK:-$(DEFAULT_STACK)}; \
+	echo "Validating: $(COMPOSE) -f $$STACK config --quiet"; \
+	$(COMPOSE) -f $$STACK config --quiet
+
+# Bring up default or specified stack (allows extra args via COMPOSE_ARGS)
+compose-up:
+	@STACK=${STACK:-$(DEFAULT_STACK)}; \
+	ARGS="${COMPOSE_ARGS:-up -d}"; \
+	echo "Running: $(COMPOSE) -f $$STACK $$ARGS"; \
+	$(COMPOSE) -f $$STACK $$ARGS
+
+# Start an individual service by name: make service-up SERVICE=authelia
+service-up:
+	@STACK=${STACK:-$(DEFAULT_STACK)}; \
+	SRV=${SERVICE:?Service name required (SERVICE=<name>)}; \
+	echo "Starting service $$SRV in $$STACK"; \
+	$(COMPOSE) -f $$STACK up -d $$SRV
+
+# Tail logs for a service using the compose file: make logs SERVICE=authelia
+logs:
+	@STACK=${STACK:-$(DEFAULT_STACK)}; \
+	SRV=${SERVICE:-authelia}; \
+	echo "Tailing logs for $$SRV (compose file $$STACK)"; \
+	$(COMPOSE) -f $$STACK logs -f $$SRV
+
+help:
+	@echo "Makefile helpers:"; \
+	@echo "  make compose STACK=stacks/infrastructure/compose.yaml COMPOSE_ARGS='up -d authelia'"; \
+	@echo "  make compose-config STACK=..."; \
+	@echo "  make compose-up STACK=... COMPOSE_ARGS='up -d'"; \
+	@echo "  make service-up SERVICE=authelia"; \
+	@echo "  make logs SERVICE=authelia";
