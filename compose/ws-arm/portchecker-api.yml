@@ -1,0 +1,22 @@
+services:
+  # Port Checker API - Backend API for the Port Checker
+  portchecker-api:
+    image: ghcr.io/dsgnr/portcheckerio-api:latest
+    container_name: api
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    profiles: ["apps", "all"]
+    networks:
+      - default
+    ports:
+      - $PORTCHECKERAPI_PORT:8000
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-S", "http://10.0.0.71:$PORTCHECKERAPI_PORT/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    environment:
+      - ALLOW_PRIVATE=false  # Prevent usage of private IP addresses
+    # DOCKER-LABELS-PLACEHOLDER

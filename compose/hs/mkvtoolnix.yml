@@ -1,0 +1,27 @@
+services:
+  # MKVToolNix - Video Editing (Remuxing - changing media container while keeping original source quality)
+  mkvtoolnix:
+    image: jlesage/mkvtoolnix:latest
+    container_name: mkvtoolnix
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    profiles: ["media","all"]
+    networks:
+      - default
+    ports:
+      - "$MKVTOOLNIX_PORT:5800"
+    volumes:
+      - $DOWNLOADSDIR:/data/downloads
+      - $DOCKERDIR/appdata/mkvtoolnix/config:/config:rw
+    environment:
+      USER_ID: $PUID
+      GROUP_ID: $PGID
+      UMASK: 002
+      TZ: $TZ
+      KEEP_APP_RUNNING: 1
+      CLEAN_TMP_DIR: 1
+      DISPLAY_WIDTH: 1600
+      DISPLAY_HEIGHT: 960
+      # VNC_PASSWORD: $MKVTOOLNIX_VNC_PASSWD
+    # DOCKER-LABELS-PLACEHOLDER

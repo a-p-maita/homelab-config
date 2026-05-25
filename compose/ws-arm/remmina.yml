@@ -1,0 +1,25 @@
+services:
+  # Remmina - Remote Desktop Client
+  remmina:
+    image: lscr.io/linuxserver/remmina:latest
+    container_name: remmina
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    profiles: ["core", "all"]
+    networks:
+      - default
+    # DEVICES-GPU-PLACEHOLDER-DO-NOT-DELETE
+    ports:
+      - "$REMMINA_PORT:3000" 
+      # - "3001:3001" # HTTPS
+    volumes:
+      - $DOCKERDIR/appdata/remmina:/config
+    environment:
+      PUID: $PUID
+      PGID: $PGID
+      TZ: $TZ
+      CUSTOM_USER: $REMMINA_HTTP_USER
+      PASSWORD: $REMMINA_HTTP_PASSWORD
+      # DRINODE: /dev/dri/renderD128 
+    # DOCKER-LABELS-PLACEHOLDER

@@ -1,0 +1,23 @@
+services:
+  # PHP - Hypertext Preprocessor
+  # https://github.com/chialab/docker-php
+  php8:
+    container_name: php8
+    image: chialab/php:8.4-fpm
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    profiles: ["core", "all"]
+    networks:
+      default: 
+        # ipv4_address: 172.18.0.9 # IP of of WP Crowdsec plugin kept changing
+      t3_proxy: 
+    user: $PUID:$PGID # allows upgrading WP and plugins
+    volumes:
+      - $DOCKERDIR/appdata/sites/simplehomelab/html:/var/www/html/simplehomelab
+      - $DOCKERDIR/logs/ws-arm/php/php8:/var/log/php
+      - $DOCKERDIR/appdata/php/php8:/usr/local/etc
+      - $DOCKERDIR/appdata/sites/khub/html:/var/www/html/khub
+      - $DOCKERDIR/appdata/sites/dash/html:/var/www/html/dash
+      - $DOCKERDIR/appdata/sites/deployrr/html:/var/www/html/deployrr
+      - $DOCKERDIR/appdata/sites/deployarr/html:/var/www/html/deployarr # delete this line after 6/15/2025

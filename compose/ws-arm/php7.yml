@@ -1,0 +1,21 @@
+services:
+  # PHP - Hypertext Preprocessor
+  # https://github.com/chialab/docker-php
+  php7:
+    container_name: php7
+    image: chialab/php:7.4-fpm
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    profiles: ["core", "all"]
+    networks:
+      - t3_proxy
+      - default
+    user: $PUID:$PGID # allows upgrading WP and plugins
+    volumes:
+      - $DOCKERDIR/appdata/sites/simplehomelab/html:/var/www/html/simplehomelab
+      - $DOCKERDIR/appdata/php/php7:/usr/local/etc/php
+      - $DOCKERDIR/appdata/sites/khub/html:/var/www/html/khub
+      - $DOCKERDIR/appdata/sites/dash/html:/var/www/html/dash
+      - $DOCKERDIR/appdata/sites/deployrr/html:/var/www/html/deployrr
+      - $DOCKERDIR/appdata/sites/deployarr/html:/var/www/html/deployarr # delete this line after 6/15/2025

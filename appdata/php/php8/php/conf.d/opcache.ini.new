@@ -1,0 +1,14 @@
+; Claude Sonnet 3.5
+opcache.enable=0
+opcache.memory_consumption=256
+opcache.interned_strings_buffer=16
+opcache.max_accelerated_files=20000
+opcache.revalidate_freq=3600
+opcache.validate_timestamps=0
+opcache.max_wasted_percentage=10
+opcache.enable_cli=0
+opcache.save_comments=1
+
+; WordPress specific
+opcache.fast_shutdown=1
+opcache.consistency_checks=0

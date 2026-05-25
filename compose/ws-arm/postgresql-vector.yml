@@ -1,0 +1,29 @@
+services:
+  # pgVector - PostgreSQL with Vector Store
+  postgresql-vector:
+    container_name: postgresql-vector
+    image: pgvector/pgvector:pg17 # PostgreSQL with pgvector support
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    profiles: ["core", "all"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d postgres -U $${POSTGRES_USER}"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 5s
+    networks:
+      - default
+    ports:
+      - "$POSTGRESQLVECTOR_PORT:5432"
+    volumes:
+      - $DOCKERDIR/appdata/postgresql-vector/data:/var/lib/postgresql/data
+      - $DOCKERDIR/appdata/postgresql-vector/schema.sql:/docker-entrypoint-initdb.d/schema.sql # only first time
+    environment:
+      - POSTGRES_DB=postgres # default database
+      - POSTGRES_USER=$POSTGRES_USER # root user
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_default_password
+    secrets:
+      - postgres_default_password
+    # DOCKER-LABELS-PLACEHOLDER

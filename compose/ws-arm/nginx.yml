@@ -1,0 +1,74 @@
+services:
+  # Nginx - Web Server
+  nginx:
+    container_name: nginx
+    image: nginx:1.27.3 # 1.27.1 Jan 31, 2025,  1.24 updated 9/25/2024 # 1.20 updated 4/19/2024
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    profiles: ["core", "all"]
+    networks:
+      - t3_proxy
+      # - default
+    depends_on:
+      php8:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+      - $DOCKERDIR/logs/ws-arm/nginx:/var/log/nginx
+      - $DOCKERDIR/appdata/nginx:/etc/nginx
+      - $DOCKERDIR/appdata/sites/simplehomelab/html:/var/www/html/simplehomelab
+      - $DOCKERDIR/appdata/sites/khub/html:/var/www/html/khub
+      - $DOCKERDIR/appdata/sites/dash/html:/var/www/html/dash
+      - $DOCKERDIR/appdata/sites/deployrr/html:/var/www/html/deployrr
+      - $DOCKERDIR/appdata/sites/deployarr/html:/var/www/html/deployarr # delete this line after 6/15/2025
+    secrets:
+      - basic_auth_credentials
+    labels:
+      - "traefik.enable=true"
+      # HTTP Routers SIMPLEHOMELAB (WordPress) Auth
+      - "traefik.http.routers.nginx-simplehomelab-auth-rtr.entrypoints=websecure-internal,websecure-external"
+      - "traefik.http.routers.nginx-simplehomelab-auth-rtr.rule=Host(`www.$DOMAINNAME_1`) && Path(`/wp-login.php`)" # crowdsec
+      - "traefik.http.routers.nginx-simplehomelab-auth-rtr.priority=100"
+      # HTTP Routers SIMPLEHOMELAB (WordPress) Bypass
+      - "traefik.http.routers.nginx-simplehomelab-rtr.entrypoints=websecure-internal,websecure-external"
+      - "traefik.http.routers.nginx-simplehomelab-rtr.rule=Host(`$DOMAINNAME_1`) || Host(`www.$DOMAINNAME_1`)" # no crowdsec
+      - "traefik.http.routers.nginx-simplehomelab-rtr.priority=99"
+      # HTTP Routers DASH (non-WordPress)
+      - "traefik.http.routers.nginx-dash-rtr.entrypoints=websecure-internal,websecure-external"
+      - "traefik.http.routers.nginx-dash-rtr.rule=Host(`dash.$DOMAINNAME_1`)" 
+      # HTTP Routers deployrr (non-WordPress)
+      - "traefik.http.routers.nginx-deployrr-rtr.entrypoints=websecure-internal,websecure-external"
+      - "traefik.http.routers.nginx-deployrr-rtr.rule=Host(`$DOMAINNAME_2`) || Host(`www.$DOMAINNAME_2`)" 
+      # HTTP Routers deployarr (non-WordPress) delete this line after 6/15/2025
+      - "traefik.http.routers.nginx-deployarr-rtr.entrypoints=websecure-internal,websecure-external" # delete this line after 6/15/2025
+      - "traefik.http.routers.nginx-deployarr-rtr.rule=Host(`$DOMAINNAME_4`) || Host(`www.$DOMAINNAME_4`)" # delete this line after 6/15/2025
+      # HTTP Routers KHUB (non-WordPress)
+      - "traefik.http.routers.nginx-khub-rtr.entrypoints=websecure-internal,websecure-external"
+      - "traefik.http.routers.nginx-khub-rtr.rule=Host(`$DOMAINNAME_3`) || Host(`www.$DOMAINNAME_3`)"
+      # Redirect simplehomelab non-www to www middleware
+      - "traefik.http.middlewares.simplehomelab-redirect.redirectregex.regex=^https?://$DOMAINNAME_1/(.*)"
+      - "traefik.http.middlewares.simplehomelab-redirect.redirectregex.replacement=https://www.$DOMAINNAME_1/$${1}"
+      - "traefik.http.middlewares.simplehomelab-redirect.redirectregex.permanent=true"
+      # Redirect khub non-www to www middleware
+      - "traefik.http.middlewares.khub-redirect.redirectregex.regex=^https?://$DOMAINNAME_3/(.*)"
+      - "traefik.http.middlewares.khub-redirect.redirectregex.replacement=https://www.$DOMAINNAME_3/$${1}"
+      - "traefik.http.middlewares.khub-redirect.redirectregex.permanent=true"
+      # Middlewares
+      - "traefik.http.routers.nginx-khub-rtr.middlewares=khub-redirect,chain-no-auth@file"
+      - "traefik.http.routers.nginx-simplehomelab-rtr.middlewares=simplehomelab-redirect,chain-no-auth-wp@file" # no crowdsec
+      - "traefik.http.routers.nginx-simplehomelab-auth-rtr.middlewares=simplehomelab-redirect,chain-no-auth-crowdsec-wp@file" # crowdsec 
+      - "traefik.http.routers.nginx-dash-rtr.middlewares=chain-oauth@file"
+      - "traefik.http.routers.nginx-deployrr-rtr.middlewares=chain-no-auth@file"
+      - "traefik.http.routers.nginx-deployarr-rtr.middlewares=chain-no-auth@file" # delete this line after 6/15/2025
+      # HTTP Services
+      - "traefik.http.routers.nginx-simplehomelab-rtr.service=nginx-svc"
+      - "traefik.http.routers.nginx-simplehomelab-auth-rtr.service=nginx-svc"
+      - "traefik.http.routers.nginx-khub-rtr.service=nginx-svc"
+      - "traefik.http.routers.nginx-dash-rtr.service=nginx-svc"
+      - "traefik.http.routers.nginx-deployrr-rtr.service=nginx-svc"
+      - "traefik.http.routers.nginx-deployarr-rtr.service=nginx-svc" # delete this line after 6/15/2025
+      - "traefik.http.services.nginx-svc.loadbalancer.server.port=80"

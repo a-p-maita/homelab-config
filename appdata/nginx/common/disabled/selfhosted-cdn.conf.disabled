@@ -1,0 +1,5 @@
+# Comment: The section below allows only images, JS, and CSS files to be available to self-hosted CDN subdomains. Avoids duplicate availability of other content through subdomains.
+    if ($request_uri ~* "\.(jpe?g|gif|png)$") {
+        rewrite ^(.*) https://cdn.simplehomelab.com$1 permanent;
+    }
+                                

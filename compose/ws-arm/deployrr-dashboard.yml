@@ -1,0 +1,22 @@
+services:
+  # Deployarr Dashboard - Homepage based Dashboard for Deployarr
+  deployrr-dashboard:
+    image: ghcr.io/gethomepage/homepage:v0.9.13
+    container_name: deployrr-dashboard
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    profiles: ["apps", "all"]
+    networks:
+      - default
+      - socket_proxy
+    ports:
+      - "$DEPLOYARRDASHBOARD_PORT:3000" 
+    volumes:
+      - $DOCKERDIR/appdata/deployrr-dashboard/config:/app/config
+      - $DOCKERDIR/appdata/deployrr-dashboard/images:/app/public/images
+    environment:
+      TZ: $TZ
+      PUID: $PUID
+      PGID: $PGID
+    # DOCKER-LABELS-PLACEHOLDER

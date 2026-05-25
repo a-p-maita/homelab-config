@@ -1,0 +1,25 @@
+services:
+  # Picard - Music Library Tagging and Management
+  picard:
+    image: mikenye/picard:latest
+    container_name: picard
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    profiles: ["media", "all"]
+    networks:
+      - default
+    ports:
+      - "$PICARD_PORT:5800"
+    volumes:
+      - $DOCKERDIR/appdata/picard:/config:rw
+      - $DOWNLOADSDIR:/downloads
+      - /dev/shm:/dev/shm
+    environment:
+      USER_ID: $PUID
+      GROUP_ID: $PGID
+      TZ: $TZ
+      UMASK: 002
+      DISPLAY_WIDTH: 1600
+      DISPLAY_HEIGHT: 960
+    # DOCKER-LABELS-PLACEHOLDER

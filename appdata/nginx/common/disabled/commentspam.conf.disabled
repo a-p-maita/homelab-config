@@ -1,0 +1,21 @@
+# Deny Access for comments to No Referrer Requests - spam protection
+location ~* (wp-comments-post)\.php$ {
+	if ($http_cookie !~* "_gat"){
+		return 405;
+	}
+	if ($http_referer !~ ^(simplehomelab.com|www.simplehomelab.com) )           {
+	      return 405;
+           }
+}
+
+#Return 410 for the 404s for spammy backlinks
+#http://webmasters.stackexchange.com/questions/84317/help-to-remove-spam-links-leading-to-404-page
+#http://serverfault.com/questions/646154/return-error-410-for-location-regex-in-nginx?rq=1
+location = / {
+        if ($query_string ~ ^p=1459955773) {
+                return 410;
+        }
+        if ($query_string ~ ^p=1461920860) {
+                return 410;
+        }        
+}

@@ -1,0 +1,7 @@
+    ssl_certificate /etc/nginx/certs/shb/shb_com-unified.crt;
+    ssl_certificate_key /etc/nginx/certs/shb/shb20180213.key;
+    ssl_dhparam /etc/nginx/certs/shb/dhparam2048.pem;    
+
+	ssl_stapling on;
+	ssl_stapling_verify on;
+	ssl_trusted_certificate /etc/nginx/certs/shb/shb_com-ca-bundle-trusted.crt;

@@ -1,0 +1,19 @@
+services:
+  # Firefly Importer - Data Importer for Firefly III
+  firefly-importer:
+    image: fireflyiii/data-importer:latest
+    container_name: firefly_importer
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    profiles: ["apps", "all"]
+    networks:
+      - default
+    ports:
+      - "$FIREFLYIMPORTER_PORT:8080"
+    volumes:
+      - $DOCKERDIR/appdata/firefly:/var/www/html/storage/upload
+    depends_on:
+      - firefly
+    env_file: $DOCKERDIR/appdata/firefly/importer.env
+    # DOCKER-LABELS-PLACEHOLDER

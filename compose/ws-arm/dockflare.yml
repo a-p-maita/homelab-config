@@ -1,0 +1,41 @@
+services:
+  # DockFlare - Cloudflare Tunnel & Zero Trust Manager
+  dockflare:
+    image: alplat/dockflare:stable  # alplat/dockflare:unstable docker tag for beta versions
+    container_name: dockflare
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    profiles: ["core", "all"]
+    ports:
+      - "$DOCKFLARE_PORT:5000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # Required to monitor Docker events
+      - $DOCKERDIR/appdata/dockflare:/app/data  # Persistent storage for state
+    networks:
+      - cf_tunnel  # Network for communication with other containers
+      - default
+      - t3_proxy
+    environment:
+      STATE_FILE_PATH: /app/data/state.json
+      TZ: $TZ
+      CF_API_TOKEN: $DOCKFLARE_CF_API_TOKEN
+      CF_ACCOUNT_ID: $DOCKFLARE_CF_ACCOUNT_ID
+      CF_ZONE_ID: $DOCKFLARE_CF_ZONE_ID
+      TUNNEL_NAME: Simple-Tunnel
+      # LABEL_PREFIX: dockflare. # The default is now 'dockflare.'. Uncomment to customize.
+      GRACE_PERIOD_SECONDS: 28800
+      CLEANUP_INTERVAL_SECONDS: 300
+      AGENT_STATUS_UPDATE_INTERVAL_SECONDS: 10
+      SCAN_ALL_NETWORKS: false
+      CLOUDFLARED_NETWORK_NAME: cf_tunnel
+      # TUNNEL_DNS_SCAN_ZONE_NAMES=extradomain.com,another-zone.net
+      MAX_CONCURRENT_DNS_OPS: 3
+    # labels: 
+    #   - 'dockflare.enable=true'
+    #   - 'dockflare.hostname=cftunnel.$DOMAINNAME_1'
+    #   - 'dockflare.service=http://dockflare:5000'
+    #   - 'dockflare.access.policy=authenticate'
+    #   - 'dockflare.access.session_duration=8h'
+    #   - 'dockflare.access.custom_rules=[{"email":{"email":"avp387@gmail.com"},"action":"allow"},{"action":"block"}]'
+      # DOCKER-LABELS-PLACEHOLDER

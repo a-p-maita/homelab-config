@@ -1,0 +1,9 @@
+http:
+  middlewares:
+    chain-oauth:
+      chain:
+        middlewares:
+          # - plugins-crowdsec-traefik-bouncer
+          - middlewares-rate-limit
+          - middlewares-secure-headers
+          - middlewares-oauth

@@ -1,0 +1,23 @@
+services:
+  # phpMyAdmin - Database management
+  # Create a new user with admin privileges. Cannot login as MySQL root for some reason.
+  phpmyadmin:
+    image: lscr.io/linuxserver/phpmyadmin:latest
+    container_name: phpmyadmin
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    profiles: ["apps", "all"]
+    networks:
+      - default
+    ports:
+      - "$PHPMYADMIN_PORT:80" 
+    environment:
+      - PUID=$PUID
+      - PGID=$PGID
+      - TZ=$TZ
+      - PMA_ARBITRARY=0 #optional
+      - PMA_ABSOLUTE_URI=https://pma.$DOMAINNAME_1 #optional
+      - PMA_HOST=mariadb
+      - PMA_PORT=3306
+    # DOCKER-LABELS-PLACEHOLDER

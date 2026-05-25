@@ -1,0 +1,29 @@
+services:
+  # Crawl4AI - Web Scraper
+  crawl4ai:
+    image: unclecode/crawl4ai:basic-arm64
+    container_name: crawl4ai
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    profiles: ["apps", "all"]
+    networks:
+      - default
+    ports:
+      - "11235:11235"
+      # - "8025:8000"
+      # - "9222:9222"
+      # - "8065:8080"
+    environment:
+      - CRAWL4AI_API_TOKEN=${CRAWL4AI_API_TOKEN:-}
+      # - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      # - CLAUDE_API_KEY=${CLAUDE_API_KEY:-}
+    volumes:
+      - /dev/shm:/dev/shm
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 1G
+    # DOCKER-LABELS-PLACEHOLDER

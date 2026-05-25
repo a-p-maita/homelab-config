@@ -1,0 +1,8 @@
+#http://serverfault.com/questions/811912/can-nginx-location-blocks-match-a-url-query-string
+if ( $args ~ "subid=" ) { return 403; }
+if ( $args ~ "link=" ) { return 403; }
+if ( $args ~ "q=" ) { return 403; }
+
+#location = /raio-raspberry-pi-easier/ {
+    #	return 403;
+    #}

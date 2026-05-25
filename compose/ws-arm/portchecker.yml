@@ -1,0 +1,26 @@
+services:
+  # Port Checker - Web UI for the Port Checker
+  portchecker:
+    image: ghcr.io/dsgnr/portcheckerio-web:latest
+    container_name: portchecker
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    profiles: ["apps", "all"]
+    networks:
+      - default
+    ports:
+      - $PORTCHECKER_PORT:80
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-S", "http://10.0.0.71:$PORTCHECKER_PORT"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+    depends_on:
+      portchecker-api:
+        condition: service_healthy
+    environment:
+      - DEFAULT_PORT=443  # Optional, Populates a default port value to be populataed in the in the UI input
+      # - GOOGLE_ANALYTICS=  # Optional, set for Google Analytics integration
+    # DOCKER-LABELS-PLACEHOLDER
