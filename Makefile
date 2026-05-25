@@ -1,5 +1,5 @@
 
-SHELL := /bin/bash
+SHELL := /bin/zsh
 
 # Generic docker compose wrapper (run from project root)
 COMPOSE := docker compose --env-file .env
@@ -22,15 +22,10 @@ all-up:
 	$(COMPOSE) -f stacks/arr/compose.yaml up -d $(EXTRA)
 	$(COMPOSE) -f stacks/home/compose.yaml up -d $(EXTRA)
 
-generate-secrets:
-	./scripts/generate-secrets.sh
-
 backup-data:
 	@echo "Backing up ${DATA_ROOT} to /mnt/backup/homelab-data (update target as needed)"
 	rsync -a --delete ${DATA_ROOT} /mnt/backup/homelab-data
 
-hardening-scan:
-	python3 scripts/harden_compose.py --output backups/compose-hardening-suggestions.txt
 
 # Generic compose wrapper
 compose:
@@ -79,7 +74,7 @@ stack-list:
 	@echo "Compose files under stacks/:"; \
 	@find stacks -type f -name 'compose.yaml' | sort
 
-# Usage: make stack-up STACK=stacks/mail/compose.yaml [SERVICE=<name>]
+# Usage: make stack-up STACK=stacks/arr/compose.yaml [SERVICE=<name>]
 stack-up:
 	@if [ -n "$(STACK)" ]; then \
 		echo "Bringing up compose: $(STACK)"; \
@@ -117,7 +112,3 @@ stack-validate:
 			$(COMPOSE) -f $$f config --quiet || exit 1; \
 		done; \
 	fi
-
-stacks-validate: stack-validate
-
-	@echo "  make logs SERVICE=authelia";
