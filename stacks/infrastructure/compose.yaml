@@ -1,11 +1,10 @@
 services:
-  # ── Cloudflared ─────────────────────────────────────────────────────────────
   cloudflared:
-    image: cloudflare/cloudflared@sha256:59bab8d3aceec09bf6bdb07d6beca0225ca5cd7ab79436a87ea97978fe1dc4f9
+    image: cloudflare/cloudflared:latest
     container_name: cloudflared
     restart: unless-stopped
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
+    # labels:
+    #   - "com.centurylinklabs.watchtower.enable=true"
     # --metrics enables the health/ready endpoint on port 8080
     command: tunnel --metrics 0.0.0.0:8080 run
     environment:
@@ -17,29 +16,9 @@ services:
     networks:
       - homelab_net
       - proxy_net
-    healthcheck:
-      # Distroless image: no shell/curl. --version exits 0 if the binary is alive.
-      # Tunnel connectivity is visible in logs; real monitoring via Uptime Kuma.
-      test: ["CMD", "cloudflared", "--version"]
-      interval: 1m
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: 128M
-        reservations:
-          cpus: "0.05"
-          memory: 64M
-    cpus: "0.25"
-    mem_limit: 128M
-    mem_reservation: 64M
 
-  # ── Homepage ─────────────────────────────────────────────────────────────────
   homepage:
-    image: ghcr.io/gethomepage/homepage@sha256:d8d784e5090111b6e4c56dfd90e272d2953a2094e87349f647165df0fa6c4401
+    image: ghcr.io/gethomepage/homepage:latest
     container_name: homepage
     ports:
       - "${HOMEPAGE_PORT}:3000"
@@ -62,44 +41,25 @@ services:
       - ../../data/homepage/config:/app/config
       - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
-      # Caddy routing — protected by Authelia 2FA
-      - "caddy=http://homepage.andreasmaita.com http://home.andreasmaita.com"
-      - "caddy.1_import=authelia_auth"
-      - "caddy.2_reverse_proxy=http://homepage:3000"
-      # Homepage self-discovery
-      - "homepage.group=Infrastructure"
-      - "homepage.name=Homepage"
-      - "homepage.icon=homepage.png"
-      - "homepage.href=https://homepage.andreasmaita.com"
-      - "homepage.description=Service dashboard"
+    # labels:
+    #   - "com.centurylinklabs.watchtower.enable=true"
+    #   # Caddy routing — protected by Authelia 2FA
+    #   - "caddy=http://homepage.andreasmaita.com http://home.andreasmaita.com"
+    #   - "caddy.1_import=authelia_auth"
+    #   - "caddy.2_reverse_proxy=http://homepage:3000"
+    #   # Homepage self-discovery
+    #   - "homepage.group=Infrastructure"
+    #   - "homepage.name=Homepage"
+    #   - "homepage.icon=homepage.png"
+    #   - "homepage.href=https://homepage.andreasmaita.com"
+    #   - "homepage.description=Service dashboard"
     networks:
       - homelab_net
       - socket_internal
       - proxy_net
-    healthcheck:
-      # homepage (node:alpine) has wget (BusyBox) but not curl
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 > /dev/null"]
-      interval: 1m
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: 256M
-        reservations:
-          cpus: "0.05"
-          memory: 64M
-    cpus: "0.25"
-    mem_limit: 256M
-    mem_reservation: 64M
 
-  # ── Uptime Kuma ──────────────────────────────────────────────────────────────
   uptime-kuma:
-    image: louislam/uptime-kuma@sha256:3d632903e6af34139a37f18055c4f1bfd9b7205ae1138f1e5e8940ddc1d176f9
+    image: louislam/uptime-kuma:latest
     container_name: uptime-kuma
     ports:
       - "${UPTIMEKUMA_PORT}:3001"
@@ -107,35 +67,17 @@ services:
       - ../../data/uptime-kuma:/app/data
       - /etc/localtime:/etc/localtime:ro
     restart: unless-stopped
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
-      # Homepage discovery (Tailscale-only access)
-      - "homepage.group=Infrastructure"
-      - "homepage.name=Uptime Kuma"
-      - "homepage.icon=uptime-kuma.png"
-      - "homepage.href=http://100.106.40.5:${UPTIMEKUMA_PORT}"
-      - "homepage.description=HTTP/TCP uptime monitoring"
+    # labels:
+    #   - "com.centurylinklabs.watchtower.enable=true"
+    #   # Homepage discovery (Tailscale-only access)
+    #   - "homepage.group=Infrastructure"
+    #   - "homepage.name=Uptime Kuma"
+    #   - "homepage.icon=uptime-kuma.png"
+    #   - "homepage.href=http://100.106.40.5:${UPTIMEKUMA_PORT}"
+    #   - "homepage.description=HTTP/TCP uptime monitoring"
     networks:
       - homelab_net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001"]
-      interval: 1m
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: 256M
-        reservations:
-          cpus: "0.05"
-          memory: 128M
-    cpus: "0.25"
-    mem_limit: 256M
-    mem_reservation: 128M
 
-  # ── Watchtower ───────────────────────────────────────────────────────────────
   watchtower:
     image: containrrr/watchtower@sha256:6dd50763bbd632a83cb154d5451700530d1e44200b268a4e9488fefdfcf2b038
     container_name: watchtower
@@ -160,25 +102,9 @@ services:
     restart: unless-stopped
     networks:
       - socket_internal
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: 128M
-        reservations:
-          cpus: "0.05"
-          memory: 32M
-    cpus: "0.25"
-    mem_limit: 128M
-    mem_reservation: 32M
 
-  # ── Caddy (caddy-docker-proxy) ────────────────────────────────────────────────
-  # Label-driven HTTP reverse proxy. Reads caddy.* labels from all containers.
-  # cloudflared → http://caddy:80 → services (plain HTTP on proxy_net).
-  # Uses docker-socket-proxy (socket_internal) to enumerate container labels safely.
-  # In non-Swarm Docker, Caddy may still log non-fatal 403s while checking ingress/swarm resources.
   caddy:
-    image: lucaslorentz/caddy-docker-proxy@sha256:1574be2205e4882e7a7b6f802e8b60fd82d7777e27ea7aae069624eb11ac6f9b
+    image: lucaslorentz/caddy-docker-proxy:latest
     container_name: caddy
     restart: unless-stopped
     ports:
@@ -197,56 +123,13 @@ services:
       - socket_internal
     depends_on:
       - docker-socket-proxy
-    healthcheck:
-      # Admin API on :2019 responds once Caddy is running and config is loaded
-      test:
-        [
-          "CMD-SHELL",
-          "wget -qO- http://127.0.0.1:2019/config/ > /dev/null || exit 1",
-        ]
-      interval: 1m
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 256M
-        reservations:
-          cpus: "0.1"
-          memory: 64M
-    cpus: "0.5"
-    mem_limit: 256M
-    mem_reservation: 64M
 
-  # ── Authelia ─────────────────────────────────────────────────────────────────
-  #   STOP: Caddy must be running first. Requires config/authelia/ files.
-  # See homelab-plan.md Phase 11 for setup instructions.
-  #
   authelia:
-    image: authelia/authelia@sha256:0c824dcab1ae97c56bf673c5e77fe8cc6bcd400564555140cc8002a12c6b6463
+    image: authelia/authelia:latest
     container_name: authelia
     restart: unless-stopped
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
-      # Forward-auth snippet — referenced by caddy.1_import=authelia_auth on protected services
-      - "caddy.0=(authelia_auth)"
-      - "caddy.0.forward_auth=authelia:9091"
-      - "caddy.0.forward_auth.uri=/api/verify"
-      - "caddy.0.forward_auth.copy_headers=Remote-User Remote-Groups Remote-Email Remote-Name"
-      - "caddy.0.forward_auth.header_up=X-Forwarded-Proto https"
-      - "caddy.0.forward_auth.header_up=X-Forwarded-Host {http.request.host}"
-      - "caddy.0.forward_auth.header_up=X-Forwarded-Uri {http.request.uri}"
-      # Authelia own public domain
-      - "caddy.1=http://auth.andreasmaita.com"
-      - "caddy.1.reverse_proxy=http://authelia:9091"
-      # Homepage discovery
-      - "homepage.group=Infrastructure"
-      - "homepage.name=Authelia"
-      - "homepage.icon=authelia.png"
-      - "homepage.href=https://auth.andreasmaita.com"
-      - "homepage.description=2FA authentication portal"
+    # labels:
+    #   - example "traefik.enable=true"
     depends_on:
       authelia-redis:
         condition: service_healthy
@@ -274,52 +157,19 @@ services:
       - infrastructure_internal
 
   authelia-redis:
-    image: redis@sha256:dfa18828cbc07b3ae6a95ec7343f6c214fdee2d836197b4be8e9904420762cd8
+    image: redis:latest
     container_name: authelia-redis
     restart: unless-stopped
     volumes:
       - ../../data/authelia/redis:/data
     networks:
       - infrastructure_internal
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-  # ── MailHog (test SMTP relay) ──────────────────────────────────────────────
-  # Lightweight in-container SMTP sink for testing Authelia notifier without
-  # requiring a full production mailserver. This service is intentionally
-  # lightweight and should be replaced with a production mailserver in
-  # `stacks/mail/compose.yaml` when ready.
-  mailhog:
-    image: mailhog/mailhog@sha256:8d76a3d4ffa32a3661311944007a415332c4bb855657f4f6c57996405c009bea
-    restart: unless-stopped
-    # Do NOT publish host ports here (avoid collisions). Authelia will talk to
-    # the service by the Docker service name `mailhog`. If you want host access
-    # to the web UI, add a `ports:` mapping after removing the existing host
-    # level mailhog container.
-    networks:
-      - homelab_net
-      - proxy_net
-    healthcheck:
-      test:
-        ["CMD-SHELL", "wget -qO- http://localhost:8025/ > /dev/null || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-    mem_reservation: 16M
-  #  # NOTE: do NOT add watchtower label to redis
-  # Mail server options moved to `stacks/mail/compose.yaml`. Use a production
-  # mailserver (docker-mailserver/Mailu) or a lightweight relay for testing.
-  # See stacks/mail/README.md for setup steps and DNS guidance.
 
   # ── Docker Socket Proxy ───────────────────────────────────────────────────────
   # Least-privilege Docker API proxy — exposes only the permissions needed by
   # Caddy and Homepage. Never accessible outside socket_internal.
   docker-socket-proxy:
-    image: ghcr.io/tecnativa/docker-socket-proxy@sha256:1f3a6f303320723d199d2316a3e82b2e2685d86c275d5e3deeaf182573b47476
+    image: ghcr.io/tecnativa/docker-socket-proxy:latest
     container_name: docker-socket-proxy
     restart: unless-stopped
     environment:
@@ -343,17 +193,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - socket_internal
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: 64M
-        reservations:
-          cpus: "0.05"
-          memory: 16M
-    cpus: "0.25"
-    mem_limit: 64M
-    mem_reservation: 16M
 
 networks:
   homelab_net:
@@ -365,16 +204,16 @@ networks:
   infrastructure_internal:
     external: true
 
-secrets:
-  tunnel-token:
-    file: ../../backups/secrets/tunnel-token.secret
-  qbittorrent-webui-pass:
-    file: ../../backups/secrets/qbittorrent-webui-pass.secret
-  authelia-session-secret:
-    file: ../../backups/secrets/authelia-session-secret.secret
-  authelia-storage-encryption-key:
-    file: ../../backups/secrets/authelia-storage-encryption-key.secret
-  authelia-users-db:
-    file: ../../backups/secrets/authelia-users-db.secret
-  authelia-smtp-password:
-    file: ../../backups/secrets/authelia-smtp-password.secret
+# secrets:
+#   tunnel-token:
+#     file: ../../backups/secrets/tunnel-token.secret
+#   qbittorrent-webui-pass:
+#     file: ../../backups/secrets/qbittorrent-webui-pass.secret
+#   authelia-session-secret:
+#     file: ../../backups/secrets/authelia-session-secret.secret
+#   authelia-storage-encryption-key:
+#     file: ../../backups/secrets/authelia-storage-encryption-key.secret
+#   authelia-users-db:
+#     file: ../../backups/secrets/authelia-users-db.secret
+#   authelia-smtp-password:
+#     file: ../../backups/secrets/authelia-smtp-password.secret

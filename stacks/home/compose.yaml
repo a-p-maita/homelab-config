@@ -1,26 +1,63 @@
 services:
   homeassistant:
-    image: homeassistant/home-assistant@sha256:ceb1202133a5a036e8b03e20a10eb113186cc2f871968323c6fc6c3fc4205716
+    image: homeassistant/home-assistant:latest
     restart: unless-stopped
     volumes:
       - ${DATA_ROOT}/homeassistant:/config
     network_mode: host
     environment:
       - TZ=${TZ}
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8123/ || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    cpus: "1.0"
-    mem_limit: 1024M
-    mem_reservation: 256M
-    deploy:
-      resources:
-        limits:
-          cpus: "1.0"
-          memory: 1024M
-        reservations:
-          cpus: "0.2"
-          memory: 256M
+
+  postgres-nextcloud:
+    image: postgres:latest
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=nextcloud
+      - POSTGRES_PASSWORD_FILE=/run/secrets/nextcloud-db-password
+      - POSTGRES_DB=nextcloud
+    secrets:
+      - nextcloud-db-password
+    volumes:
+      - ${DATA_ROOT}/postgres/nextcloud:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  nextcloud:
+    image: nextcloud:latest
+    restart: unless-stopped
+    environment:
+      - MYSQL_PASSWORD_FILE=/run/secrets/nextcloud-db-password
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+    volumes:
+      - ${DATA_ROOT}/nextcloud:/var/www/html
+    networks:
+      - proxy_net
+      - backend
+
+  paperless:
+    image: ghcr.io/paperless-ngx/paperless-ngx@sha256:6c86cad803970ea782683a8e80e7403444c5bf3cf70de63b4d3c8e87500db92f
+    restart: unless-stopped
+    environment:
+      - PAPERLESS_ADMIN_USER=${PAPERLESS_ADMIN_USER}
+      - PAPERLESS_ADMIN_PASSWORD_FILE=/run/secrets/paperless-admin-pass
+      - PAPERLESS_DB_PASSWORD_FILE=/run/secrets/paperless-db-pass
+    volumes:
+      - ${DATA_ROOT}/paperless:/usr/src/paperless/data
+    networks:
+      - backend
+      - proxy_net
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.paperless.rule=Host(`paperless.${DOMAIN}`)"
+    #   - "traefik.http.services.paperless.loadbalancer.server.port=8000"
+
+networks:
+  proxy_net:
+    external: true
+  backend:
+    internal: true
+
+# secrets:
+#   nextcloud-db-password:
+#     file: ../../backups/secrets/nextcloud-db-password.secret

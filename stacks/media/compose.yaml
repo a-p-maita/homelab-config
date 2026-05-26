@@ -1,43 +1,6 @@
 services:
-  qbittorrent:
-    image: lscr.io/linuxserver/qbittorrent@sha256:eeea9f8a8cdde23555186843d26e8ded1222421f31f98a5cc1b50c2882ebcf4e
-    environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - WEBUI_PORT=${QBITTORRENT_WEBUI_PORT}
-    restart: unless-stopped
-    volumes:
-      - ${DATA_ROOT}/qbit:/config
-      - ${DATA_ROOT}/downloads:/downloads
-    ports:
-      - "${QBITTORRENT_WEBUI_PORT}:8080"
-    networks:
-      - proxy_net
-      - backend
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.qbittorrent.rule=Host(`qbit.${DOMAIN}`)"
-      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8080"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/ || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    cpus: "0.5"
-    mem_limit: 256M
-    mem_reservation: 128M
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 256M
-        reservations:
-          cpus: "0.1"
-          memory: 128M
-
   navidrome:
-    image: deluan/navidrome@sha256:9fa40b3d8dec43ceb2213d1fa551da3dcfef6ac6d19c2e534efb92527c2bafd2
+    image: deluan/navidrome:latest
     restart: unless-stopped
     environment:
       - ND_USERNAME=${NAVIDROME_USER}
@@ -52,51 +15,6 @@ services:
     networks:
       - proxy_net
       - backend
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:4533/ || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    cpus: "0.25"
-    mem_limit: 192M
-    mem_reservation: 64M
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: 192M
-        reservations:
-          cpus: "0.05"
-          memory: 64M
-
-  yamtrack:
-    image: ghcr.io/fuzzygrim/yamtrack@sha256:928df13c46c9f615b37f5ef1eb5a87fc8813f5941f28c7d8227af73d291b0d19
-    restart: unless-stopped
-    environment:
-      - YAMTRACK_EXTERNAL_URL=${YAMTRACK_EXTERNAL_URL}
-    volumes:
-      - ${DATA_ROOT}/yamtrack:/data
-    networks:
-      - proxy_net
-      - backend
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    cpus: "0.25"
-    mem_limit: 192M
-    mem_reservation: 64M
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: 192M
-        reservations:
-          cpus: "0.05"
-          memory: 64M
 
 networks:
   proxy_net:
@@ -104,6 +22,6 @@ networks:
   backend:
     internal: true
 
-secrets:
-  navidrome-pass:
-    file: ../../backups/secrets/navidrome-pass.secret
+# secrets:
+#   navidrome-pass:
+#     file: ../../backups/secrets/navidrome-pass.secret
