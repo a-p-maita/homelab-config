@@ -1,6 +1,6 @@
 services:
   joplin:
-    image: joplin/server@sha256:0877bfba41a943017c42c58e90db9d8d548bfe699b5e410248b5b879371734f9
+    image: joplin/server:latest
     restart: unless-stopped
     environment:
       - DB_PASSWORD_FILE=/run/secrets/joplin-db-pass
@@ -9,30 +9,9 @@ services:
     networks:
       - backend
       - proxy_net
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.joplin.rule=Host(`joplin.${DOMAIN}`)"
-      - "traefik.http.services.joplin.loadbalancer.server.port=22300"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:22300/ || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    cpus: "0.25"
-    mem_limit: 256M
-    mem_reservation: 64M
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: 256M
-        reservations:
-          cpus: "0.05"
-          memory: 64M
 
   vaultwarden:
-    image: vaultwarden/server@sha256:d626d04934cd1192ad8ced1adb975099fca78cec33ab467d2d3c923cde7f3b0c
+    image: vaultwarden/server:latest
     restart: unless-stopped
     environment:
       - ADMIN_TOKEN_FILE=/run/secrets/vaultwarden-admin-token
@@ -41,27 +20,6 @@ services:
     networks:
       - backend
       - proxy_net
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.vaultwarden.rule=Host(`vault.${DOMAIN}`)"
-      - "traefik.http.services.vaultwarden.loadbalancer.server.port=80"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:80/ || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-    cpus: "0.25"
-    mem_limit: 256M
-    mem_reservation: 64M
-    deploy:
-      resources:
-        limits:
-          cpus: "0.25"
-          memory: 256M
-        reservations:
-          cpus: "0.05"
-          memory: 64M
 
 networks:
   proxy_net:

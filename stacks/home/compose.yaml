@@ -36,7 +36,7 @@ services:
       - backend
 
   paperless:
-    image: ghcr.io/paperless-ngx/paperless-ngx@sha256:6c86cad803970ea782683a8e80e7403444c5bf3cf70de63b4d3c8e87500db92f
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
     restart: unless-stopped
     environment:
       - PAPERLESS_ADMIN_USER=${PAPERLESS_ADMIN_USER}
@@ -47,10 +47,6 @@ services:
     networks:
       - backend
       - proxy_net
-    # labels:
-    #   - "traefik.enable=true"
-    #   - "traefik.http.routers.paperless.rule=Host(`paperless.${DOMAIN}`)"
-    #   - "traefik.http.services.paperless.loadbalancer.server.port=8000"
 
 networks:
   proxy_net:

@@ -1,0 +1,17 @@
+services:
+  yamtrack:
+    image: ghcr.io/fuzzygrim/yamtrack:latest
+    restart: unless-stopped
+    environment:
+      - YAMTRACK_EXTERNAL_URL=${YAMTRACK_EXTERNAL_URL}
+    volumes:
+      - ${DATA_ROOT}/yamtrack:/data
+    networks:
+      - proxy_net
+      - backend
+
+networks:
+  proxy_net:
+    external: true
+  backend:
+    internal: true
