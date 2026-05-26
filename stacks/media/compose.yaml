@@ -8,10 +8,6 @@ services:
     volumes:
       - ${DATA_ROOT}/music:/music
       - ${DATA_ROOT}/navidrome_db:/data
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.navidrome.rule=Host(`music.${DOMAIN}`)"
-      - "traefik.http.services.navidrome.loadbalancer.server.port=4533"
     networks:
       - proxy_net
       - backend
@@ -22,6 +18,6 @@ networks:
   backend:
     internal: true
 
-# secrets:
-#   navidrome-pass:
-#     file: ../../backups/secrets/navidrome-pass.secret
+secrets:
+  navidrome-pass:
+    file: secrets/navidrome-pass.secret
