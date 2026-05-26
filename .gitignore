@@ -36,13 +36,10 @@ __pycache__/
 
 !.gitignore
 !README.md
-!LICENSE
 !.env.example
 data/
 scripts/
-!secrets_example
-!secrets_example/*
 !stacks/
 !stacks/*
-!stacks/**/.env.example
-!stacks/**/*.yaml
+!secrets-example
+!secrets-example/*

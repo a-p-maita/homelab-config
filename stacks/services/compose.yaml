@@ -1,15 +1,4 @@
 services:
-  joplin:
-    image: joplin/server:latest
-    restart: unless-stopped
-    environment:
-      - DB_PASSWORD_FILE=/run/secrets/joplin-db-pass
-    volumes:
-      - ${DATA_ROOT}/joplin:/data
-    networks:
-      - backend
-      - proxy_net
-
   vaultwarden:
     image: vaultwarden/server:latest
     restart: unless-stopped
@@ -26,13 +15,3 @@ networks:
     external: true
   backend:
     internal: true
-
-secrets:
-  paperless-admin-pass:
-    file: ../../backups/secrets/paperless-admin-pass.secret
-  paperless-db-pass:
-    file: ../../backups/secrets/paperless-db-pass.secret
-  joplin-db-pass:
-    file: ../../backups/secrets/joplin-db-pass.secret
-  vaultwarden-admin-token:
-    file: ../../backups/secrets/vaultwarden-admin-token.secret

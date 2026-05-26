@@ -26,7 +26,6 @@ Depends on/creates another directory one step up called `data/` which holds all 
 | [Readarr](https://readarr.com/)                                                 | Automated book/ebook collection manager                                 |
 | [Lidarr](https://lidarr.audio/)                                                 | Automated music collection manager                                      |
 | [Jackett](https://github.com/Jackett/Jackett)                                   | Torrent indexer proxy (legacy — use Prowlarr for new indexers)          |
-| [Audiobookbay Downloader](https://github.com/moonblade/audiobookbay-downloader) | Search and download audiobooks via AudiobookBay                         |
 | [Gluetun](https://github.com/qdm12/gluetun) _(optional)_                        | VPN client (ProtonVPN WireGuard) — enable with `USE_VPN=true` in `.env` |
 | [deunhealth](https://github.com/qdm12/deunhealth) _(optional)_                  | Auto-restarts qBittorrent when VPN stalls                               |
 
