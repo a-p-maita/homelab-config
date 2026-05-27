@@ -1,12 +1,8 @@
-A homelab setup to repurpose my old laptop.
+# Homelab - a setup to repurpose my old laptop
 
-Layout:
+## Service Stacks
 
-- Repo holds many docker compose files under `stacks/service_category_etc`
-- Persistent/long-term app data is stored in `data/`
-- runtime secrets are held in the `secrets`
-
-## Homelab Service Stack
+- **Generally each service will be listed by level of importance and recommendation**
 
 ### Infrastructure
 
@@ -29,8 +25,13 @@ Layout:
 - [Homepage](https://gethomepage.dev/) - Dashboard for quick links to internal/external services
   - [DOCUMENTATION](https://gethomepage.dev/configs/)
   - Would like one that automatically attaches to services this would be nice
-- [Uptime Kuma](https://uptime.kuma.pet/) - Service uptime monitoring
+- [Dockge](https://dockge.kuma.pet/) - Web-UI docker compose file manager
+  - [DOCUMENTATION](https://github.com/louislam/dockge#readme)
+- [Uptime Kuma](https://uptime.kuma.pet/) - Service uptime monitoring, and all that
+  - [DOCUMENTATION](https://github.com/louislam/uptime-kuma/wiki)
 - [Watchtower](https://containrrr.dev/watchtower/) - Automatic nightly docker image updates
+- [Dozzle](https://github.com/amir20/dozzle) - Real-time log viewer
+  - [DOCUMENTATION](https://github.com/amir20/dozzle#README)
 
 ### Media
 
@@ -45,34 +46,24 @@ Layout:
   - [DOCUMENTATION](https://www.navidrome.org/docs/)
   - Uses a Subsonic API so it's compatible with many-a-thing
 
-### *Arr
+### Cloud
 
-- **Purpose: Automated media downloading and management**
-- [qBittorrent](https://www.qbittorrent.org/)
-  - [DOCUMENTATION](https://www.qbittorrent.org/docs/)
-  - Torrent client
-  - Goes hand-in-hand with [Gluetun](https://github.com/qdm12/gluetun) _(optional)_
-    - My VPN client is ProtonVPN WireGuard - enabled by setting `secrets/vpn_enabled.secret` to `true`
-- [Prowlarr](https://prowlarr.com/)
-  - [DOCUMENTATION](https://wiki.servarr.com/prowlarr)
-  - Indexer manager — syncs trackers to all \*arr apps
-- [Radarr](https://radarr.video/)
-  - [DOCUMENTATION](https://wiki.servarr.com/radarr)
-  - Automated movie collection manager
-- [Sonarr](https://sonarr.tv/)
-  - [DOCUMENTATION](https://wiki.servarr.com/sonarr)
-  - Automated TV series collection manager
-- [Lidarr](https://lidarr.audio/)
-  - [DOCUMENTATION](https://wiki.servarr.com/lidarr)
-  - Automated music collection manager
-- [Jackett](https://github.com/Jackett/Jackett)
-  - Torrent indexer proxy (More indexers than Prowlarr, less integrated tho)
-  - Auto-restarts qBittorrent when VPN stalls
-- [Bazarr](https://www.bazarr.media/)
-  - [DOCUMENTATION](https://wiki.servarr.com/bazarr)
-  - Subtitle manager for Sonarr/Radarr
-- [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) - Cloudflare anti-bot solver for indexers
-  - [DOCUMENTATION](https://github.com/FlareSolverr/FlareSolverr/wiki)
+- **Purpose: Cloud-based services and automation**
+- [Vaultwarden](https://github.com/dani-garcia/vaultwarden) - Password manager
+  - [DOCUMENTATION](https://github.com/dani-garcia/vaultwarden/wiki)
+  - Server-side software for Bitwarden, can connect to extension and mobile app but the data is separate fromt the official one so keep that in mind
+- [Immich](https://immich.app/)- Photos and images, replacement for google photos
+  - [DOCUMENTATION](https://docs.immich.app/)
+  - Limitation is through cloudflare domain there's upload size limits so it struggles with videos etc.
+    - Chunking would help this but it was said to be out-of-scope for Immich
+- [Forgejo](https://forgejo.org/) - Git repository and GitHub replacement
+  - [DOCUMENTATION](https://forgejo.org/docs/)
+- [Paperless-NGX](https://docs.paperless-ngx.com/) - Document management & OCR
+  - [DOCUMENTATION](https://docs.paperless-ngx.com/)
+- [NextCloud](https://nextcloud.com/) - File sync/sharing, document office, calendar, contacts etc.
+  - [DOCUMENTATION](https://docs.nextcloud.com/)
+- [Home Assistant](https://www.home-assistant.io/) - Home automation platform
+  - [DOCUMENTATION](https://www.home-assistant.io/docs/)
 
 ### Trackers
 
@@ -85,36 +76,128 @@ Layout:
     - I'm holding out for the day audiobooks and ABS are suported
 - [Mealie](https://mealie.io/) - Recipe manager & meal planner
   - [DOCUMENTATION](https://docs.mealie.io/)
+- [Actual Budget](https://actualbudget.org/) - Local-first personal finance manager
+  - [DOCUMENTATION](https://docs.actualbudget.org/)
+- [Habitica](https://github.com/HabitRPG/habitica) - Game-mode task/habit tracker
+  - [DOCUMENTATION](https://github.com/HabitRPG/habitica/wiki)
+  - Not self-hosted but has a public API and is a neat way to manage tasks and all that
+- [Monica](https://github.com/monicahq/monica) - Personal relationship manager aka CRM
+  - [DOCUMENTATION](https://www.monicahq.com/docs/)
+  - Used to keep track of family/friend/acquaintance details - useful anti-altzheimers tool lol
+
+### *Arr
+
+- **Purpose: Automated media downloading and management**
+- [qBittorrent](https://www.qbittorrent.org/)
+  - [DOCUMENTATION](https://www.qbittorrent.org/docs/)
+  - Torrent client
+  - Goes hand-in-hand with [Gluetun](https://github.com/qdm12/gluetun) _(optional)_
+    - My VPN client is ProtonVPN WireGuard - enabled by setting `secrets/vpn_enabled.secret` to `true`
+- [Prowlarr](https://prowlarr.com/)
+  - [DOCUMENTATION](https://wiki.servarr.com/prowlarr)
+  - Indexer manager — syncs trackers to all \*arr apps
+- [Jackett](https://github.com/Jackett/Jackett)
+  - Torrent indexer proxy (More indexers than Prowlarr, less integrated tho)
+  - Auto-restarts qBittorrent when VPN stalls
+- [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) - Cloudflare anti-bot solver for indexers
+  - [DOCUMENTATION](https://github.com/FlareSolverr/FlareSolverr/wiki)
+- [Sonarr](https://sonarr.tv/)
+  - [DOCUMENTATION](https://wiki.servarr.com/sonarr)
+  - Automated TV series collection manager
+- [Radarr](https://radarr.video/)
+  - [DOCUMENTATION](https://wiki.servarr.com/radarr)
+  - Automated movie collection manager
+- [Lidarr](https://lidarr.audio/)
+  - [DOCUMENTATION](https://wiki.servarr.com/lidarr)
+  - Automated music collection manager
+- [Bazarr](https://www.bazarr.media/)
+  - [DOCUMENTATION](https://wiki.servarr.com/bazarr)
+  - Subtitle manager for Sonarr/Radarr
+- [Profilarr](https://github.com/Dictionarry-Hub/Profilarr/) - Media quality/format manager for Radarr/Sonarr
+  - [DOCUMENTATION](https://github.com/Dictionarry-Hub/Profilarr/wiki)
+  - Can be set up to use tip top best [TRaSH Guides](https://trash-guides.info/) see [this repo](https://github.com/johman10/profilarr-trash-guides)
+  - Still waiting on Lidarr integration
+- [Decluttarr](https://github.com/ManiMatter/decluttarr) - Autoclears download queues and downloads from \*arr stack
+  - [DOCUMENTATION](https://github.com/ManiMatter/decluttarr#readme)
 
 ### Apps
 
 - **Purpose: General apps that don't fit in another category**
-- [Paperless-NGX](https://docs.paperless-ngx.com/) - Document management & OCR
-  - [DOCUMENTATION](https://docs.paperless-ngx.com/)
-- [Kiwix](https://www.kiwix.org/) - Offline Wikipedia & ZIM content
-- [Draw.io](https://github.com/jgraph/drawio) - Diagram editor
-- [Excalidraw](https://excalidraw.com/) - Collaborative whiteboard
-- [IT-Tools](https://github.com/CorentinTh/it-tools) - Developer utilities collection
-- [Vaultwarden](https://github.com/dani-garcia/vaultwarden) - Password manager (Bitwarden-compatible)
-- [Actual Budget](https://actualbudget.org/) - Local-first personal finance manager
-
-### Cloud
-
-- **Purpose: Cloud-based services and automation**
-- [Immich](https://immich.app/)- Photos and images, replacement for google photos
-  - [DOCUMENTATION](https://docs.immich.app/)
-  - Limitation is through cloudflare domain there's upload size limits so it struggles with videos etc.
-    - Chunking would help this but it was said to be out-of-scope for Immich
-- [Forgejo](https://forgejo.org/) - Git repository and GitHub replacement
-  - [DOCUMENTATION](https://forgejo.org/docs/)
-- [Home Assistant](https://www.home-assistant.io/) - Home automation platform
-  - [DOCUMENTATION](https://www.home-assistant.io/docs/)
-- [NextCloud](https://nextcloud.com/) - File sync/sharing, document office, calendar, contacts etc.
-  - [DOCUMENTATION](https://docs.nextcloud.com/)
+- [Kiwix](https://www.kiwix.org/) - Offline Wikipedia & ZIM content reader
+  - [DOCUMENTATION](https://wiki.kiwix.org/wiki/Documentation)
 - [Jitsi Meet](https://jitsi.org/jitsi-meet/) - Video conferencing
   - [DOCUMENTATION](https://jitsi.github.io/handbook/docs/devops-guide/devops-guide-docker)
 - [Rustdesk](https://rustdesk.com/) - Remote desktop server
   - [DOCUMENTATION](https://rustdesk.com/docs/)
+- [Draw.io](https://github.com/jgraph/drawio) - Diagram editor
+- [Excalidraw](https://excalidraw.com/) - Collaborative whiteboard
+- [IT-Tools](https://github.com/CorentinTh/it-tools) - Developer utilities collection
+
+## Setup and Getting it Running
+
+**File structure:**
+
+```markdown
+.
+|-- .gitignore
+|-- README.md
+|-- backups/
+|-- secrets-example/
+|-- data/
+    |-- app_data/
+        |-- app1/
+        |-- .../
+    |-- media/
+        |-- audiobooks/
+        |-- books/
+        |-- documents/
+        |-- games/
+        |-- movies/
+        |-- music/
+        |-- other/
+        |-- photos/
+        |-- tv/
+        |-- videos/
+    |-- personal/
+        |-- area/
+        |-- archive/
+        |-- documents/
+        |-- downloads/
+        |-- other/
+        |-- photos/
+        |-- projects/
+        |-- resource/
+        |-- videos/
+    |-- torrents/
+        |-- incomplete/
+        |-- complete/
+            |-- audiobooks/
+            |-- .../
+            |-- videos/
+    |-- usenet/
+         |-- incomplete/
+         |-- complete/
+             |-- audiobooks/
+             |-- .../
+             |-- videos/
+|-- stacks/
+    |-- apps/
+        |-- .gitignore
+        |-- compose.yaml
+        |-- secrets-example/
+    |-- example_category/
+        |-- .gitignore
+        |-- compose.yaml
+        |-- secrets-example/
+```
+
+<!-- Layout:
+
+- Repo holds many docker compose files under `stacks/category_example/compose.yaml`
+- Persistent/long-term app data is stored in `data/`
+- Global runtime secrets are held in the `secrets/`
+  - Each category has own secrets file under `stacks/category/compose.yaml`
+  - These use the global secrets but can also define category-specific ones -->
 
 ## Hardware
 
