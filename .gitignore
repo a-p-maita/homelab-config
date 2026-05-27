@@ -43,3 +43,4 @@ scripts/
 !stacks/*
 !secrets-example
 !secrets-example/*
+!Makefile

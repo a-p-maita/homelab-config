@@ -1,17 +1,65 @@
 services:
-  yamtrack:
-    image: ghcr.io/fuzzygrim/yamtrack:latest
-    restart: unless-stopped
-    environment:
-      - YAMTRACK_EXTERNAL_URL=${YAMTRACK_EXTERNAL_URL}
-    volumes:
-      - ${DATA_ROOT}/yamtrack:/data
-    networks:
-      - proxy_net
-      - backend
+  # yamtrack:
+  #   image: ghcr.io/fuzzygrim/yamtrack:latest
+  #   env_file:
+  #     - ../../.env
+  #   restart: unless-stopped
+  #   environment:
+  #     - YAMTRACK_EXTERNAL_URL=${YAMTRACK_EXTERNAL_URL}
+  #   volumes:
+  #     - ${DATA_ROOT}/app_data/yamtrack:/data
+  #   networks:
+  #     - proxy_net
+  #     - backend
+  # mealie:
+  #   image: hkotel/mealie:latest
+  #   env_file:
+  #     - ../../.env
+  #   restart: unless-stopped
+  #   environment:
+  #     - BASE_URL=${MEALIE_EXTERNAL_URL}
+  #   volumes:
+  #     - ${DATA_ROOT}/app_data/mealie:/app/data
+  #   networks:
+  #     - proxy_net
+  #     - backend
 
-networks:
-  proxy_net:
-    external: true
-  backend:
-    internal: true
+  mealie:
+    image: ghcr.io/mealie-recipes/mealie:latest
+    container_name: mealie
+    restart: unless-stopped
+    ports:
+      # Default port is 9925
+      # - "9925:9000"
+      - "${MEALIE_PORT}:9000"
+    deploy:
+      resources:
+        limits:
+          memory: 1000M #
+    volumes:
+      - ${DATA_ROOT}/app_data/mealie-data:/app/data/
+    environment:
+      # Set Backend ENV Variables Here
+      ALLOW_SIGNUP: ${ALLOW_SIGNUP_STRING}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TIMEZONE}
+      # BASE_URL: https://mealie.${DOMAIN}
+      BASE_URL: http://localhost:${MEALIE_PORT}
+      # Start of extra ENV variables (https://docs.mealie.io/documentation/getting-started/installation/backend-config/)
+      ## Defaults are false, see to work it with Authentik and there's more ENV variables to set
+      # LDAP_AUTH_ENABLED: true
+      # OIDC_AUTH_ENABLED: true
+      #
+
+    # networks:
+    #   - proxy_net
+    #   - backend
+
+volumes:
+  mealie-data:
+# networks:
+#   proxy_net:
+#     external: true
+#   backend:
+#     internal: true
