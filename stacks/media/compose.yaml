@@ -81,5 +81,7 @@ networks:
     internal: true
 
 secrets:
-  navidrome-pass:
-    file: secrets/navidrome-pass.secret
+  # navidrome-pass:
+  #   file: secrets/navidrome-pass.secret#
+  audiobookshelf-port:
+    file: secrets/audiobookshelf-port.secret
