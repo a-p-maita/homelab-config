@@ -1,104 +1,134 @@
 A homelab setup to repurpose my old laptop.
 
-This repository defines a Docker Compose-based homelab with multiple stack files under `stacks/`, persistent app data stored in `data/`, and runtime secrets + ports configured in `.env`.
+Layout:
 
-The system is organized into purpose-driven stacks:
+- Repo holds many docker compose files under `stacks/service_category_etc`
+- Persistent/long-term app data is stored in `data/`
+- runtime secrets are held in the `secrets`
 
-- `stacks/infrastructure/compose.yaml` — edge routing, auth, dashboard, monitoring, proxy, and Cloudflare tunnel.
-- `stacks/cloud/compose*.yaml` — cloud services such as Immich and Nextcloud plus supporting DB/cache containers.
-- `stacks/services/compose*.yaml` — productivity and utility apps like Forgejo, Vaultwarden, Joplin, Actual Budget, and Paperless.
-- `stacks/media/compose.yaml` — media servers, audiobooks, music, and related tracking services.
-- `stacks/arr/compose.yaml` — download automation and optional VPN overlay for qBittorrent.
-- `stacks/home/compose.yaml` — Home Assistant.
-
-Depends on/creates another directory one step up called `data/` which holds all the permanent data being written like images, audiobooks and databases (all gitignored). Ports are set to high, non-standard values to avoid errors.
-
-## What's running
-
-### Arr (torrent automation)
-
-| Service                                                                         | Purpose                                                                 |
-| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| [qBittorrent](https://www.qbittorrent.org/)                                     | Torrent client                                                          |
-| [Prowlarr](https://prowlarr.com/)                                               | Indexer manager — syncs trackers to all \*arr apps                      |
-| [Radarr](https://radarr.video/)                                                 | Automated movie collection manager                                      |
-| [Sonarr](https://sonarr.tv/)                                                    | Automated TV series collection manager                                  |
-| [Readarr](https://readarr.com/)                                                 | Automated book/ebook collection manager                                 |
-| [Lidarr](https://lidarr.audio/)                                                 | Automated music collection manager                                      |
-| [Jackett](https://github.com/Jackett/Jackett)                                   | Torrent indexer proxy (legacy — use Prowlarr for new indexers)          |
-| [Gluetun](https://github.com/qdm12/gluetun) _(optional)_                        | VPN client (ProtonVPN WireGuard) — enable with `USE_VPN=true` in `.env` |
-| [deunhealth](https://github.com/qdm12/deunhealth) _(optional)_                  | Auto-restarts qBittorrent when VPN stalls                               |
-
-### Media
-
-| Service                                               | Purpose                                                                  |
-| ----------------------------------------------------- | ------------------------------------------------------------------------ |
-| [Audiobookshelf](https://www.audiobookshelf.org/)     | Audiobook & podcast library with streaming                               |
-| [Yamtrack](https://github.com/FuzzyGrim/Yamtrack)     | Media tracker (TV, movies, games, manga, books)                          |
-| [CrossWatch](https://github.com/FuzzyGrim/crosswatch) | Sync watch history across Trakt, AniList, Jellyfin, Simkl                |
-| [Navidrome](https://www.navidrome.org/)               | Music streaming server (Subsonic API)                                    |
-| [Feishin](https://github.com/jeffvli/feishin)         | Modern web UI for Navidrome                                              |
-
-### Entertainment
-
-| Service                           | Purpose                  |
-| --------------------------------- | ------------------------ |
-| [Jellyfin](https://jellyfin.org/) | Media server (video, TV) |
-
-### Documents
-
-| Service                                          | Purpose                         |
-| ------------------------------------------------ | ------------------------------- |
-| [Paperless-NGX](https://docs.paperless-ngx.com/) | Document management & OCR       |
-| [Stirling PDF](https://stirlingpdf.io/)          | PDF manipulation tools          |
-| [Kiwix](https://www.kiwix.org/)                  | Offline Wikipedia & ZIM content |
-
-### Tools
-
-| Service                                                   | Purpose                                 |
-| --------------------------------------------------------- | --------------------------------------- |
-| [Draw.io](https://github.com/jgraph/drawio)               | Diagram editor                          |
-| [Excalidraw](https://excalidraw.com/)                     | Collaborative whiteboard                |
-| [IT-Tools](https://github.com/CorentinTh/it-tools)        | Developer utilities collection          |
-| [Vaultwarden](https://github.com/dani-garcia/vaultwarden) | Password manager (Bitwarden-compatible) |
-| [Actual Budget](https://actualbudget.org/)                | Local-first personal finance            |
-| [Joplin Server](https://joplinapp.org/)                   | Note-taking sync server                 |
-
-### Personal
-
-| Service                      | Purpose                       |
-| ---------------------------- | ----------------------------- |
-| [Mealie](https://mealie.io/) | Recipe manager & meal planner |
-
-### Home
-
-| Service                                          | Purpose         |
-| ------------------------------------------------ | --------------- |
-| [Home Assistant](https://www.home-assistant.io/) | Home automation |
+## Homelab Service Stack
 
 ### Infrastructure
 
-| Service                                                                                       | Purpose                                                    |
-| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| [Immich](https://immich.app/)                                                                 | Self-hosted photo and video backup                         |
-| [Forgejo](https://forgejo.org/)                                                               | Self-hosted git repository                                 |
-| [Homepage](https://gethomepage.dev/)                                                          | Dashboard with live container health                       |
-| [Uptime Kuma](https://uptime.kuma.pet/)                                                       | Service uptime monitoring                                  |
-| [Cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) | Cloudflare tunnel for external access (no port forwarding) |
-| [Watchtower](https://containrrr.dev/watchtower/)                                              | Automatic nightly image updates                            |
+- **Purpose: What's essential to run the homelab and expose services**
+- [Traefik](https://traefik.io/) - Reverse proxy to link services to subdomains and handle TLS, also obscures service ports and does nice obscurity in a nutshell
+  - [DOCUMENTATION](https://doc.traefik.io/traefik/)
+  - Might be a bit heavy but it's nice and supported and declarative
+- [Authentik](https://goauthentik.io/)- Lets me guard exposed services/subdomains for peace of mind and all that
+  - [DOCUMENTATION](https://goauthentik.io/docs/)
+  - Identity provider for single sign-on to all services
+  - Would like to add 2FA eventually but it's a bit of a pain to set up and maintain so maybe later
+- [Cloudflared](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) - Cloudflare daemon tunnel for external access
+  - [DOCUMENTATION](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/install-and-setup/tunnel-guide/)
+  - Good way to get around port forwarding, again
+  - Requires setting up tunnels for each subdomain/service through the [Cloudflare dashboard](https://dash.cloudflare.com/) but it's easy enough
+
+### Maintenance
+
+- **Purpose: Maintenance and monitoring tools for the homelab**
+- [Homepage](https://gethomepage.dev/) - Dashboard for quick links to internal/external services
+  - [DOCUMENTATION](https://gethomepage.dev/configs/)
+  - Would like one that automatically attaches to services this would be nice
+- [Uptime Kuma](https://uptime.kuma.pet/) - Service uptime monitoring
+- [Watchtower](https://containrrr.dev/watchtower/) - Automatic nightly docker image updates
+
+### Media
+
+- **Purpose: Media streaming and downloading**
+- [Audiobookshelf](https://www.audiobookshelf.org/) - Audiobook server, godly piece of tech highly recommend genuinely can't live without it
+  - [DOCUMENTATION](https://www.audiobookshelf.org/docs/)
+  - Has mobile client in beta too, a bit limited but mostly perfect honestly for what it needs
+- [Jellyfin](https://jellyfin.org/) - Media streaming/downloading server
+  - [DOCUMENTATION](https://jellyfin.org/docs/)
+  - Supports movies, tv shows, music, audiobooks, podcasts and allthat but I'd rather use purpose-built stuff who knos though it's a good fallback
+- [Navidrome](https://www.navidrome.org/) - Music streaming server
+  - [DOCUMENTATION](https://www.navidrome.org/docs/)
+  - Uses a Subsonic API so it's compatible with many-a-thing
+
+### *Arr
+
+- **Purpose: Automated media downloading and management**
+- [qBittorrent](https://www.qbittorrent.org/)
+  - [DOCUMENTATION](https://www.qbittorrent.org/docs/)
+  - Torrent client
+  - Goes hand-in-hand with [Gluetun](https://github.com/qdm12/gluetun) _(optional)_
+    - My VPN client is ProtonVPN WireGuard - enabled by setting `secrets/vpn_enabled.secret` to `true`
+- [Prowlarr](https://prowlarr.com/)
+  - [DOCUMENTATION](https://wiki.servarr.com/prowlarr)
+  - Indexer manager — syncs trackers to all \*arr apps
+- [Radarr](https://radarr.video/)
+  - [DOCUMENTATION](https://wiki.servarr.com/radarr)
+  - Automated movie collection manager
+- [Sonarr](https://sonarr.tv/)
+  - [DOCUMENTATION](https://wiki.servarr.com/sonarr)
+  - Automated TV series collection manager
+- [Lidarr](https://lidarr.audio/)
+  - [DOCUMENTATION](https://wiki.servarr.com/lidarr)
+  - Automated music collection manager
+- [Jackett](https://github.com/Jackett/Jackett)
+  - Torrent indexer proxy (More indexers than Prowlarr, less integrated tho)
+  - Auto-restarts qBittorrent when VPN stalls
+- [Bazarr](https://www.bazarr.media/)
+  - [DOCUMENTATION](https://wiki.servarr.com/bazarr)
+  - Subtitle manager for Sonarr/Radarr
+- [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) - Cloudflare anti-bot solver for indexers
+  - [DOCUMENTATION](https://github.com/FlareSolverr/FlareSolverr/wiki)
+
+### Trackers
+
+- **Purpose: Trackers for anything and everything to log in life**
+- [Yamtrack](https://github.com/FuzzyGrim/Yamtrack) - Everything media tracker very good
+  - [DOCUMENTATION](https://github.com/FuzzyGrim/Yamtrack/wiki)
+  - Has scheduled sync with Trakt, AniList so it's hella convenient
+  - Has calendar to sync upcoming stuff which is neat
+  - Tracks tv shows, anime, movies, games, manga, books
+    - I'm holding out for the day audiobooks and ABS are suported
+- [Mealie](https://mealie.io/) - Recipe manager & meal planner
+  - [DOCUMENTATION](https://docs.mealie.io/)
+
+### Apps
+
+- **Purpose: General apps that don't fit in another category**
+- [Paperless-NGX](https://docs.paperless-ngx.com/) - Document management & OCR
+  - [DOCUMENTATION](https://docs.paperless-ngx.com/)
+- [Kiwix](https://www.kiwix.org/) - Offline Wikipedia & ZIM content
+- [Draw.io](https://github.com/jgraph/drawio) - Diagram editor
+- [Excalidraw](https://excalidraw.com/) - Collaborative whiteboard
+- [IT-Tools](https://github.com/CorentinTh/it-tools) - Developer utilities collection
+- [Vaultwarden](https://github.com/dani-garcia/vaultwarden) - Password manager (Bitwarden-compatible)
+- [Actual Budget](https://actualbudget.org/) - Local-first personal finance manager
+
+### Cloud
+
+- **Purpose: Cloud-based services and automation**
+- [Immich](https://immich.app/)- Photos and images, replacement for google photos
+  - [DOCUMENTATION](https://docs.immich.app/)
+  - Limitation is through cloudflare domain there's upload size limits so it struggles with videos etc.
+    - Chunking would help this but it was said to be out-of-scope for Immich
+- [Forgejo](https://forgejo.org/) - Git repository and GitHub replacement
+  - [DOCUMENTATION](https://forgejo.org/docs/)
+- [Home Assistant](https://www.home-assistant.io/) - Home automation platform
+  - [DOCUMENTATION](https://www.home-assistant.io/docs/)
+- [NextCloud](https://nextcloud.com/) - File sync/sharing, document office, calendar, contacts etc.
+  - [DOCUMENTATION](https://docs.nextcloud.com/)
+- [Jitsi Meet](https://jitsi.org/jitsi-meet/) - Video conferencing
+  - [DOCUMENTATION](https://jitsi.github.io/handbook/docs/devops-guide/devops-guide-docker)
+- [Rustdesk](https://rustdesk.com/) - Remote desktop server
+  - [DOCUMENTATION](https://rustdesk.com/docs/)
 
 ## Hardware
 
-Running on an old laptop repurposed as a headless server.
+Running on an old laptop repurposed as a server:
 
-| Component | Spec                                                   |
-| --------- | ------------------------------------------------------ |
-| CPU       | AMD Ryzen 5 5500U — 6 cores, 12 threads, up to 4.0 GHz |
-| RAM       | 14 GB DDR4 + 14 GB zram swap                           |
-| Storage   | NVMe SSD ~930 GB (main) + 120 GB SSD (secondary)       |
-| OS        | Linux                                                  |
+- **CPU:** AMD Ryzen 5 5500U - 6 cores, 12 threads, 4.0 GHz
+- **RAM:** 14 GB DDR4 + 14 GB ZRAM swap
+  - 16 GB physically/technically
+- **Storage:** NVMe SSD 930 GB
+- **OS:** Linux
+  - Trying to make it work for both Arch and Debian
+  - May switch to Proxmox eventually when the homelab is stable
 
-### Resource allocation
+<!-- ### Resource allocation
 
 Every container has `deploy.resources.limits` set. The budget leaves ~2 cores and ~2 GB RAM free for the OS. Key allocations:
 
@@ -107,116 +137,4 @@ Every container has `deploy.resources.limits` set. The budget leaves ~2 cores an
 | Heavy    | Immich server/ML, Jellyfin, Paperless-NGX                         | 2.0        | 2 GB          |
 | Medium   | Audiobookshelf, qBittorrent, Lidarr, Stirling PDF, Home Assistant | 1.0        | 512 M – 1 G   |
 | Light    | Most other services                                               | 0.25 – 0.5 | 128 M – 512 M |
-| DB/cache | postgres, redis, mysql                                            | 0.25 – 0.5 | 256 M – 1 G   |
-
-Limits are soft ceilings — containers can burst when idle headroom is available. Reservations are set low so Docker does not pre-allocate memory.
-
-## Setup
-
-```bash
-git clone https://github.com/Andreas-PM/homelab-config.git
-cd homelab-config
-cp .env.example .env
-# Fill in .env with your credentials and tokens
-```
-
-A few services need config files seeded before first start, or they'll ignore settings like save paths and proxy headers. Templates are in `config-templates/`. Most are **auto-seeded by `up-all.sh`** — the ones below need manual placement:
-
-```bash
-# qBittorrent
-mkdir -p data/qbittorrent/config/qBittorrent
-cp config-templates/qbittorrent/qBittorrent.conf data/qbittorrent/config/qBittorrent/qBittorrent.conf
-cp config-templates/qbittorrent/categories.json  data/qbittorrent/config/qBittorrent/categories.json
-# Set WebUI\Username in the .conf. Password hash is written automatically on first login.
-
-# Jackett
-mkdir -p data/jackett/config/Jackett
-cp config-templates/jackett/ServerConfig.json data/jackett/config/Jackett/ServerConfig.json
-# Set APIKey in ServerConfig.json to match JACKETT_API_KEY in your .env.
-
-```
-
-The following templates are seeded automatically by `up-all.sh` on first run (only if the file doesn't already exist):
-
-- `config-templates/homepage/` → `data/homepage/config/` (services, settings, docker, widgets, bookmarks)
-- `config-templates/stirling-pdf/settings.yml` → `data/stirling-pdf/configs/settings.yml`
-- `config-templates/crosswatch/config.json` → `data/crosswatch/config.json`
-
-Then bring everything up:
-
-```bash
-./scripts/up-all.sh
-```
-
-> **First run:** Several services require manual steps after startup (setting credentials, completing wizards, etc.). See **[FIRST-RUN.md](FIRST-RUN.md)** for the complete guide.
-
-## Restoring data from backup
-
-If you have a pre-rework backup of `~/homelab-data`, restore it by copying the backup tree into the repo's `data/` directory instead of moving the source. This keeps the original backup intact while restoring service data.
-
-Example:
-
-```bash
-cd /home/a-p-maita/homelab-config
-mkdir -p data
-rsync -a --info=progress2 ~/homelab-data/ ./data/
-# or
-cp -a ~/homelab-data/. ./data/
-```
-
-After copying, verify ownership and permissions for the container user:
-
-```bash
-sudo chown -R 1000:1000 data/
-```
-
-Do not delete or move the original `~/homelab-data` backup; keep it as a safe copy until the restored system is verified.
-
-## Cloudflare tunnel
-
-Services exposed via Cloudflare tunnel (configured in Zero Trust → Networks → Tunnels → Public Hostnames):
-
-| Subdomain                         | Internal service            | Auth                                 |
-| --------------------------------- | --------------------------- | ------------------------------------ |
-| `abs.andreasmaita.com` | `http://audiobookshelf:80`  | Audiobookshelf own login             |
-| `music.andreasmaita.com`      | `http://navidrome:4533`     | Navidrome own login                  |
-| `feishin.andreasmaita.com`        | `http://feishin:9180`       | Navidrome own login (via Feishin)    |
-| `immich.andreasmaita.com`         | `http://immich-server:2283` | Immich own login                     |
-| `forgejo`        | `http://forgejo:3000`       | Forgejo own login                    |
-| `homepage.andreasmaita.com`       | `http://homepage:3000`      | None (internal dashboard)            |
-
-**Feishin `SERVER_URL`:** Set `NAVIDROME_EXTERNAL_URL` in `.env` to the public Navidrome tunnel URL. Feishin's browser client connects to Navidrome from the user's device, not from Docker, so it must be a publicly reachable URL.
-
-**Cloudflare Access bypass for Navidrome API paths (required for mobile Subsonic clients):**
-
-Mobile music apps (Symfonium, Ultrasonic, etc.) can't complete a browser-based Access challenge. Bypass Access for the API paths only so clients can authenticate directly with Navidrome:
-
-1. Zero Trust → Access → Applications → Add application → Self-hosted
-2. Set application domain: `music.andreasmaita.com`
-3. Under **Policies**, add a rule:
-   - Action: **Bypass**
-   - Include rule: **Everyone**
-   - Path: `/rest/*`
-4. Add a second Bypass rule for path `/api/*` (used by Feishin native mode)
-5. Add a third Bypass rule for path `/ping` (healthcheck)
-6. Add your normal Allow policy (email OTP etc.) — this catches everything else like the web UI
-
-With this setup: web UI at `/app` requires Access auth, but `/rest/*` and `/api/*` are open to Navidrome's own auth (username/password/token).
-
-## Music stack first-run
-
-After `up-all.sh`, the music services need one-time setup:
-
-| Service         | URL      | What to do                                                                                                                                                                                                                                      |
-| --------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Navidrome**   | `:20070` | Create your admin account on first visit                                                                                                                                                                                                        |
-| **Lidarr**      | `:20059` | Complete the setup wizard. Add Prowlarr as indexer sync source (see FIRST-RUN.md §10). Add qBittorrent as download client (`http://qbittorrent:20050`, credentials from `.env`, category `music`). Set music root folder to `/data/media/music` |
-
-**Feishin** (`:20072`) is pre-locked to Navidrome — just log in with your Navidrome credentials.
-
-## Notes
-
-- All ports are configurable via `.env` — see `.env.example` for the full list
-- Ports are intentionally in the `20000–20340` range to avoid conflicts with well-known services
-- Immich uses its default port (`2283`) for app compatibility
-- First-time setup for all services is documented in **[FIRST-RUN.md](FIRST-RUN.md)**
+| DB/cache | postgres, redis, mysql                                            | 0.25 – 0.5 | 256 M – 1 G   | -->
