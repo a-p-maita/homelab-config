@@ -3,8 +3,18 @@ services:
     image: ghcr.io/advplyr/audiobookshelf:latest
     # ABS runs on port 13378 by default. If you want to change
     # the port, only change the external port, not the internal port
+    env_file:
+      # - specific.env
+      - ../../.env
+    environment:
+      # - AUDIOBOOKSHELF_PORT=/run/secrets/audiobookshelf-port
+      # - DATA_ROOT=/run/secrets/data-root
+      - AUDIOBOOKSHELF_PORT=${AUDIOBOOKSHELF_PORT}
+      - DATA_ROOT=${DATA_ROOT}
     ports:
-      - 13378:80
+      # - 13378:${AUDIOBOOKSHELF_PORT}
+      - ${AUDIOBOOKSHELF_PORT}:80
+      # - 13378:80
     volumes:
       # These volumes are needed to keep your library persistent
       # and allow media to be accessed by the ABS server.
@@ -12,21 +22,21 @@ services:
       # and the path to the right of the colon is where the data is
       # available to ABS in Docker.
       # You can change these media directories or add as many as you want
-      - ./audiobooks:/audiobooks
-      - ./podcasts:/podcasts
+      - $DATA_ROOT/media/audiobooks:/audiobooks
+      - $DATA_ROOT/media/podcasts:/podcasts
       # The metadata directory can be stored anywhere on your computer
-      - ./metadata:/metadata
+      - $DATA_ROOT/app_data/audiobookshelf/metadata:/metadata
       # The config directory needs to be on the same physical machine
       # you are running ABS on
-      - ./config:/config
+      - $DATA_ROOT/app_data/audiobookshelf/config:/config
     restart: unless-stopped
     # You can use the following user directive to run the ABS
     # docker container as a specific user. You will need to change
     # the UID and GID to the correct values for your user.
     # user: 1000:1000
-    networks:
-      - proxy_net
-      - backend
+    # networks:
+    #   - proxy_net
+    #   - backend
   # navidrome:
   #   image: deluan/navidrome:latest
   #   restart: unless-stopped
@@ -80,8 +90,10 @@ networks:
   backend:
     internal: true
 
-secrets:
-  # navidrome-pass:
-  #   file: secrets/navidrome-pass.secret#
-  audiobookshelf-port:
-    file: secrets/audiobookshelf-port.secret
+# secrets:
+#   navidrome-pass:
+#     file: secrets/navidrome-pass.secret#
+#   audiobookshelf-port:
+#     file: secrets/audiobookshelf-port.secret
+#   data-root:
+#     file: ../../secrets/data-root.secret
