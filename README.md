@@ -43,11 +43,12 @@
 
 |Service|Purpose|Docs|Notes|Image|
 |---|---|---|---|---|
-|[Yamtrack](https://github.com/FuzzyGrim/Yamtrack)|Everything media tracker|[Documentation](https://github.com/FuzzyGrim/Yamtrack/wiki)|Syncs with Trakt/AniList<br>Calendar support<br>Waiting for audiobook/ABS support|[fuzzygrim/yamtrack:latest](https://ghcr.io/fuzzygrim/yamtrack:latest)|
-|[Mealie](https://github.com/hay-kot/mealie)|Recipe manager and meal planner|[Documentation](https://docs.mealie.io/)||[hkotel/mealie:latest](https://hub.docker.com/r/hkotel/mealie)|
 |[Actual Budget](https://github.com/actualbudget/actual)|Local-first finance manager|[Documentation](https://actualbudget.github.io/docs/)||[actualbudget/actual-server:latest](https://ghcr.io/actualbudget/actual-server:latest)|
-|[Habitica](https://github.com/HabitRPG/habitica)|Game-mode task/habit tracking|[Documentation](https://github.com/HabitRPG/habitica/wiki)||[habitica/habitica:latest](https://hub.docker.com/r/habitica/habitica)|
+|[Mealie](https://github.com/hay-kot/mealie)|Recipe manager and meal planner|[Documentation](https://docs.mealie.io/)||[hkotel/mealie:latest](https://hub.docker.com/r/hkotel/mealie)|
+|[Wger](https://github.com/wger-project/wger)|Workout manager|[Documentation](https://wger.readthedocs.io/en/latest/installation/docker.html)|Requires NGINX to be set up<br>Hopefully works with Traefik have to research|[docker.io/wger/server:latest](https://hub.docker.com/r/wger/wger)|
 |[Monica](https://github.com/monicahq/monica)|Personal CRM|[Documentation](https://www.monicahq.com/docs/)|Useful for tracking family/friend details|[linuxserver/monica:latest](https://ghcr.io/linuxserver/monica:latest)|
+|[Yamtrack](https://github.com/FuzzyGrim/Yamtrack)|Everything media tracker|[Documentation](https://github.com/FuzzyGrim/Yamtrack/wiki)|Syncs with Trakt/AniList<br>Calendar support<br>Waiting for audiobook/ABS support|[fuzzygrim/yamtrack:latest](https://ghcr.io/fuzzygrim/yamtrack:latest)|
+|[Habitica](https://github.com/HabitRPG/habitica)|Game-mode task/habit tracking|[Documentation](https://github.com/HabitRPG/habitica/wiki)||[habitica/habitica:latest](https://hub.docker.com/r/habitica/habitica)|
 
 ### *Arr - Automated media downloading and management
 
