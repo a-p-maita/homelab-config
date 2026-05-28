@@ -90,6 +90,8 @@ services:
     volumes:
       - ${DATA_ROOT}/app_data/redis:/data
 
+ 
+
 volumes:
   redis_data:
 

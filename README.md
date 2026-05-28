@@ -189,6 +189,19 @@ Running on an old laptop repurposed as a server:
 - I'm reckoning it might be a bit hellish to have Forgejo running on different ports and behind Authentik so I'll try if it's possible otherwise it might just be one I'll chance exposing and relying on it to have good security and all that
 - Also the immich mobile client throws a fit if the port changes and is behind Authentik, so that one would need special handling or again one of those I'll have to live with
 
+### Secret and environment variables 
+
+- Trying to use real secrets is tricky since not all apps and services can correctly parse and read them
+- Compared to .env files which are almost universal
+   - Docker files are a bit of a hell thing because you can't just specify two files in the `env_file:` section and expect them to merge, it's just the latest one that gets used
+   - Also apparently even trying to use just one root env file also doesn't work for it because some variables get read only at container runtime so you have to do the CLI `docker compose --env-file. env up - d
+
+### Docker compose files, compose override files and Dockerfiles 
+
+- So apparently it's good practice to keep the exact compose.yaml file exactly the same as the original one and then change the variables with compose.override.yaml
+so that pulling changes is much easier and compatability reasons so might refactor to do this
+- Dockerfiles are used in the stead of images in case that one isn't available, It's much more clear and defines what base software image, data does and envs to use but again it's sensitive to big changes and I'd have to keep up to it whereas images fo this automatically (double check this it's mostly intuition so far)
+
 ### Resource Allocation Guideline
 
 Using docker's `deploy.resources.limits` implement resouce caps to prevent overly-hungry ones
