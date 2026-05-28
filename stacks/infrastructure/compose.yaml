@@ -1,33 +1,36 @@
 services:
-  cloudflared:
-    container_name: cloudflared
-    image: cloudflare/cloudflared
-    restart: unless-stopped
-    command: tunnel run
-    environment:
-      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
-    networks:
-      - cftunnel-transport
+  # traefik:
+  #   image: "traefik:latest"
+  #   container_name: "traefik"
+  #   env_file:
+  #     - ../../.env
+  #   restart: unless-stopped
+  #   command:
+  #     #- "--log.level=DEBUG"
+  #     - "--api.insecure=true"
+  #     # Enabling Docker provider
+  #     - "--providers.docker=true"
+  #     # Do not expose containers unless explicitly told so
+  #     - "--providers.docker.exposedbydefault=false"
+  #     - "--entryPoints.web.address=:80"
+  #   ports:
+  #     # Traefik will listen to incoming request on the port 80 (HTTP)
+  #     - "80:80"
+  #       # Traefik will listen on port 8080 by default for API request.
+  #     - "8080:8080"
+  #   volumes:
+  #     - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
-  traefik:
-    image: traefik:latest
-    container_name: traefik
-    restart: always
-    env_file:
-      - ../../.env
-    networks:
-      - cftunnel-transport
-      - cloudflaretunnel
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./config/traefik.yaml:/traefik.yaml:ro
-      - ./config/certificates.yaml:/certificates.yaml:ro
-      - ./config/origin-certificates/:/origin-certificates:ro
-
-networks:
-  cftunnel-transport:
-  cloudflaretunnel:
-    external: true
+  # whoami:
+  #   image: "traefik/whoami"
+  #   container_name: "simple-service"
+  #   labels:
+  #     # Explicitly tell Traefik to expose this container
+  #     - "traefik.enable=true"
+  #     # The domain the service will respond to
+  #     - "traefik.http.routers.whoami.rule=Host(`whoami.localhost`)"
+  #     # Allow request only from the predefined entry point named "web"
+  #     - "traefik.http.routers.whoami.entrypoints=web"
 
   # homepage:
   #   image: ghcr.io/gethomepage/homepage:latest
