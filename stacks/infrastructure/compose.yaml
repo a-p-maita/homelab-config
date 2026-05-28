@@ -1,60 +1,72 @@
 services:
   cloudflared:
-    image: cloudflare/cloudflared:latest
     container_name: cloudflared
+    image: cloudflare/cloudflared
     restart: unless-stopped
-    # labels:
-    #   - "com.centurylinklabs.watchtower.enable=true"
-    # --metrics enables the health/ready endpoint on port 8080
-    command: tunnel --metrics 0.0.0.0:8080 run
+    command: tunnel run
     environment:
-      - TUNNEL_TOKEN_FILE=/run/secrets/tunnel-token
-    secrets:
-      - tunnel-token
-    ports:
-      - "${CLOUDFLARED_PORT}:8080"
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
     networks:
-      - homelab_net
-      - proxy_net
+      - cftunnel-transport
 
-  homepage:
-    image: ghcr.io/gethomepage/homepage:latest
-    container_name: homepage
-    ports:
-      - "${HOMEPAGE_PORT}:3000"
-    environment:
-      - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS}
-      # ── Arr widget API keys — set these in .env after first arr stack start ──
-      # Get each key from Settings → General inside the respective service UI.
-      - HOMEPAGE_VAR_RADARR_API_KEY=${RADARR_API_KEY:-}
-      - HOMEPAGE_VAR_SONARR_API_KEY=${SONARR_API_KEY:-}
-      - HOMEPAGE_VAR_LIDARR_API_KEY=${LIDARR_API_KEY:-}
-      - HOMEPAGE_VAR_PROWLARR_API_KEY=${PROWLARR_API_KEY:-}
-      - HOMEPAGE_VAR_BAZARR_API_KEY=${BAZARR_API_KEY:-}
-      - HOMEPAGE_VAR_AUTOBRR_API_KEY=${AUTOBRR_API_KEY:-}
-      - HOMEPAGE_VAR_SEERR_API_KEY=${SEERR_API_KEY:-}
-      - HOMEPAGE_VAR_JELLYFIN_API_KEY=${JELLYFIN_API_KEY:-}
-      # ── qBittorrent widget credentials (same as WebUI login) ─────────────────
-      - HOMEPAGE_VAR_QBT_USER=${QBITTORRENT_WEBUI_USER}
-      - HOMEPAGE_VAR_QBT_PASS_FILE=/run/secrets/qbittorrent-webui-pass
-    volumes:
-      - ../../data/homepage/config:/app/config
-      - /etc/localtime:/etc/localtime:ro
-    restart: unless-stopped
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: always
+    env_file:
+      - ../../.env
     networks:
-      - homelab_net
-      - socket_internal
-      - proxy_net
+      - cftunnel-transport
+      - cloudflaretunnel
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/traefik.yaml:/traefik.yaml:ro
+      - ./config/certificates.yaml:/certificates.yaml:ro
+      - ./config/origin-certificates/:/origin-certificates:ro
 
 networks:
-  homelab_net:
+  cftunnel-transport:
+  cloudflaretunnel:
     external: true
-  proxy_net:
-    external: true
-  socket_internal:
-    external: true
-  infrastructure_internal:
-    external: true
+
+  # homepage:
+  #   image: ghcr.io/gethomepage/homepage:latest
+  #   container_name: homepage
+  #   ports:
+  #     - "${HOMEPAGE_PORT}:3000"
+  #   environment:
+  #     - HOMEPAGE_ALLOWED_HOSTS=${HOMEPAGE_ALLOWED_HOSTS}
+  #     # ── Arr widget API keys — set these in .env after first arr stack start ──
+  #     # Get each key from Settings → General inside the respective service UI.
+  #     - HOMEPAGE_VAR_RADARR_API_KEY=${RADARR_API_KEY:-}
+  #     - HOMEPAGE_VAR_SONARR_API_KEY=${SONARR_API_KEY:-}
+  #     - HOMEPAGE_VAR_LIDARR_API_KEY=${LIDARR_API_KEY:-}
+  #     - HOMEPAGE_VAR_PROWLARR_API_KEY=${PROWLARR_API_KEY:-}
+  #     - HOMEPAGE_VAR_BAZARR_API_KEY=${BAZARR_API_KEY:-}
+  #     - HOMEPAGE_VAR_AUTOBRR_API_KEY=${AUTOBRR_API_KEY:-}
+  #     - HOMEPAGE_VAR_SEERR_API_KEY=${SEERR_API_KEY:-}
+  #     - HOMEPAGE_VAR_JELLYFIN_API_KEY=${JELLYFIN_API_KEY:-}
+  #     # ── qBittorrent widget credentials (same as WebUI login) ─────────────────
+  #     - HOMEPAGE_VAR_QBT_USER=${QBITTORRENT_WEBUI_USER}
+  #     - HOMEPAGE_VAR_QBT_PASS_FILE=/run/secrets/qbittorrent-webui-pass
+  #   volumes:
+  #     - ../../data/homepage/config:/app/config
+  #     - /etc/localtime:/etc/localtime:ro
+  #   restart: unless-stopped
+  #   networks:
+  #     - homelab_net
+  #     - socket_internal
+  #     - proxy_net
+
+# networks:
+#   homelab_net:
+#     external: true
+#   proxy_net:
+#     external: true
+#   socket_internal:
+#     external: true
+#   infrastructure_internal:
+#     external: true
 
 # secrets:
 #   tunnel-token:
