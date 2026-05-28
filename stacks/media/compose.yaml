@@ -1,5 +1,6 @@
 services:
   audiobookshelf:
+    container_name: audiobookshelf
     image: ghcr.io/advplyr/audiobookshelf:latest
     # ABS runs on port 13378 by default. If you want to change
     # the port, only change the external port, not the internal port
@@ -8,7 +9,8 @@ services:
       - ../../.env
     environment:
       # - AUDIOBOOKSHELF_PORT=/run/secrets/audiobookshelf-port
-      # - DATA_ROOT=/run/secrets/data-root
+      # - AUDIOBOOKSHELF_PORT=${AUDIOBOOKSHELF_PORT}
+      # - DATA_ROOT=${DATA_ROOT}
       - AUDIOBOOKSHELF_PORT=${AUDIOBOOKSHELF_PORT}
       - DATA_ROOT=${DATA_ROOT}
     ports:
@@ -90,10 +92,10 @@ networks:
   backend:
     internal: true
 
-# secrets:
-#   navidrome-pass:
-#     file: secrets/navidrome-pass.secret#
-#   audiobookshelf-port:
-#     file: secrets/audiobookshelf-port.secret
-#   data-root:
-#     file: ../../secrets/data-root.secret
+secrets:
+  #   navidrome-pass:
+  #     file: secrets/navidrome-pass.secret#
+  audiobookshelf-port:
+    file: secrets/audiobookshelf-port.txt
+  data-root:
+    file: ../../secrets/data-root.secret

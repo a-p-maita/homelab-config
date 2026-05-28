@@ -25,19 +25,11 @@ services:
   #     - backend
 
   mealie:
-    image: ghcr.io/mealie-recipes/mealie:latest
     container_name: mealie
+    image: ghcr.io/mealie-recipes/mealie:latest
     restart: unless-stopped
-    ports:
-      # Default port is 9925
-      # - "9925:9000"
-      - "${MEALIE_PORT}:9000"
-    deploy:
-      resources:
-        limits:
-          memory: 1000M #
-    volumes:
-      - ${DATA_ROOT}/app_data/mealie-data:/app/data/
+    env_file:
+      - ../../.env
     environment:
       # Set Backend ENV Variables Here
       ALLOW_SIGNUP: ${ALLOW_SIGNUP_STRING}
@@ -47,17 +39,35 @@ services:
       # BASE_URL: https://mealie.${DOMAIN}
       BASE_URL: http://localhost:${MEALIE_PORT}
       # Start of extra ENV variables (https://docs.mealie.io/documentation/getting-started/installation/backend-config/)
+    volumes:
+      - ${DATA_ROOT}/app_data/mealie-data:/app/data/
       ## Defaults are false, see to work it with Authentik and there's more ENV variables to set
       # LDAP_AUTH_ENABLED: true
       # OIDC_AUTH_ENABLED: true
       #
+    ports:
+      # Default port is 9925
+      # - "9925:9000"
+      - "${MEALIE_PORT}:9000"
+    deploy:
+      resources:
+        limits:
+          memory: 1000M #
+
+
+    # secrets:
+    #   - mealie-port
+    #   - allow-mealie-signup
+    #   - puid
+    #   - pgid
+    #   - timezone
 
     # networks:
     #   - proxy_net
     #   - backend
 
-volumes:
-  mealie-data:
+# volumes:
+#   mealie-data:
 # networks:
 #   proxy_net:
 #     external: true
