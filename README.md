@@ -107,14 +107,10 @@
         |-- tv/
         |-- videos/
     |-- personal/
-        |-- area/
-        |-- archive/
         |-- documents/
         |-- downloads/
         |-- other/
         |-- photos/
-        |-- projects/
-        |-- resource/
         |-- videos/
     |-- torrents/
         |-- incomplete/
@@ -196,6 +192,7 @@ Running on an old laptop repurposed as a server:
 - Compared to .env files which are almost universal
   - Docker files are a bit of a hell thing because you can't just specify two files in the `env_file:` section and expect them to merge, it's just the latest one that gets used
   - Also apparently even trying to use just one root env file also doesn't work for it because some variables get read only at container runtime so you have to do the CLI `docker compose --env-file. env up - d
+  - It may work if they're named differently like root is `.env` and then the category-specific one is `specific.env`
 
 ### Docker compose files, compose override files and Dockerfiles
 
