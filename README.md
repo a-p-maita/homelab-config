@@ -200,13 +200,16 @@ Running on an old laptop repurposed as a server:
 so that pulling changes is much easier and compatability reasons so might refactor to do this
 - Dockerfiles are used in the stead of images in case that one isn't available, It's much more clear and defines what base software image, data does and envs to use but again it's sensitive to big changes and I'd have to keep up to it whereas images fo this automatically (double check this it's mostly intuition so far)
 
-### Resource Allocation Guideline
+### Simplification O'clock?
 
-Using docker's `deploy.resources.limits` implement resouce caps to prevent overly-hungry ones
-
-|Impact|Example App|CPU|RAM|
-|---|---|---|---|
-|Heavy|Immich server/ML, Jellyfin, Paperless-NGX|2.0|2 GB|
-|Medium|Audiobookshelf, qBittorrent, Lidarr, Stirling PDF, Home Assistant|1.0|512 M – 1 G|
-|Light|Most other services|0.25 – 0.5|128 M – 512 M|
-|DB/cache|postgres, redis, mysql|0.25 – 0.5|256 M – 1 G|
+- So running into quite a few roadblocks in general because I'm getting exposed to a lot of new tech I'm not too familiar with
+- Don't get me wrong it's really fun, but exhausting at times
+- Specifically right now it's making the stack for my infrastructure of Cloudflare, Traefik and Authentik work
+- I know those are crutial and I'm somewhat familiar with how a reverse proxy works
+- Issue is I don't see all too clearly how to connect them all and then use them for apps as well since I've not even managed to spin them up so far
+- One of the bottlenecks in no router access but still that's not major
+- So, my line of thinking is to start stripping the system down and simplify then add features once I know a current one is stable, iterating on it basically
+- That means my nice root .env and secrets etc rrally shouldn't be a thing and for now I add all environmental variables where the compose file is
+- I'll also go away with the custom port ranges since that doesn't do too much for my security through obscurity given I'm going to use a robust external system anyways
+- Also maybe keeping apps as their own compose files and in their own dirs might make more sense and be more maintainable/compatible with tbe upstream priginals that's a thought
+- Some good sources that do similar to what I'm doing is this guy he just like me fr [Jim's Garage](https://github.com/JamesTurland/JimsGarage)
