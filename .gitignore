@@ -1,20 +1,29 @@
 # Ignore all persistent and sensitive data
 data/
-*.env*
 .DS_Store
 *.log
 backups/
 *.rendered
 
-# Except the .env example for the layout
+# Secrets — actual secret files must never be committed
+secrets/
+*.secret
+acme/
+acme.json
+
+# Env files — all .env files are gitignored except .env.example
+.env
+**/.env
+# Allow example files
 !.env.example
+!**/.env.example
 
 # TLS certificates and private keys
 *.pem
 *.crt
 *.key
 
-# TLS/le-tencrypt and cert directories
+# TLS/letsencrypt and cert directories
 letsencrypt/
 certs/
 

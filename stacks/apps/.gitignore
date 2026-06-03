@@ -2,4 +2,3 @@
 !.gitignore
 !compose.yaml
 !secrets-example
-!secrets-example/secret.secret
