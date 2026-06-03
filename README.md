@@ -17,7 +17,6 @@
 |[Homepage](https://github.com/gethomepage/homepage)|Dashboard for quick links to internal/external services|[Documentation](https://gethomepage.dev/)|Would like one that automatically attaches to services|[gethomepage/homepage:latest](https://ghcr.io/gethomepage/homepage:latest)|
 |[Dockge](https://github.com/louislam/dockge)|Web UI Docker Compose file manager|[Documentation](https://github.com/louislam/dockge#readme)||[louislam/dockge:latest](https://hub.docker.com/r/louislam/dockge)|
 |[Uptime Kuma](https://github.com/louislam/uptime-kuma)|Service uptime monitoring|[Documentation](https://github.com/louislam/uptime-kuma/wiki)||[louislam/uptime-kuma:latest](https://hub.docker.com/r/louislam/uptime-kuma)|
-|[Watchtower](https://github.com/nicholas-fedor/watchtower)|Automatic nightly Docker image updates|[Documentation](https://hub.docker.com/r/containrrr/watchtower#readme)||[containrrr/watchtower:latest](https://ghcr.io/containrrr/watchtower:latest)|
 |[Dozzle](https://github.com/amir20/dozzle)|Real-time log viewer|[Documentation](https://github.com/amir20/dozzle#README)||[amir20/dozzle:latest](https://ghcr.io/amir20/dozzle:latest)|
 
 ### Media - Media streaming and downloading
@@ -45,7 +44,6 @@
 |---|---|---|---|---|
 |[Actual Budget](https://github.com/actualbudget/actual)|Local-first finance manager|[Documentation](https://actualbudget.github.io/docs/)||[actualbudget/actual-server:latest](https://ghcr.io/actualbudget/actual-server:latest)|
 |[Mealie](https://github.com/hay-kot/mealie)|Recipe manager and meal planner|[Documentation](https://docs.mealie.io/)||[hkotel/mealie:latest](https://hub.docker.com/r/hkotel/mealie)|
-|[Wger](https://github.com/wger-project/wger)|Workout manager|[Documentation](https://wger.readthedocs.io/en/latest/installation/docker.html)|Requires NGINX to be set up<br>Hopefully works with Traefik have to research|[docker.io/wger/server:latest](https://hub.docker.com/r/wger/wger)|
 |[Monica](https://github.com/monicahq/monica)|Personal CRM|[Documentation](https://www.monicahq.com/docs/)|Useful for tracking family/friend details|[linuxserver/monica:latest](https://ghcr.io/linuxserver/monica:latest)|
 |[Yamtrack](https://github.com/FuzzyGrim/Yamtrack)|Everything media tracker|[Documentation](https://github.com/FuzzyGrim/Yamtrack/wiki)|Syncs with Trakt/AniList<br>Calendar support<br>Waiting for audiobook/ABS support|[fuzzygrim/yamtrack:latest](https://ghcr.io/fuzzygrim/yamtrack:latest)|
 |[Habitica](https://github.com/HabitRPG/habitica)|Game-mode task/habit tracking|[Documentation](https://github.com/HabitRPG/habitica/wiki)||[habitica/habitica:latest](https://hub.docker.com/r/habitica/habitica)|
