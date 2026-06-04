@@ -6,7 +6,11 @@
 !**/
 
 # Any secrets and environment variables
-!secrets-example/secret.txt
-secrets/
-.env
-!.env.example
+stack-secrets/
+!stack-secrets-example/secret.txt
+stack.env
+!stack.env.example
+
+# Don't ignore service example itself
+!service-example
+!service-example/*

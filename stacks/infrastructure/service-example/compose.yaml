@@ -1,0 +1,6 @@
+# Obviously fake service if you put this up you just a dummy ngl
+# Replace ts with something real broski
+# This should be an identical one to the source's compose
+services:
+  example-service:
+    image: location/to/service/image

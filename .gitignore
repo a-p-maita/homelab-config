@@ -1,21 +1,24 @@
-# Default stuff
+# Ignore default stuff
 *
 !.gitignore
 !README.md
 
-# MacOS annoyance
+# Ignore MacOS annoyance
 .DS_Store
 
 # Ignore persistent/perm data obviously too large to store, plus doesn't follow IaC idea of whole homelab
 data/
 
 # Ignore env files and actual secrets
-.env
-**/.env
-secrets/*
+root.env
+root-secrets/
+root-secrets/*
+
+# Don't ignore compose stacks themselves
+!stacks/
+!stacks/*
 
 # Don't ignore examples to show how system sets up
-!.env.example
-!stacks/*
-!secrets-example
-!secrets-example/*
+!root.env.example
+!root-secrets-example
+!root-secrets-example/*
