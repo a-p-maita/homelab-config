@@ -1,55 +1,21 @@
-# Ignore all persistent and sensitive data
-data/
-.DS_Store
-*.log
-backups/
-*.rendered
-
-# Secrets — actual secret files must never be committed
-secrets/
-*.secret
-acme/
-acme.json
-
-# Env files — all .env files are gitignored except .env.example
-.env
-**/.env
-# Allow example files
-!.env.example
-!**/.env.example
-
-# TLS certificates and private keys
-*.pem
-*.crt
-*.key
-
-# TLS/letsencrypt and cert directories
-letsencrypt/
-certs/
-
-# Java heap dumps (Stirling-PDF OOM artifacts)
-*.hprof
-
-# Editor artifacts
-*.swp
-*~
-
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
-
-
+# Default stuff
 *
-*/
-
 !.gitignore
 !README.md
-!.env.example
+
+# MacOS annoyance
+.DS_Store
+
+# Ignore persistent/perm data obviously too large to store, plus doesn't follow IaC idea of whole homelab
 data/
-scripts/
-!stacks/
+
+# Ignore env files and actual secrets
+.env
+**/.env
+secrets/*
+
+# Don't ignore examples to show how system sets up
+!.env.example
 !stacks/*
 !secrets-example
 !secrets-example/*
-!Makefile

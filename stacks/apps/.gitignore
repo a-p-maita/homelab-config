@@ -1,4 +1,12 @@
+# Default stuff
 *
 !.gitignore
-!compose.yaml
-!secrets-example
+
+# Any service dir, non-specific but counts on nested gitignore to protect other secrets too
+!**/
+
+# Any secrets and environment variables
+!secrets-example/secret.txt
+secrets/
+.env
+!.env.example
