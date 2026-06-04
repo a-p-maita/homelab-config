@@ -1,6 +1,22 @@
-# Obviously fake service if you put this up you just a dummy ngl
-# Replace ts with something real broski
-# This should be an identical one to the source's compose
+# Couldn't find official so sourced it after https://github.com/JamesTurland/JimsGarage/blob/main/Cloudflare-Tunnel/docker-compose.yaml
+
 services:
-  example-service:
-    image: location/to/service/image
+  tunnel:
+    container_name: cloudflare-tunnel
+    image: cloudflare/cloudflared
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    # secrets:
+    #   - cloudflare_tunnel_token
+    restart: unless-stopped
+    networks:
+      - proxy
+
+# secrets:
+# cloudflare_tunnel_token:
+#   file: service-secrets/cloudflare-tunnel-token.txt
+
+networks:
+  proxy:
+    external: true
