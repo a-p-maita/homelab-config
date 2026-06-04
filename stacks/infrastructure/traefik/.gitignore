@@ -1,0 +1,17 @@
+# Default stuff
+*
+!.gitignore
+
+# The compose file itself, get it from source could also be called docker-compose.yml etc.
+# Assumes it doesn't depend on a Dockerfile but instead images, but this can change I guess
+# File struct allows for per-service Dockerflile to just plop in
+!compose.yaml
+!compose.override.yaml
+
+
+# Secrets and environment variables
+service-secrets/
+service-secrets/*
+!service.env.example
+!service-secrets-example/
+!service-secrets-example/*
