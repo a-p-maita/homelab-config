@@ -8,8 +8,8 @@
 # Any secrets and environment variables
 stack-secrets/
 !stack-secrets-example/secret.txt
-stack.env
-!stack.env.example
+.env
+!.env.example
 
 # Don't ignore service example itself
 !service-example

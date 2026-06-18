@@ -12,6 +12,7 @@
 # Secrets and environment variables
 service-secrets/
 service-secrets/*
-!service.env.example
+.env
+!.env.example
 !service-secrets-example/
 !service-secrets-example/*
