@@ -1,9 +1,9 @@
-# Obviously fake service if you put this up you just a dummy ngl
-# Replace ts with something real broski
-# Not all fields filled but fill out env variables, files and secrets
-# It's fine to override the other ones the purpose is for the prev to be as close to the original compose as possible for pulling and compatability etc
-services:
-  example-service:
-    env_file:
-      - .env
-      - more.env.files
+# # Obviously fake service if you put this up you just a dummy ngl
+# # Replace ts with something real broski
+# # Not all fields filled but fill out env variables, files and secrets
+# # It's fine to override the other ones the purpose is for the prev to be as close to the original compose as possible for pulling and compatability etc
+# services:
+#   example-service:
+#     env_file:
+#       - .env
+#       - more.env.files
