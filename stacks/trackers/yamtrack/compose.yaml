@@ -12,8 +12,8 @@ services:
       - REDIS_URL=redis://redis:6379
       - DB_HOST=db
       - DB_NAME=yamtrack
-      - DB_USER=yamtrack
-      - DB_PASSWORD=yamtrack
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
       - DB_PORT=5432
     ports:
       - "8000:8000"
@@ -23,8 +23,8 @@ services:
     container_name: yamtrack-db
     environment:
       - POSTGRES_DB=yamtrack
-      - POSTGRES_USER=yamtrack
-      - POSTGRES_PASSWORD=yamtrack
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - ~/homelab-config/data/app_data/yamtrack/db:/var/lib/postgresql/data
     restart: unless-stopped
