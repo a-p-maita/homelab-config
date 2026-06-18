@@ -9,16 +9,16 @@
 # Ignore persistent/perm data obviously too large to store, plus doesn't follow IaC idea of whole homelab
 data/
 
-# Ignore env files and actual secrets
-root.env
-root-secrets/
-root-secrets/*
-
 # Don't ignore compose stacks themselves
 !stacks/
 !stacks/*
 
-# Don't ignore examples to show how system sets up
-!root.env.example
-!root-secrets-example
-!root-secrets-example/*
+# Env files ignore, and allow example template
+.env
+!.env.example
+
+# Secrets ignore, and allow example template
+secrets/
+secrets/*
+!secrets-example
+!secrets-example/*
