@@ -11,7 +11,8 @@ services:
       - ~/homelab-config/data/app_data/nextcloud/appdata:/config
       - ~/homelab-config/data/app_data/nextcloud/data:/data
     ports:
-      - 443:443
+      - 21000:80
+      - 21001:443
     restart: unless-stopped
     # labels:
     #   - "traefik.enable=true"
