@@ -11,10 +11,10 @@ services:
       # - 8080:80
       - 24000:80
     environment:
-      # Generate a key using: echo -n 'base64:'; openssl rand -base64 32
+      # Gen key with `echo -n 'base64:'; openssl rand -base64 32``
       - APP_KEY=${MONICA_APP_KEY}
       - DB_HOST=db
-      - DB_USERNAME=monica
+      - DB_USERNAME=${MONICA_MYSQL_USER}
       - DB_PASSWORD=${MONICA_DB_PASSWORD}
     volumes:
       - ~/homelab-config/data/app_data/monica/data:/var/www/html/storage
@@ -25,7 +25,7 @@ services:
     environment:
       - MYSQL_RANDOM_ROOT_PASSWORD=true
       - MYSQL_DATABASE=monica
-      - MYSQL_USER=monica
+      - MYSQL_USER=${MONICA_MYSQL_USER}
       - MYSQL_PASSWORD=${MONICA_DB_PASSWORD}
     volumes:
       - ~/homelab-config/data/app_data/monica/mysql:/var/lib/mysql
