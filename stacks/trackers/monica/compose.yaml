@@ -1,26 +1,31 @@
+# Official Docker Compose template for Monica Personal CRM (Apache variant)
+# Source: https://github.com/monicahq/docker
 services:
   app:
-    image: monica
+    image: monica:latest
     depends_on:
       - db
     ports:
-      - 8080:80
+      # Default but used for many other services, so change to avoid conflicts
+      # Change later to be docker network-specific and/or reverse proxied
+      # - 8080:80
+      - 24000:80
     environment:
-      # Generate with `echo -n 'base64:'; openssl rand -base64 32`
+      # Generate a key using: echo -n 'base64:'; openssl rand -base64 32
       - APP_KEY=${MONICA_APP_KEY}
       - DB_HOST=db
-      - DB_USERNAME=${MONICA_DB_USERNAME}
+      - DB_USERNAME=monica
       - DB_PASSWORD=${MONICA_DB_PASSWORD}
     volumes:
       - ~/homelab-config/data/app_data/monica/data:/var/www/html/storage
     restart: always
 
   db:
-    image: mariadb:11
+    image: mariadb:10.11
     environment:
       - MYSQL_RANDOM_ROOT_PASSWORD=true
       - MYSQL_DATABASE=monica
-      - MYSQL_USER=${MONICA_DB_USERNAME}
+      - MYSQL_USER=monica
       - MYSQL_PASSWORD=${MONICA_DB_PASSWORD}
     volumes:
       - ~/homelab-config/data/app_data/monica/mysql:/var/lib/mysql
@@ -28,6 +33,6 @@ services:
 
 volumes:
   data:
-    name: data
+    name: monica_data
   mysql:
-    name: mysql
+    name: monica_mysql
