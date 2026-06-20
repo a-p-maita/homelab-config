@@ -1,6 +1,29 @@
-# Obviously fake service if you put this up you just a dummy ngl
-# Replace ts with something real broski
-# This should be an identical one to the source's compose
 services:
-  example-service:
-    image: location/to/service/image
+  profilarr:
+    image: ghcr.io/dictionarry-hub/profilarr:develop
+    container_name: profilarr
+    restart: unless-stopped
+    ports:
+      - "6869:6868"
+    volumes:
+      - ${DATA_DIR}/app_data/profilarr/config:/config
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=022
+      - TZ=Europe/London
+      - PORT=6868
+      - HOST=0.0.0.0
+      - PARSER_HOST=parser
+      - PARSER_PORT=5000
+    depends_on:
+      parser:
+        condition: service_healthy
+
+  # Optional - only needed for CF/QP testing features
+  parser:
+    image: ghcr.io/dictionarry-hub/profilarr-parser:develop
+    container_name: profilarr-parser
+    restart: unless-stopped
+    expose:
+      - "5000"
