@@ -5,7 +5,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Etc/UTC
+      - TZ=Europe/London
     volumes:
       - ${DATA_DIR}/app_data/radarr/data:/config
       - ${DATA_DIR}/media/movies:/movies #optional
