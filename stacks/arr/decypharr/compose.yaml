@@ -1,0 +1,16 @@
+services:
+  decypharr:
+    image: cy01/blackhole:latest
+    container_name: decypharr
+    ports:
+      - "8282:8282"
+    volumes:
+      - ${DATA_DIR}/app_data/decypharr/mnt/:/mnt:rshared
+      - ${DATA_DIR}/app_data/decypharr/configs/:/app # config.json must be in this directory
+    restart: unless-stopped
+    devices:
+      - /dev/fuse:/dev/fuse:rwm
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
