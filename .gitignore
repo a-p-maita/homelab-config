@@ -22,3 +22,7 @@ secrets/
 secrets/*
 !secrets-example
 !secrets-example/*
+
+# Not the scripts
+!scripts/
+!scripts/*.sh
