@@ -1,0 +1,7 @@
+services:
+  it-tools:
+    image: "corentinth/it-tools:latest" # The Docker image to use.
+    ports:
+      - "26000:80"
+    restart: unless-stopped # Ensures the container restarts unless it is explicitly stopped.
+    container_name: it-tools # Custom name for the container.
