@@ -29,6 +29,24 @@ services:
     networks:
       proxy:
 
+  # Own added for online office suite to work 
+  collabora:
+    image: collabora/code:latest
+    container_name: collabora
+    ports:
+      - "9980:9980"
+    restart: unless-stopped
+    volumes:
+      - /var/container/collabora/etc/coolwsd/:/etc/coolwsd/:rw
+    environment:
+      #- domain=example.com
+      - username=${collaboraUser}
+      - password=${collaboraPassword}
+      - dictionaries=en_GB
+      - TZ=Europe/London
+    networks:
+      proxy:
+  
 networks:
   proxy:
     external: true
