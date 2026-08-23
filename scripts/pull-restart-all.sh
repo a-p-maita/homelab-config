@@ -16,7 +16,7 @@ while IFS= read -r compose_dir; do
     continue
   fi
 
-  echo "==> Updating compose stack in $compose_dir"
+  echo "---> Updating compose stack in $compose_dir"
   (
     cd "$compose_dir"
 
@@ -25,7 +25,7 @@ while IFS= read -r compose_dir; do
       exit 0
     fi
 
-    if ! docker compose restart; then
+    if ! (docker compose down && docker compose up -d); then
       echo "restart failed for $compose_dir" >&2
     fi
   )

@@ -15,6 +15,7 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_PORT=5432
+      - STEAM_API_KEY=${STEAM_API_KEY}
     ports:
       - "8000:8000"
 
@@ -35,6 +36,8 @@ services:
     restart: unless-stopped
     volumes:
       - ~/homelab-config/data/app_data/yamtrack/redis_data:/data
+    ports:
+      - "6379:6379"
 
 volumes:
   redis_data:

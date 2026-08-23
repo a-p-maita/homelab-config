@@ -35,15 +35,16 @@ services:
     container_name: collabora
     ports:
       - "9980:9980"
-    restart: unless-stopped
-    volumes:
-      - /var/container/collabora/etc/coolwsd/:/etc/coolwsd/:rw
+    restart: always
+#    volumes:
+#      - /var/container/collabora/etc/coolwsd/:/etc/coolwsd/:rw
     environment:
       #- domain=example.com
       - username=${collaboraUser}
       - password=${collaboraPassword}
       - dictionaries=en_GB
       - TZ=Europe/London
+      - extra_params=--o:ssl.enable=false --o:ssl.termination=true
     networks:
       proxy:
   
