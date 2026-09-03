@@ -36,7 +36,13 @@ services:
       - WEBUI_PORT=8085
     volumes:
       - ~/homelab-config/data/app_data/qbittorrent:/config
-      - ~/homelab-config/data/app_data/qbittorrent/downloads:/downloads
+      - ~/homelab-config/data/media/downloads:/downloads
+      - ~/homelab-config/data/media/audiobooks:/audiobooks
+      - ~/homelab-config/data/media/books:/books
+      - ~/homelab-config/data/media/movies:/movies
+      - ~/homelab-config/data/media/music:/music
+      - ~/homelab-config/data/media/podcasts:/podcasts
+      - ~/homelab-config/data/media/tv:/tv
     depends_on:
       - gluetun
     restart: always
