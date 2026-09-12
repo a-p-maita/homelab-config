@@ -13,3 +13,5 @@ services:
       - ${DATA_DIR}/app_data/shelfmark/config:/config # App configuration
       # Required for torrent / usenet - path must match your download client's volume exactly
       - ${DATA_DIR}/media/downloads:/downloads
+      - ${DATA_DIR}/media/audiobooks:/audiobooks
+      - ${DATA_DIR}/media/books:/books
