@@ -9,11 +9,11 @@ services:
     ports:
       - 13378:80 # remove if you're using a proxy
     volumes:
-      - ~/homelab-config/data/media/audiobooks:/audiobooks
+      - ${DATA_DIR}/data/media/audiobooks:/audiobooks
       # - </path/to/podcasts>:/podcasts
-      - ~/homelab-config/data/media/podcasts:/podcasts
-      - ~/homelab-config/data/app_data/audiobookshelf:/config
-      - ~/homelab-config/data/app_data/audiobookshelf:/metadata
+      - ${DATA_DIR}/media/podcasts:/podcasts
+      - ${DATA_DIR}/app_data/audiobookshelf:/config
+      - ${DATA_DIR}/app_data/audiobookshelf:/metadata
     environment:
       - TZ=Europe/London
     networks:
