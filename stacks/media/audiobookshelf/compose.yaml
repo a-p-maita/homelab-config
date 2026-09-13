@@ -9,7 +9,7 @@ services:
     ports:
       - 13378:80 # remove if you're using a proxy
     volumes:
-      - ${DATA_DIR}/data/media/audiobooks:/audiobooks
+      - ${DATA_DIR}/media/audiobooks:/audiobooks
       # - </path/to/podcasts>:/podcasts
       - ${DATA_DIR}/media/podcasts:/podcasts
       - ${DATA_DIR}/app_data/audiobookshelf:/config
