@@ -16,3 +16,4 @@ service-secrets/*
 !.env.example
 !service-secrets-example/
 !service-secrets-example/*
+*.pem
